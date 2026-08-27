@@ -27,16 +27,19 @@ export function AdminDashboard() {
       let expenseList = dataStore.getExpenses();
       let donorsList = dataStore.getDonors();
       let appsList = dataStore.getAdoptionApplications();
+      let activeUsers = 0;
 
       try {
-        const [incomeRes, expenseRes, donorRes] = await Promise.all([
+        const [incomeRes, expenseRes, donorRes, usersRes] = await Promise.all([
           supabase.from('income_records').select('*'),
           supabase.from('expense_records').select('*'),
           supabase.from('donors').select('*'),
+          supabase.from('profiles').select('id', { count: 'exact', head: true }),
         ]);
         if (incomeRes.data && incomeRes.data.length > 0) incomeList = incomeRes.data as any;
         if (expenseRes.data && expenseRes.data.length > 0) expenseList = expenseRes.data as any;
         if (donorRes.data && donorRes.data.length > 0) donorsList = donorRes.data as any;
+        activeUsers = usersRes.count ?? 0;
       } catch {}
 
       const totalIncome = incomeList.reduce((s, r) => s + r.amount_usd, 0);
@@ -48,7 +51,7 @@ export function AdminDashboard() {
         balance: totalIncome - totalExpense,
         donorCount: donorsList.length,
         unreadMessages: appsList.filter(a => a.status === 'pending').length,
-        activeUsers: 4,
+        activeUsers,
       };
     },
   });
@@ -68,21 +71,9 @@ export function AdminDashboard() {
         
         if (all.length > 0) return all;
 
-        // Fallback recent activity for demo
-        return [
-          { id: '1', description: 'Donación mensual - Familia García', amount_usd: 500.00, date: '2026-08-03', category: 'donation', type: 'income' as const },
-          { id: '2', description: 'Alimento seco - Julio', amount_usd: 295.00, date: '2026-08-01', category: 'food', type: 'expense' as const },
-          { id: '3', description: 'Aporte corporativo - PetCare S.A.', amount_usd: 2500.00, date: '2026-07-28', category: 'donation', type: 'income' as const },
-          { id: '4', description: 'Consultas veterinarias', amount_usd: 350.00, date: '2026-07-25', category: 'medical', type: 'expense' as const },
-          { id: '5', description: 'Bingo Solidario', amount_usd: 450.00, date: '2026-07-20', category: 'event', type: 'income' as const },
-        ];
+        return [];
       } catch {
-        return [
-          { id: '1', description: 'Donación mensual - Familia García', amount_usd: 500.00, date: '2026-08-03', category: 'donation', type: 'income' as const },
-          { id: '2', description: 'Alimento seco - Julio', amount_usd: 295.00, date: '2026-08-01', category: 'food', type: 'expense' as const },
-          { id: '3', description: 'Aporte corporativo - PetCare S.A.', amount_usd: 2500.00, date: '2026-07-28', category: 'donation', type: 'income' as const },
-          { id: '4', description: 'Consultas veterinarias', amount_usd: 350.00, date: '2026-07-25', category: 'medical', type: 'expense' as const },
-        ];
+        return [];
       }
     },
   });

@@ -55,10 +55,7 @@ export function ActivityDetailModal({
       onRegistered();
       onClose();
     } catch {
-      toast.success(`¡Inscripción registrada para "${activity.title}"! Nos vemos pronto. 🐾`);
-      reset();
-      onRegistered();
-      onClose();
+      toast.error('No pudimos registrar tu inscripción. Intenta nuevamente.');
     } finally {
       setSubmitting(false);
     }

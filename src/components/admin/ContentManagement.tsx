@@ -20,7 +20,7 @@ export function ContentManagement() {
 
   const [heroText, setHeroText] = useState('Cada vida merece una segunda oportunidad');
   const [heroSub, setHeroSub] = useState('En AdoptaME rescatamos, cuidamos y buscamos un hogar para perros en necesidad.');
-  const [emergencyAlert, setEmergencyAlert] = useState('🚨 Caso Crítico: Requerimos apoyo para la cirugía urgente de Coco.');
+  const [emergencyAlert, setEmergencyAlert] = useState('');
 
   const saveSettings = useMutation({
     mutationFn: async () => {
@@ -36,15 +36,14 @@ export function ContentManagement() {
       ];
 
       for (const item of settingsToSave) {
-        await supabase.from('site_settings').upsert([item], { onConflict: 'key' });
+        const { error } = await supabase.from('site_settings').upsert([item], { onConflict: 'key' });
+        if (error) throw error;
       }
     },
     onSuccess: () => {
       toast.success('¡Contenido y Redes Sociales actualizados correctamente!');
     },
-    onError: () => {
-      toast.success('Cambios guardados localmente.');
-    },
+    onError: () => toast.error('No pudimos guardar los cambios. Verifica la conexión con Supabase.'),
   });
 
   return (

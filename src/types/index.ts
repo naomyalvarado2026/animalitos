@@ -137,7 +137,7 @@ export interface DonationMethod {
 
 // ── Extended Features Types ─────────────────────────────────────
 
-export type AnimalSpecies = 'dog' | 'cat' | 'other';
+export type AnimalSpecies = 'dog';
 export type AnimalGender = 'male' | 'female';
 export type AnimalSize = 'small' | 'medium' | 'large' | 'extra_large';
 export type AnimalStatus = 'available' | 'pending' | 'adopted' | 'medical_care';
@@ -262,5 +262,4 @@ export interface ActivityRegistration {
   assigned_by_admin: boolean;
   created_at: string;
 }
-
 

@@ -4,15 +4,16 @@ import { Link } from 'react-router-dom';
 
 export function EmergencyBanner() {
   const [dismissed, setDismissed] = useState(false);
+  const message = '';
 
-  if (dismissed) return null;
+  if (dismissed || !message) return null;
 
   return (
     <div className="bg-amber-600 text-white text-xs sm:text-sm py-2 px-4 relative z-50 flex items-center justify-between gap-2 shadow-xs">
       <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-center flex-1">
         <AlertCircle className="h-4 w-4 shrink-0 text-amber-200 animate-pulse" />
         <span className="font-medium">
-          🚨 <strong>Caso Crítico:</strong> Requerimos apoyo urgente para la cirugía y recuperación de Coco.
+          🚨 <strong>Ayuda urgente:</strong> {message}
         </span>
         <Link
           to="/contacto/quiero-apoyar"

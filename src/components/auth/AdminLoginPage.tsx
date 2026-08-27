@@ -23,11 +23,11 @@ export function AdminLoginPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      email: 'admin@animalitos.org',
-      password: 'admin123',
+      email: '',
+      password: '',
     },
   });
 
@@ -45,11 +45,6 @@ export function AdminLoginPage() {
     }
     setIsSigningIn(false);
   }
-
-  const fillDemoCredentials = () => {
-    setValue('email', 'admin@animalitos.org');
-    setValue('password', 'admin123');
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)] p-4 relative">
@@ -71,7 +66,7 @@ export function AdminLoginPage() {
             Panel Administrativo
           </h1>
           <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
-            Animalitos — Acceso Restringido
+            AdoptaME — Acceso restringido
           </p>
         </div>
 
@@ -82,19 +77,6 @@ export function AdminLoginPage() {
               <Lock className="h-4 w-4 text-[var(--color-muted-foreground)]" />
               <span className="text-sm text-[var(--color-muted-foreground)]">Credenciales requeridas</span>
             </div>
-            <button
-              type="button"
-              onClick={fillDemoCredentials}
-              className="text-xs text-[var(--color-primary)] hover:underline font-medium"
-            >
-              Cargar Demo
-            </button>
-          </div>
-
-          <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400">
-            <p className="font-semibold mb-1">Acceso Demo:</p>
-            <p><strong>Email:</strong> admin@animalitos.org</p>
-            <p><strong>Contraseña:</strong> admin123</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

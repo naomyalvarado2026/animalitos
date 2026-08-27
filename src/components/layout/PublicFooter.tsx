@@ -59,7 +59,7 @@ export function PublicFooter() {
             </p>
             {/* Social */}
             <div className="flex items-center gap-3 pt-1">
-              {SOCIAL_LINKS.map(({ svg, href, label }) => (
+              {SOCIAL_LINKS.filter(({ href }) => href !== '#').map(({ svg, href, label }) => (
                 <a
                   key={label}
                   href={href}

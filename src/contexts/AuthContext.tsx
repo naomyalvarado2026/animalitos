@@ -15,39 +15,6 @@ interface AuthContextValue {
   hasAccessLevel: (level: number) => boolean;
 }
 
-const MOCK_ADMIN_USER: User = {
-  id: '00000000-0000-0000-0000-000000000001',
-  app_metadata: { provider: 'email' },
-  user_metadata: { full_name: 'Administrador Animalitos' },
-  aud: 'authenticated',
-  created_at: new Date().toISOString(),
-  email: 'admin@animalitos.org',
-  phone: '',
-  role: 'authenticated',
-  updated_at: new Date().toISOString(),
-};
-
-const MOCK_ADMIN_PROFILE: Profile = {
-  id: '00000000-0000-0000-0000-000000000001',
-  email: 'admin@animalitos.org',
-  full_name: 'Administrador Animalitos',
-  avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-  role: 'super_admin',
-  access_level: 10,
-  is_active: true,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
-
-const MOCK_ADMIN_SESSION: Session = {
-  access_token: 'mock-access-token',
-  token_type: 'bearer',
-  expires_in: 3600,
-  refresh_token: 'mock-refresh-token',
-  user: MOCK_ADMIN_USER,
-  expires_at: Math.floor(Date.now() / 1000) + 3600,
-};
-
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -57,16 +24,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check demo session first
-    const isDemo = localStorage.getItem('animalitos_demo_session') === 'true';
-    if (isDemo) {
-      setUser(MOCK_ADMIN_USER);
-      setSession(MOCK_ADMIN_SESSION);
-      setProfile(MOCK_ADMIN_PROFILE);
-      setLoading(false);
-      return;
-    }
-
     // Get initial Supabase session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -83,7 +40,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        if (localStorage.getItem('animalitos_demo_session') === 'true') return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -137,46 +93,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signIn(email: string, password: string) {
     const cleanEmail = email.trim().toLowerCase();
 
-    // Check for demo admin credentials
-    if (cleanEmail === 'admin@animalitos.org' && (password === 'admin123' || password === 'Animalitos2026!')) {
-      localStorage.setItem('animalitos_demo_session', 'true');
-      setUser(MOCK_ADMIN_USER);
-      setSession(MOCK_ADMIN_SESSION);
-      setProfile(MOCK_ADMIN_PROFILE);
-      setLoading(false);
-      return { error: null };
-    }
-
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
       if (error) {
-        // Fallback for admin email if Supabase instance is mock/offline
-        if (cleanEmail === 'admin@animalitos.org') {
-          localStorage.setItem('animalitos_demo_session', 'true');
-          setUser(MOCK_ADMIN_USER);
-          setSession(MOCK_ADMIN_SESSION);
-          setProfile(MOCK_ADMIN_PROFILE);
-          setLoading(false);
-          return { error: null };
-        }
         return { error: error as Error };
       }
       return { error: null };
     } catch {
-      if (cleanEmail === 'admin@animalitos.org') {
-        localStorage.setItem('animalitos_demo_session', 'true');
-        setUser(MOCK_ADMIN_USER);
-        setSession(MOCK_ADMIN_SESSION);
-        setProfile(MOCK_ADMIN_PROFILE);
-        setLoading(false);
-        return { error: null };
-      }
       return { error: new Error('Error al conectar con el servidor de autenticación') };
     }
   }
 
   async function signOut() {
-    localStorage.removeItem('animalitos_demo_session');
     try {
       await supabase.auth.signOut();
     } catch {
@@ -216,4 +144,3 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
-

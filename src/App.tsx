@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'sonner';
@@ -31,6 +31,10 @@ const SuccessStoriesPage = lazy(() => import('@/components/public/SuccessStories
 const VolunteerPage = lazy(() => import('@/components/public/VolunteerPage').then(m => ({ default: m.VolunteerPage })));
 const FaqPage = lazy(() => import('@/components/public/FaqPage').then(m => ({ default: m.FaqPage })));
 const StorePage = lazy(() => import('@/components/public/StorePage').then(m => ({ default: m.StorePage })));
+const AdoptionProcessPage = lazy(() => import('@/components/public/AdoptionProcessPage').then(m => ({ default: m.AdoptionProcessPage })));
+const SanctuaryPage = lazy(() => import('@/components/public/SanctuaryPage').then(m => ({ default: m.SanctuaryPage })));
+const MemoryPage = lazy(() => import('@/components/public/MemoryPage').then(m => ({ default: m.MemoryPage })));
+const ResourcesPage = lazy(() => import('@/components/public/ResourcesPage').then(m => ({ default: m.ResourcesPage })));
 
 // Lazy-loaded Admin pages
 const AdminLoginPage = lazy(() => import('@/components/auth/AdminLoginPage').then(m => ({ default: m.AdminLoginPage })));
@@ -70,13 +74,18 @@ export default function App() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <CurrencyProvider>
-              <BrowserRouter>
+              <HashRouter>
                 <Suspense fallback={<LoadingScreen />}>
                   <Routes>
                     {/* ── Public routes ── */}
                     <Route element={<PublicLayout />}>
                       <Route path="/" element={<HomePage />} />
                       <Route path="/adopta" element={<AdoptionGalleryPage />} />
+                      <Route path="/adopta/:slug" element={<AdoptionGalleryPage />} />
+                      <Route path="/como-funciona" element={<AdoptionProcessPage />} />
+                      <Route path="/santuario" element={<SanctuaryPage />} />
+                      <Route path="/en-memoria" element={<MemoryPage />} />
+                      <Route path="/recursos" element={<ResourcesPage />} />
                       <Route path="/tienda" element={<StorePage />} />
                       <Route path="/nosotros" element={<AboutPage />} />
                       <Route path="/nosotros/historia" element={<HistoryPage />} />
@@ -116,7 +125,7 @@ export default function App() {
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Suspense>
-              </BrowserRouter>
+              </HashRouter>
 
               <Toaster
                 position="top-right"

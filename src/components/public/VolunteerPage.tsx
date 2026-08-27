@@ -68,12 +68,13 @@ const VOLUNTEER_ROLES = [
 
 export function VolunteerPage() {
   const [submitting, setSubmitting] = useState(false);
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<VolunteerFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<VolunteerFormData>({
     resolver: zodResolver(volunteerSchema),
     defaultValues: {
       area_of_interest: 'dog_walking',
     },
   });
+  const selectedArea = watch('area_of_interest');
 
   async function onSubmit(data: VolunteerFormData) {
     setSubmitting(true);
@@ -83,8 +84,7 @@ export function VolunteerPage() {
       toast.success('¡Solicitud de voluntariado recibida! Nos pondremos en contacto contigo pronto. 🐾');
       reset();
     } catch {
-      toast.success('¡Solicitud registrada correctamente! Gracias por sumarte a nuestro equipo. 🐾');
-      reset();
+      toast.error('No pudimos registrar tu solicitud. Intenta nuevamente cuando el sistema esté disponible.');
     } finally {
       setSubmitting(false);
     }
@@ -118,13 +118,13 @@ export function VolunteerPage() {
               viewport={{ once: true }}
               transition={{ delay: i * 0.06 }}
             >
-              <Card className="hover-card h-full cursor-pointer" onClick={() => setValue('area_of_interest', role.area as VolunteerArea)}>
+              <button type="button" aria-pressed={selectedArea === role.area} className={`rounded-2xl border bg-[var(--color-card)] text-left shadow-sm hover-card h-full w-full cursor-pointer ${selectedArea === role.area ? 'border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/20' : 'border-[var(--color-border)]'}`} onClick={() => setValue('area_of_interest', role.area as VolunteerArea)}>
                 <CardContent className="p-6">
                   <span className="text-4xl block mb-3">{role.icon}</span>
                   <h3 className="font-heading text-lg font-bold mb-1">{role.title}</h3>
                   <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">{role.desc}</p>
                 </CardContent>
-              </Card>
+              </button>
             </motion.div>
           ))}
         </div>

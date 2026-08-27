@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useParams } from 'react-router-dom';
 import { Heart, Search, ShieldCheck, Sparkles, X, CheckCircle2, Share2 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -35,6 +36,7 @@ const adoptionSchema = z.object({
 type AdoptionFormData = z.infer<typeof adoptionSchema>;
 
 export function AdoptionGalleryPage() {
+  const { slug } = useParams();
   const [speciesFilter, setSpeciesFilter] = useState<AnimalSpecies | 'all' | 'favorites'>('all');
   const [search, setSearch] = useState('');
   const [sizeFilter, setSizeFilter] = useState<'all' | 'small' | 'medium' | 'large'>('all');
@@ -77,7 +79,7 @@ export function AdoptionGalleryPage() {
     const shareData = {
       title: `¡Adopta a ${animal.name}! - AdoptaME`,
       text: `Conoce a ${animal.name}, un perrito en adopción en AdoptaME.`,
-      url: window.location.href,
+      url: `${window.location.origin}/adopta/${slugify(animal.name)}`,
     };
 
     if (navigator.share) {
@@ -87,7 +89,7 @@ export function AdoptionGalleryPage() {
         // User cancelled share
       }
     } else {
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(`${window.location.origin}/adopta/${slugify(animal.name)}`);
       toast.success('¡Enlace copiado al portapapeles!');
     }
   };
@@ -106,6 +108,15 @@ export function AdoptionGalleryPage() {
       return dataStore.getAnimals().filter((animal) => animal.species === 'dog');
     },
   });
+
+  useEffect(() => {
+    if (!slug || isLoading || detailAnimal) return;
+    const match = animals.find((animal) => slugify(animal.name) === slug);
+    if (match) {
+      setDetailAnimal(match);
+      setIsDetailModalOpen(true);
+    }
+  }, [slug, animals, isLoading, detailAnimal]);
 
   const filtered = animals.filter(animal => {
     if (animal.species !== 'dog') return false;
@@ -169,6 +180,7 @@ export function AdoptionGalleryPage() {
               <button
                 key={tab.id}
                 onClick={() => setSpeciesFilter(tab.id as any)}
+                aria-pressed={speciesFilter === tab.id}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                   speciesFilter === tab.id
                     ? 'brand-gradient-bg text-white shadow-xs'
@@ -183,7 +195,7 @@ export function AdoptionGalleryPage() {
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2 w-full">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted-foreground)]" />
-              <Input placeholder="Buscar por nombre o raza..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-xs" />
+              <Input aria-label="Buscar perros por nombre o raza" placeholder="Buscar por nombre o raza..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-xs" />
             </div>
             <select aria-label="Filtrar por tamaño" value={sizeFilter} onChange={e => setSizeFilter(e.target.value as typeof sizeFilter)} className="h-9 rounded-lg border border-[var(--color-input)] bg-transparent px-3 text-xs">
               <option value="all">Todos los tamaños</option><option value="small">Pequeños</option><option value="medium">Medianos</option><option value="large">Grandes</option>
@@ -234,6 +246,8 @@ export function AdoptionGalleryPage() {
                       <img
                         src={animal.main_image_url}
                         alt={animal.name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-3 left-3 flex gap-2">
@@ -369,6 +383,10 @@ export function AdoptionGalleryPage() {
   );
 }
 
+function slugify(value: string) {
+  return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
 function AdoptionModal({ animal, onClose }: { animal: Animal; onClose: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const { register, handleSubmit, formState: { errors }, reset } = useForm<AdoptionFormData>({
@@ -383,18 +401,8 @@ function AdoptionModal({ animal, onClose }: { animal: Animal; onClose: () => voi
   async function onSubmit(data: AdoptionFormData) {
     setSubmitting(true);
     try {
-      dataStore.submitAdoptionApplication({
-        animal_id: animal.id,
-        ...data,
-      });
-      try {
-        await supabase.from('adoption_applications').insert([
-          {
-            animal_id: animal.id,
-            ...data,
-          },
-        ]);
-      } catch {}
+      const { error } = await supabase.from('adoption_applications').insert([{ animal_id: animal.id, ...data }]);
+      if (error) throw error;
       toast.success(`¡Solicitud enviada para ${animal.name}! Nos pondremos en contacto muy pronto. 🐾`);
       reset();
       onClose();

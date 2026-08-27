@@ -20,17 +20,29 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Inicio', href: '/' },
-  { label: 'Adóptame', href: '/adopta' },
+  { label: 'Adoptar', href: '/adopta' },
+  { label: 'Cómo funciona', href: '/como-funciona' },
   { label: 'Tienda', href: '/tienda' },
   {
-    label: 'Nosotros',
-    href: '/nosotros',
-    children: [
-      { label: 'Historia', href: '/nosotros/historia' },
-      { label: 'Historias de Éxito ✨', href: '/historias-de-exito' },
-    ],
-  },
-  { label: 'Súmate', href: '/voluntariado' },
+      label: 'Ayudar',
+      href: '/nosotros',
+      children: [
+      { label: 'Voluntariado', href: '/voluntariado' },
+      { label: 'Santuario', href: '/santuario' },
+      { label: 'Tienda solidaria', href: '/tienda' },
+      { label: 'Donaciones', href: '/donaciones' },
+      ],
+    },
+  {
+      label: 'Nosotros',
+      href: '/nosotros',
+      children: [
+        { label: 'Historia', href: '/nosotros/historia' },
+        { label: 'Historias de Éxito ✨', href: '/historias-de-exito' },
+        { label: 'En memoria de', href: '/en-memoria' },
+      ],
+    },
+  { label: 'Recursos', href: '/recursos' },
   {
     label: 'Transparencia',
     href: '/transparencia',

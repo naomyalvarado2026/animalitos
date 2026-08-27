@@ -47,7 +47,7 @@ const MOCK_ACTIVITIES: VolunteerActivity[] = [
   {
     id: 'act-2',
     title: 'Campaña de Sanidad & Cepillado 🏥',
-    description: 'Apoyo al equipo veterinario en pesaje, cepillado y aplicación de desparasitantes a gatitos.',
+    description: 'Apoyo al equipo veterinario en pesaje, cepillado y aplicación de desparasitantes a los perritos.',
     category: 'medical',
     activity_date: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
     end_date: null,
@@ -126,6 +126,7 @@ export function VolunteerCalendar() {
   const [viewMode, setViewMode] = useState<'month' | 'agenda'>('agenda');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [selectedActivity, setSelectedActivity] = useState<VolunteerActivity | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(() => new Date());
 
   const { data: activities = [], refetch } = useQuery({
     queryKey: ['volunteer-activities-public'],
@@ -163,7 +164,8 @@ export function VolunteerCalendar() {
           {/* View mode toggle */}
           <div className="flex items-center gap-1 bg-[var(--color-background)] p-1 rounded-xl border border-[var(--color-border)]">
             <button
-              onClick={() => setViewMode('agenda')}
+            onClick={() => setViewMode('agenda')}
+            aria-pressed={viewMode === 'agenda'}
               className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 viewMode === 'agenda'
                   ? 'brand-gradient-bg text-white shadow-xs'
@@ -173,7 +175,8 @@ export function VolunteerCalendar() {
               <List className="h-3.5 w-3.5" /> Agenda
             </button>
             <button
-              onClick={() => setViewMode('month')}
+            onClick={() => setViewMode('month')}
+            aria-pressed={viewMode === 'month'}
               className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 viewMode === 'month'
                   ? 'brand-gradient-bg text-white shadow-xs'
@@ -192,6 +195,7 @@ export function VolunteerCalendar() {
           <button
             key={cat.id}
             onClick={() => setCategoryFilter(cat.id)}
+            aria-pressed={categoryFilter === cat.id}
             className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
               categoryFilter === cat.id
                 ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] border-[var(--color-primary)] font-semibold shadow-xs'
@@ -284,6 +288,13 @@ export function VolunteerCalendar() {
       ) : (
         /* Month Grid View */
         <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-heading font-bold capitalize">{currentMonth.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}</h4>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" aria-label="Mes anterior" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" aria-label="Mes siguiente" onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
+            </div>
+          </div>
           <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-[var(--color-muted-foreground)] mb-3 pb-2 border-b border-[var(--color-border)]">
             <span>Lun</span>
             <span>Mar</span>
@@ -295,10 +306,12 @@ export function VolunteerCalendar() {
           </div>
 
           <div className="grid grid-cols-7 gap-2">
-            {Array.from({ length: 31 }).map((_, dayIndex) => {
-              const dayNum = dayIndex + 1;
+            {Array.from({ length: (new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()) + ((new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay() + 6) % 7) }).map((_, dayIndex) => {
+              const firstDayOffset = (new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay() + 6) % 7;
+              if (dayIndex < firstDayOffset) return <div key={`empty-${dayIndex}`} className="min-h-[70px]" aria-hidden="true" />;
+              const dayNum = dayIndex - firstDayOffset + 1;
               const dayActivities = filtered.filter(
-                (act) => new Date(act.activity_date).getDate() === dayNum
+                (act) => { const date = new Date(`${act.activity_date}T12:00:00`); return date.getFullYear() === currentMonth.getFullYear() && date.getMonth() === currentMonth.getMonth() && date.getDate() === dayNum; }
               );
 
               return (
