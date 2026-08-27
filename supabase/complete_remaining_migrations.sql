@@ -1,36 +1,43 @@
 -- =====================================================================
--- COMPLETE REMAINING MIGRATIONS (IDEMPOTENT & SAFE)
--- Refugio AdoptaME / Animalitos
+-- FIX & COMPLETE MIGRATIONS (100% BULLETPROOF)
 -- =====================================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- ── 1. Asegurar funciones base de seguridad y nivel de acceso ────────
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS access_level INTEGER NOT NULL DEFAULT 1 CHECK (access_level BETWEEN 0 AND 10);
+-- ── 1. Asegurar columnas faltantes en profiles ───────────────────────
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS access_level INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
 
+UPDATE public.profiles
+SET access_level = 10, is_active = true
+WHERE role = 'super_admin';
+
+-- ── 2. Función de Seguridad has_access_level ──────────────────────────
 CREATE OR REPLACE FUNCTION public.has_access_level(required_level INTEGER)
 RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
+LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = ''
+SET search_path = public
 AS $$
-  SELECT EXISTS (
+BEGIN
+  RETURN EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE id = (SELECT auth.uid())
+    WHERE id = auth.uid()
       AND is_active = true
-      AND CASE role
-        WHEN 'super_admin' THEN GREATEST(access_level, 10)
-        WHEN 'admin' THEN GREATEST(access_level, 7)
-        WHEN 'editor' THEN GREATEST(access_level, 4)
-        ELSE access_level
-      END >= required_level
+      AND (
+        role = 'super_admin'
+        OR (role = 'admin' AND required_level <= 7)
+        OR (role = 'editor' AND required_level <= 4)
+        OR COALESCE(access_level, 1) >= required_level
+      )
   );
+END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.has_access_level(INTEGER) TO authenticated, anon;
 
--- ── 2. Módulo de Voluntariado y Calendario ───────────────────────────
+-- ── 3. Tablas de Voluntariado y Calendario ───────────────────────────
 CREATE TABLE IF NOT EXISTS public.volunteer_activities (
   id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title              TEXT NOT NULL,
@@ -73,7 +80,7 @@ CREATE TABLE IF NOT EXISTS public.volunteer_applications (
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- ── 3. Módulo de Historias de Éxito ───────────────────────────────────
+-- ── 4. Historias de Éxito y Configuración ────────────────────────────
 CREATE TABLE IF NOT EXISTS public.success_stories (
   id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   animal_name        TEXT NOT NULL,
@@ -87,14 +94,13 @@ CREATE TABLE IF NOT EXISTS public.success_stories (
   created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- ── 4. Configuración del Sitio y Notificaciones ───────────────────────
 CREATE TABLE IF NOT EXISTS public.site_settings (
   key         TEXT PRIMARY KEY,
   value       JSONB NOT NULL,
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- ── 5. Habilitar RLS y Políticas de Acceso ────────────────────────────
+-- ── 5. Habilitar RLS y Políticas ─────────────────────────────────────
 ALTER TABLE public.volunteer_activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_registrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.volunteer_applications ENABLE ROW LEVEL SECURITY;
@@ -128,7 +134,7 @@ CREATE POLICY "success_stories_admin_write" ON public.success_stories FOR ALL US
 DROP POLICY IF EXISTS "settings_public_read" ON public.site_settings;
 CREATE POLICY "settings_public_read" ON public.site_settings FOR SELECT USING (true);
 
--- ── 6. Trigger para contador dinámico de voluntarios ─────────────────
+-- ── 6. Trigger Contador de Voluntarios ────────────────────────────────
 CREATE OR REPLACE FUNCTION public.update_activity_volunteer_count()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -159,7 +165,7 @@ CREATE TRIGGER on_registration_change
   AFTER INSERT OR DELETE ON public.activity_registrations
   FOR EACH ROW EXECUTE FUNCTION public.update_activity_volunteer_count();
 
--- ── 7. Datos Semilla (Seed Data) ──────────────────────────────────────
+-- ── 7. Datos Semilla ──────────────────────────────────────────────────
 INSERT INTO public.volunteer_activities (
   title, description, category, activity_date, start_time, end_time, location, max_volunteers, current_volunteers, coordinator_name, requirements
 ) VALUES
@@ -174,12 +180,6 @@ INSERT INTO public.volunteer_activities (
   'Apoyo al equipo veterinario en pesaje, cepillado y aplicación de tratamientos preventivos.',
   'medical', CURRENT_DATE + INTERVAL '5 days', '10:00', '13:00', 'Área Médica Refugio', 4, 1, 'Dra. María Elena',
   ARRAY['Uso de mascarilla', 'Guantes de látex']
-),
-(
-  'Bazar Solidario & Colecta 🎟️',
-  'Atención en stand de donaciones y venta de artículos promocionales para recaudar fondos.',
-  'events', CURRENT_DATE + INTERVAL '8 days', '11:00', '17:00', 'Plaza Principal', 6, 2, 'Laura Méndez',
-  ARRAY['Camiseta institucional']
 )
 ON CONFLICT DO NOTHING;
 
@@ -192,12 +192,5 @@ INSERT INTO public.success_stories (
   'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800',
   'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=800',
   CURRENT_DATE - INTERVAL '60 days', true
-),
-(
-  'Luna', 'Andrea Morales', 'Una segunda oportunidad para brillar',
-  'Luna llegó con mucho temor a las personas. Gracias a la paciencia de Andrea, ahora es la perrita más cariñosa.',
-  'https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?w=800',
-  'https://images.unsplash.com/photo-1517849845537-4d257902454a?w=800',
-  CURRENT_DATE - INTERVAL '30 days', true
 )
 ON CONFLICT DO NOTHING;
