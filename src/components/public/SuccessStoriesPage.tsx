@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { SuccessStory } from '@/types';
 import { formatDateShort } from '@/lib/utils';
+import { assetUrl } from '@/lib/assets';
 
 const MOCK_STORIES: SuccessStory[] = [
   {
@@ -15,8 +16,8 @@ const MOCK_STORIES: SuccessStory[] = [
     adopter_name: 'Familia Martínez',
     title: 'De la calle a convertirse en el rey de la casa',
     story: 'Toby fue encontrado con desnutrición severa y mucho temor a las personas. Gracias a los cuidados médicos del refugio y al amor incondicional de la familia Martínez, hoy Toby es un perrito radiante, juguetón y lleno de energía.',
-    before_image_url: '/images/dog_max.jpg',
-    after_image_url: '/images/hero.jpg',
+    before_image_url: assetUrl('/images/dog_max.jpg'),
+    after_image_url: assetUrl('/images/hero.jpg'),
     adoption_date: '2025-12-10',
     is_featured: true,
     created_at: new Date().toISOString(),
@@ -28,7 +29,7 @@ const MOCK_STORIES: SuccessStory[] = [
     title: 'La perrita que llenó nuestro hogar de felicidad',
     story: 'Bella era una perrita tímida que pasaba desapercibida. Ana la vio en la web del refugio y supo que era para ella. Hoy disfruta los paseos y acompaña a su familia cada tarde.',
     before_image_url: null,
-    after_image_url: '/images/dog_max.jpg',
+    after_image_url: assetUrl('/images/dog_max.jpg'),
     adoption_date: '2026-01-20',
     is_featured: true,
     created_at: new Date().toISOString(),

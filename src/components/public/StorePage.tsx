@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/lib/supabase';
+import { assetUrl } from '@/lib/assets';
 
 const PRODUCTS = [
-  { name: 'Camiseta AdoptaME', type: 'Ropa solidaria', price: 'Consultar', image: '/images/hero.jpg', color: 'coral' },
-  { name: 'Pañuelo “ME eligieron”', type: 'Para tu mejor amigo', price: 'Consultar', image: '/images/dog_max.jpg', color: 'yellow' },
-  { name: 'Tote bag AdoptaME', type: 'Uso diario', price: 'Consultar', image: '/images/shelter_hero_1785817115197.jpg', color: 'cream' },
+  { name: 'Camiseta AdoptaME', type: 'Ropa solidaria', price: 'Consultar', image: assetUrl('/images/hero.jpg'), color: 'coral' },
+  { name: 'Pañuelo “ME eligieron”', type: 'Para tu mejor amigo', price: 'Consultar', image: assetUrl('/images/dog_max.jpg'), color: 'yellow' },
+  { name: 'Tote bag AdoptaME', type: 'Uso diario', price: 'Consultar', image: assetUrl('/images/shelter_hero_1785817115197.jpg'), color: 'cream' },
 ];
 
 export function StorePage() {
@@ -44,7 +45,7 @@ export function StorePage() {
   };
 
   return (
-    <div className="pt-8">
+    <div className="pt-16">
       <section className="bg-[#171717] text-[#fffdf9] py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 grid lg:grid-cols-[1fr_.8fr] gap-10 items-end">
           <div><p className="text-[#ff9a62] uppercase tracking-[.16em] text-sm font-bold">Tienda solidaria</p><h1 className="font-heading text-5xl sm:text-7xl leading-none tracking-[-.06em] font-extrabold mt-4">Lleva un <span className="text-[#f0644a]">ME</span> contigo.</h1><p className="text-white/70 text-lg max-w-xl leading-relaxed mt-6">Productos bonitos con un propósito enorme: cada compra se convierte en alimento, vacunas y oportunidades para nuestros perros.</p></div>

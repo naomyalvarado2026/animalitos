@@ -4,6 +4,8 @@ import { Helmet } from 'react-helmet-async';
 import { PublicHeader } from './PublicHeader';
 import { PublicFooter } from './PublicFooter';
 import { EmergencyBanner } from './EmergencyBanner';
+import { PublicMobileNav } from './PublicMobileNav';
+import { assetUrl } from '@/lib/assets';
 
 export function PublicLayout() {
   const { pathname } = useLocation();
@@ -13,8 +15,16 @@ export function PublicLayout() {
       ? { title: 'Tienda solidaria | AdoptaME', description: 'Compra productos con propósito y ayuda a financiar el rescate de perros.' }
       : pathname === '/donaciones'
         ? { title: 'Dona y salva una vida | AdoptaME', description: 'Tu apoyo cubre alimento, salud y recuperación para perros rescatados.' }
-        : pathname === '/voluntariado'
+      : pathname === '/voluntariado'
           ? { title: 'Súmate como voluntario | AdoptaME', description: 'Comparte tu tiempo y ayuda a transformar la vida de un perro.' }
+          : pathname === '/como-funciona'
+            ? { title: 'Cómo funciona la adopción | AdoptaME', description: 'Conoce el proceso responsable para adoptar un perro rescatado.' }
+            : pathname === '/santuario'
+              ? { title: 'Santuario y padrinazgo | AdoptaME', description: 'Acompaña a los residentes permanentes que necesitan cuidados especiales.' }
+              : pathname === '/en-memoria'
+                ? { title: 'En memoria de | AdoptaME', description: 'Honramos a los perros que dejaron una huella en nuestra manada.' }
+                : pathname === '/recursos'
+                  ? { title: 'Recursos de tenencia responsable | AdoptaME', description: 'Guías para cuidar, adaptar y convivir mejor con un perro.' }
           : { title: 'AdoptaME | Cada perro merece una historia feliz', description: 'Rescatamos perros, les devolvemos la confianza y encontramos hogares responsables.' };
   return (
     <div className="flex flex-col min-h-screen bg-[var(--color-background)]">
@@ -24,14 +34,15 @@ export function PublicLayout() {
         <link rel="canonical" href={`${window.location.origin}${pathname}`} />
         <meta property="og:title" content={seo.title} />
         <meta property="og:description" content={seo.description} />
-        <meta property="og:image" content={`${window.location.origin}/images/dog_max.jpg`} />
+        <meta property="og:image" content={`${window.location.origin}${assetUrl('/images/dog_max.jpg')}`} />
       </Helmet>
       <EmergencyBanner />
       <PublicHeader />
-      <main className="flex-1 pt-16" id="main-content">
+      <main className="flex-1 pb-20 md:pb-0" id="main-content">
         <Outlet />
       </main>
       <PublicFooter />
+      <PublicMobileNav />
     </div>
   );
 }

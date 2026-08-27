@@ -248,7 +248,11 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 }
 
 /* ── Mobile Touch Targets & Bottom Sheets ── */
-@media (max-width: 639px) {
+@media (max-width: 767px) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   .mobile-touch-target {
     min-height: 44px;
     min-width: 44px;

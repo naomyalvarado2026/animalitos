@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
+import { assetUrl } from '@/lib/assets';
 import { ArrowRight, Heart, PawPrint, ShieldCheck } from 'lucide-react';
 
 const RESIDENTS = [
-  { name: 'Residentes senior', text: 'Perritos que necesitan calma, rutina y cuidados constantes.', image: '/images/dog_max.jpg' },
-  { name: 'Cuidados especiales', text: 'Casos que requieren tratamiento o acompañamiento permanente.', image: '/images/hero.jpg' },
+  { name: 'Residentes senior', text: 'Perritos que necesitan calma, rutina y cuidados constantes.', image: assetUrl('/images/dog_max.jpg') },
+  { name: 'Cuidados especiales', text: 'Casos que requieren tratamiento o acompañamiento permanente.', image: assetUrl('/images/hero.jpg') },
 ];
 
 export function SanctuaryPage() {

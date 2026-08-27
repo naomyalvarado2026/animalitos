@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { PawIcon } from './PawBackground';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Tienda', href: '/tienda' },
   {
       label: 'Ayudar',
-      href: '/nosotros',
+      href: '/voluntariado',
       children: [
       { label: 'Voluntariado', href: '/voluntariado' },
       { label: 'Santuario', href: '/santuario' },
@@ -68,14 +68,13 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function PublicHeader() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const isMobile = useMobile();
   const location = useLocation();
 
   useEffect(() => {
-    setIsMenuOpen(false);
     setOpenDropdown(null);
   }, [location.pathname]);
 
@@ -193,22 +192,13 @@ export function PublicHeader() {
                 <Link to="/contacto/quiero-apoyar">❤️ Donar</Link>
               </Button>
             )}
-            {isMobile && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                aria-label={isMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
-              >
-                {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-            )}
+            {isMobile && <span className="sr-only">La navegación principal está en la barra inferior</span>}
           </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      {isMobile && isMenuOpen && (
+      {false && isMobile && (
         <div className="border-t border-[var(--color-border)] bg-[var(--color-card)] shadow-lg animate-fade-in">
           <nav className="max-w-7xl mx-auto px-4 py-3 space-y-1" role="navigation" aria-label="Menú móvil">
             {NAV_ITEMS.map((item) => (

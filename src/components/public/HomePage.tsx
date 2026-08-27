@@ -2,17 +2,18 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowRight, Heart, PawPrint, ShoppingBag, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { assetUrl } from '@/lib/assets';
 
 const STORIES = [
-  { name: 'Max', detail: '2 años · Grande', image: '/images/dog_max.jpg', text: 'me encanta correr, jugar y estar cerca de las personas.' },
-  { name: 'Toby', detail: '8 meses · Mediano', image: 'https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?auto=format&fit=crop&q=80&w=800', text: 'soy curioso, aprendo rápido y busco una familia paciente.' },
-  { name: 'Bella', detail: '3 años · Grande', image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&q=80&w=800', text: 'soy noble, tranquila y sueño con compartir paseos.' },
+  { name: 'Max', detail: '2 años · Grande', image: assetUrl('/images/dog_max.jpg'), text: 'me encanta correr, jugar y estar cerca de las personas.' },
+  { name: 'Toby', detail: '8 meses · Mediano', image: assetUrl('/images/dog_max_1785817128864.jpg'), text: 'soy curioso, aprendo rápido y busco una familia paciente.' },
+  { name: 'Bella', detail: '3 años · Grande', image: assetUrl('/images/shelter_hero_1785817115197.jpg'), text: 'soy noble, tranquila y sueño con compartir paseos.' },
 ];
 
 const IMPACT = [
-  { value: '1.240+', label: 'perritos rescatados' },
-  { value: '890+', label: 'historias con final feliz' },
-  { value: '100%', label: 'adopción responsable' },
+  { value: '—', label: 'perritos rescatados · dato por conectar' },
+  { value: '—', label: 'historias con final feliz · dato por conectar' },
+  { value: '—', label: 'adopciones responsables · dato por conectar' },
 ];
 
 export function HomePage() {
@@ -28,7 +29,7 @@ export function HomePage() {
             <div className="flex flex-col sm:flex-row gap-3 mt-9"><Button size="xl" className="bg-[#f0644a] hover:bg-[#ff8069] text-white" asChild><Link to="/adopta">Conoce a los perritos <ArrowRight /></Link></Button><Button size="xl" variant="ghost" className="text-white border border-white/20 hover:bg-white/10" asChild><Link to="/donaciones">Quiero ayudar</Link></Button></div>
           </motion.div>
           <motion.div initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .7, delay: .12 }} className="relative lg:translate-x-8">
-            <div className="relative rounded-[2rem] overflow-hidden border-[10px] border-[#fffdf9]/10 shadow-2xl rotate-[1.5deg]"><img src="/images/dog_max.jpg" alt="Max, un perro rescatado de AdoptaME" className="w-full aspect-[4/5] object-cover" /><div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-[#fffdf9] text-[#171717] p-4 flex items-center justify-between"><div><p className="text-xs text-[#6e6a64]">Conoce a</p><p className="font-heading text-xl font-bold">Max</p></div><span className="text-[#f0644a] font-bold text-sm">Adóptame <span className="text-xl">→</span></span></div></div>
+            <div className="relative rounded-[2rem] overflow-hidden border-[10px] border-[#fffdf9]/10 shadow-2xl rotate-[1.5deg]"><img src={assetUrl('/images/dog_max.jpg')} alt="Max, un perro rescatado de AdoptaME" className="w-full aspect-[4/5] object-cover" /><div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-[#fffdf9] text-[#171717] p-4 flex items-center justify-between"><div><p className="text-xs text-[#6e6a64]">Conoce a</p><p className="font-heading text-xl font-bold">Max</p></div><span className="text-[#f0644a] font-bold text-sm">Adóptame <span className="text-xl">→</span></span></div></div>
             <div className="absolute -bottom-5 -left-5 bg-[#ffcf5a] text-[#171717] px-4 py-3 rounded-2xl font-heading font-bold text-sm -rotate-6 shadow-lg">Tu mejor amigo<br />te está esperando</div>
           </motion.div>
         </div>
