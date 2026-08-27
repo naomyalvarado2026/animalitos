@@ -20,7 +20,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Inicio', href: '/' },
-  { label: 'Adóptame 🐾', href: '/adopta' },
+  { label: 'Adóptame', href: '/adopta' },
+  { label: 'Tienda', href: '/tienda' },
   {
     label: 'Nosotros',
     href: '/nosotros',
@@ -29,7 +30,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: 'Historias de Éxito ✨', href: '/historias-de-exito' },
     ],
   },
-  { label: 'Voluntariado 🤝', href: '/voluntariado' },
+  { label: 'Súmate', href: '/voluntariado' },
   {
     label: 'Transparencia',
     href: '/transparencia',
@@ -87,13 +88,10 @@ export function PublicHeader() {
           <Link
             to="/"
             className="flex items-center gap-2.5 group"
-            aria-label="Animalitos — Inicio"
+            aria-label="AdoptaME — Inicio"
           >
-            <div className="w-9 h-9 rounded-xl brand-gradient-bg flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
-              <PawIcon size={20} color="white" />
-            </div>
-            <span className="font-heading text-xl font-bold text-[var(--color-foreground)] group-hover:text-[var(--color-primary)] transition-colors">
-              Animalitos
+            <span className="font-heading text-xl tracking-[-0.05em] font-extrabold text-[var(--color-foreground)] group-hover:opacity-80 transition-colors">
+              Adopta<span className="text-[var(--color-primary)]">ME</span>
             </span>
           </Link>
 

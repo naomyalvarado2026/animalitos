@@ -19,7 +19,7 @@ export function ContentManagement() {
   });
 
   const [heroText, setHeroText] = useState('Cada vida merece una segunda oportunidad');
-  const [heroSub, setHeroSub] = useState('En Animalitos rescatamos, cuidamos y buscamos un hogar para perros y gatos en necesidad.');
+  const [heroSub, setHeroSub] = useState('En AdoptaME rescatamos, cuidamos y buscamos un hogar para perros en necesidad.');
   const [emergencyAlert, setEmergencyAlert] = useState('🚨 Caso Crítico: Requerimos apoyo para la cirugía urgente de Coco.');
 
   const saveSettings = useMutation({

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
 export function SettingsManagement() {
-  const [shelterName, setShelterName] = useState('Animalitos');
+  const [shelterName, setShelterName] = useState('AdoptaME');
   const [email, setEmail] = useState('hola@animalitos.org');
   const [phone, setPhone] = useState('+1 (234) 567-890');
   const [address, setAddress] = useState('Tu dirección aquí, Ciudad, País');

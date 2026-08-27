@@ -36,7 +36,7 @@ const QUESTIONS: Question[] = [
     title: '¿Con quiénes convivirá la mascota?',
     options: [
       { label: 'Niños pequeños y familia', value: 'kids', emoji: '👨‍👩‍👧‍👦' },
-      { label: 'Otras mascotas (perros/gatos)', value: 'other_pets', emoji: '🐕' },
+      { label: 'Otras mascotas', value: 'other_pets', emoji: '🐕' },
       { label: 'Solo yo o adultos', value: 'adults_only', emoji: '🧑' },
     ],
   },
@@ -52,12 +52,12 @@ const MATCHED_PETS = [
     reason: 'Ideal para personas activas y familias. Ama los paseos al aire libre y jugar con niños.',
   },
   {
-    name: 'Luna',
-    species: 'Gata 🐱',
-    breed: 'Calicó',
+    name: 'Bella',
+    species: 'Perra 🐶',
+    breed: 'Mestiza tipo Golden',
     matchScore: 95,
-    image: '/images/cat_luna.jpg',
-    reason: 'Perfecta para departamentos o ambientes tranquilos. Es muy cariñosa y dócil.',
+    image: '/images/dog_max.jpg',
+    reason: 'Perfecta para familias que buscan una compañera cariñosa, noble y tranquila.',
   },
 ];
 

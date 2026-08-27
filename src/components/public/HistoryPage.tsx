@@ -6,7 +6,7 @@ const TIMELINE = [
     year: '2016',
     title: 'El Comienzo',
     description:
-      'María González rescató su primera camada de cachorros de la calle. Sin saberlo, ese fue el primer paso de lo que hoy es Animalitos.',
+      'María González rescató su primera camada de cachorros de la calle. Sin saberlo, ese fue el primer paso de lo que hoy es AdoptaME.',
     emoji: '🐶',
   },
   {

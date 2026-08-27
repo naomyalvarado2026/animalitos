@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Heart, Mail, Phone, MapPin, Globe } from 'lucide-react';
-import { PawIcon } from './PawBackground';
+import { Heart, Mail, MapPin } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const QUICK_LINKS = [
   { label: 'Inicio', href: '/' },
   { label: 'Adóptame', href: '/adopta' },
+  { label: 'Tienda solidaria', href: '/tienda' },
   { label: 'Nosotros', href: '/nosotros' },
   { label: 'Preguntas Frecuentes', href: '/faq' },
   { label: 'Transparencia', href: '/transparencia' },
@@ -51,14 +51,11 @@ export function PublicFooter() {
           {/* Brand */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl brand-gradient-bg flex items-center justify-center shadow-sm">
-                <PawIcon size={22} color="white" />
-              </div>
-              <span className="font-heading text-xl font-bold">Animalitos</span>
+              <span className="font-heading text-xl tracking-[-0.05em] font-extrabold">Adopta<span className="text-[var(--color-primary)]">ME</span></span>
             </Link>
             <p className="text-sm text-[var(--color-muted-foreground)] leading-relaxed">
-              Rescatamos, cuidamos y buscamos un hogar para cada animal que llega a nosotros.
-              Tu apoyo hace posible cada historia de esperanza. 🐾
+              Rescatamos, cuidamos y buscamos un hogar para perros que merecen una segunda oportunidad.
+              Tu apoyo hace posible cada historia feliz. 🐾
             </p>
             {/* Social */}
             <div className="flex items-center gap-3 pt-1">
@@ -104,19 +101,11 @@ export function PublicFooter() {
             <ul className="space-y-3">
               <li className="flex items-start gap-2.5 text-sm text-[var(--color-foreground)]">
                 <MapPin className="h-4 w-4 mt-0.5 text-[var(--color-primary)] shrink-0" />
-                <span>Tu dirección aquí, Ciudad, País</span>
-              </li>
-              <li className="flex items-center gap-2.5 text-sm">
-                <Phone className="h-4 w-4 text-[var(--color-primary)] shrink-0" />
-                <a href="tel:+1234567890" className="hover:text-[var(--color-primary)] transition-colors">
-                  +1 (234) 567-890
-                </a>
+                <span>Visitas con cita previa · consulta disponibilidad</span>
               </li>
               <li className="flex items-center gap-2.5 text-sm">
                 <Mail className="h-4 w-4 text-[var(--color-primary)] shrink-0" />
-                <a href="mailto:hola@animalitos.org" className="hover:text-[var(--color-primary)] transition-colors">
-                  hola@animalitos.org
-                </a>
+                <Link to="/contacto" className="hover:text-[var(--color-primary)] transition-colors">Escríbenos desde el formulario</Link>
               </li>
             </ul>
 
@@ -133,7 +122,7 @@ export function PublicFooter() {
         <Separator className="my-8" />
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--color-muted-foreground)]">
-          <span>© {new Date().getFullYear()} Animalitos. Todos los derechos reservados.</span>
+          <span>© {new Date().getFullYear()} AdoptaME. Todos los derechos reservados.</span>
           <span className="flex items-center gap-1">
             Hecho con <Heart className="h-3 w-3 text-red-500 fill-red-500" /> para cada patita
           </span>

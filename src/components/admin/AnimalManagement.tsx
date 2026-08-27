@@ -17,7 +17,7 @@ import type { Animal, AnimalSpecies, AnimalStatus, AnimalGender, AnimalSize } fr
 
 const animalSchema = z.object({
   name: z.string().min(1, 'Nombre requerido'),
-  species: z.enum(['dog', 'cat', 'other']),
+  species: z.literal('dog'),
   breed: z.string().optional(),
   age_months: z.coerce.number().min(0),
   gender: z.enum(['male', 'female']),
@@ -104,7 +104,7 @@ export function AnimalManagement() {
     setEditingAnimal(animal);
     form.reset({
       name: animal.name,
-      species: animal.species,
+      species: 'dog',
       breed: animal.breed ?? '',
       age_months: animal.age_months,
       gender: animal.gender,
@@ -155,8 +155,6 @@ export function AnimalManagement() {
                 <Label htmlFor="species">Especie</Label>
                 <select id="species" {...form.register('species')} className="flex h-9 w-full rounded-lg border border-[var(--color-input)] bg-transparent px-3 py-1 text-sm">
                   <option value="dog">Perro 🐶</option>
-                  <option value="cat">Gato 🐱</option>
-                  <option value="other">Otro 🐾</option>
                 </select>
               </div>
 

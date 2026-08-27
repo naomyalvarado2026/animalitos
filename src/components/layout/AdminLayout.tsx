@@ -72,7 +72,7 @@ export function AdminLayout() {
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <p className="font-heading text-sm font-bold leading-none">Animalitos</p>
+            <p className="font-heading text-sm font-bold leading-none">Adopta<span className="text-[var(--color-primary)]">ME</span></p>
             <p className="text-xs text-[var(--color-muted-foreground)] mt-0.5">Panel Admin</p>
           </div>
         )}

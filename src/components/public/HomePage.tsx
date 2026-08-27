@@ -1,242 +1,46 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Heart, Users, Home, ChevronRight, Star, Shield, TrendingUp } from 'lucide-react';
+import { ArrowRight, Heart, PawPrint, ShoppingBag, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { PawBackground, PawIcon } from '@/components/layout/PawBackground';
-import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 
-const STATS = [
-  { label: 'Animales Rescatados', value: '1,240+', icon: Heart, color: 'text-rose-500' },
-  { label: 'Adopciones Exitosas', value: '890+', icon: Home, color: 'text-emerald-500' },
-  { label: 'Voluntarios Activos', value: '120', icon: Users, color: 'text-blue-500' },
-  { label: 'Años de Servicio', value: '8', icon: Star, color: 'text-amber-500' },
+const STORIES = [
+  { name: 'Max', detail: '2 años · Grande', image: '/images/dog_max.jpg', text: 'me encanta correr, jugar y estar cerca de las personas.' },
+  { name: 'Toby', detail: '8 meses · Mediano', image: 'https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?auto=format&fit=crop&q=80&w=800', text: 'soy curioso, aprendo rápido y busco una familia paciente.' },
+  { name: 'Bella', detail: '3 años · Grande', image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&q=80&w=800', text: 'soy noble, tranquila y sueño con compartir paseos.' },
 ];
 
-const SECTIONS = [
-  {
-    icon: Shield,
-    title: 'Transparencia Total',
-    description: 'Publicamos todos nuestros ingresos y gastos. Cada peso donado es administrado con responsabilidad.',
-    href: '/transparencia',
-    color: 'bg-amber-50 dark:bg-amber-950/20',
-    iconColor: 'text-amber-600',
-  },
-  {
-    icon: Heart,
-    title: 'Haz una Donación',
-    description: 'Tu apoyo nos permite alimentar, medicar y cuidar a cada animal hasta que encuentre un hogar.',
-    href: '/donaciones',
-    color: 'bg-rose-50 dark:bg-rose-950/20',
-    iconColor: 'text-rose-600',
-  },
-  {
-    icon: Users,
-    title: 'Conócenos',
-    description: 'Somos un equipo apasionado por el bienestar animal. Conoce nuestra historia y misión.',
-    href: '/nosotros',
-    color: 'bg-blue-50 dark:bg-blue-950/20',
-    iconColor: 'text-blue-600',
-  },
+const IMPACT = [
+  { value: '1.240+', label: 'perritos rescatados' },
+  { value: '890+', label: 'historias con final feliz' },
+  { value: '100%', label: 'adopción responsable' },
 ];
 
 export function HomePage() {
   return (
-    <div className="flex flex-col">
-      {/* Hero */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-        <PawBackground className="opacity-60" />
-
-        {/* Gradient overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'radial-gradient(ellipse at 60% 40%, hsl(30, 60%, 88%, 0.35) 0%, transparent 70%)',
-          }}
-        />
-
-        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-card)] shadow-sm mb-8 text-sm font-medium text-[var(--color-muted-foreground)]">
-              <PawIcon size={14} color="var(--color-primary)" />
-              Refugio de Animales · Rescate &amp; Adopción
-            </div>
-
-            <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-[var(--color-foreground)] mb-6 leading-tight">
-              Cada vida{' '}
-              <span className="brand-gradient-text">merece</span>
-              <br />
-              una segunda oportunidad
-            </h1>
-
-            <p className="text-lg sm:text-xl text-[var(--color-muted-foreground)] mb-10 max-w-2xl mx-auto leading-relaxed">
-              En Animalitos rescatamos, cuidamos y buscamos un hogar para perros y gatos
-              en necesidad. Juntos podemos cambiar su historia.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button variant="warm" size="xl" asChild>
-                <Link to="/contacto/quiero-apoyar">
-                  <Heart className="h-5 w-5" />
-                  Quiero Donar
-                </Link>
-              </Button>
-              <Button variant="outline" size="xl" asChild>
-                <Link to="/nosotros">
-                  Conocer más
-                  <ChevronRight className="h-5 w-5" />
-                </Link>
-              </Button>
-            </div>
+    <div className="overflow-hidden">
+      <section className="relative bg-[#171717] text-[#fffdf9] pt-20 pb-14 lg:pt-24 lg:pb-24">
+        <div className="absolute right-0 top-0 h-full w-1/2 bg-[#f0644a] hidden lg:block" />
+        <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 grid lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }}>
+            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-[#ff9a62] mb-7"><PawPrint className="h-4 w-4" /> Rescate · cuidado · adopción</div>
+            <h1 className="font-heading text-5xl sm:text-6xl lg:text-[5.2rem] leading-[.98] tracking-[-.06em] font-extrabold max-w-2xl">Una familia puede <span className="text-[#f0644a]">cambiarlo todo.</span></h1>
+            <p className="mt-7 text-lg text-white/70 max-w-xl leading-relaxed">En AdoptaME rescatamos perros, les devolvemos la confianza y encontramos el hogar donde puedan ser ellos mismos.</p>
+            <div className="flex flex-col sm:flex-row gap-3 mt-9"><Button size="xl" className="bg-[#f0644a] hover:bg-[#ff8069] text-white" asChild><Link to="/adopta">Conoce a los perritos <ArrowRight /></Link></Button><Button size="xl" variant="ghost" className="text-white border border-white/20 hover:bg-white/10" asChild><Link to="/donaciones">Quiero ayudar</Link></Button></div>
           </motion.div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-[var(--color-muted-foreground)] animate-bounce">
-          <span className="text-xs">Scroll</span>
-          <div className="w-px h-8 bg-gradient-to-b from-[var(--color-muted-foreground)] to-transparent" />
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="py-16 bg-[var(--color-card)] border-y border-[var(--color-border)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {STATS.map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="flex flex-col items-center text-center gap-2"
-              >
-                <div className={`p-3 rounded-2xl bg-[var(--color-background)]`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
-                <span className="font-heading text-4xl font-bold text-[var(--color-foreground)]">
-                  <AnimatedCounter value={stat.value} />
-                </span>
-                <span className="text-sm text-[var(--color-muted-foreground)] font-medium">
-                  {stat.label}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Mission Statement */}
-      <section className="relative py-20 overflow-hidden">
-        <PawBackground className="opacity-40" />
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <span className="text-4xl mb-4 block">🐾</span>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-[var(--color-foreground)] mb-4">
-              Nuestra Misión
-            </h2>
-            <p className="text-lg text-[var(--color-muted-foreground)] leading-relaxed">
-              Somos un refugio sin fines de lucro comprometido con el bienestar animal.
-              Rescatamos animales en situaciones de abandono, maltrato o peligro,
-              les brindamos atención médica, alimentación y amor, y trabajamos
-              incansablemente para encontrarles un hogar permanente y amoroso.
-            </p>
+          <motion.div initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .7, delay: .12 }} className="relative lg:translate-x-8">
+            <div className="relative rounded-[2rem] overflow-hidden border-[10px] border-[#fffdf9]/10 shadow-2xl rotate-[1.5deg]"><img src="/images/dog_max.jpg" alt="Max, un perro rescatado de AdoptaME" className="w-full aspect-[4/5] object-cover" /><div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-[#fffdf9] text-[#171717] p-4 flex items-center justify-between"><div><p className="text-xs text-[#6e6a64]">Conoce a</p><p className="font-heading text-xl font-bold">Max</p></div><span className="text-[#f0644a] font-bold text-sm">Adóptame <span className="text-xl">→</span></span></div></div>
+            <div className="absolute -bottom-5 -left-5 bg-[#ffcf5a] text-[#171717] px-4 py-3 rounded-2xl font-heading font-bold text-sm -rotate-6 shadow-lg">Tu mejor amigo<br />te está esperando</div>
           </motion.div>
         </div>
       </section>
 
-      {/* Section Cards */}
-      <section className="py-16 bg-[var(--color-background)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {SECTIONS.map((section, i) => (
-              <motion.div
-                key={section.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.12, duration: 0.5 }}
-              >
-                <Link to={section.href} className="block h-full group">
-                  <Card className="h-full hover-card border-[var(--color-border)] overflow-hidden">
-                    <CardContent className="p-6 flex flex-col h-full">
-                      <div className={`w-12 h-12 rounded-2xl ${section.color} flex items-center justify-center mb-4`}>
-                        <section.icon className={`h-6 w-6 ${section.iconColor}`} />
-                      </div>
-                      <h3 className="font-heading text-xl font-semibold mb-2 group-hover:text-[var(--color-primary)] transition-colors">
-                        {section.title}
-                      </h3>
-                      <p className="text-sm text-[var(--color-muted-foreground)] leading-relaxed flex-1">
-                        {section.description}
-                      </p>
-                      <div className="flex items-center gap-1 mt-4 text-sm font-medium text-[var(--color-primary)]">
-                        Saber más
-                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <section className="bg-[#f0644a] text-white py-7"><div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 grid grid-cols-1 sm:grid-cols-3 gap-5">{IMPACT.map((item) => <div key={item.label} className="flex sm:block items-baseline gap-3 sm:text-center"><span className="font-heading text-3xl font-extrabold">{item.value}</span><span className="text-sm text-white/80">{item.label}</span></div>)}</div></section>
 
-      {/* CTA Banner */}
-      <section className="py-16 relative overflow-hidden">
-        <div className="absolute inset-0 brand-gradient-bg opacity-95" />
-        <PawBackground className="opacity-10" />
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex justify-center mb-4">
-              <TrendingUp className="h-10 w-10 text-white/80" />
-            </div>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mb-4">
-              Sé parte del cambio
-            </h2>
-            <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-              Con tu donación podemos rescatar más animales, brindarles atención médica
-              y encontrarles un hogar. Cada aporte cuenta.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button
-                size="xl"
-                className="bg-white text-[var(--color-primary)] hover:bg-white/90 font-semibold shadow-lg"
-                asChild
-              >
-                <Link to="/contacto/quiero-apoyar">
-                  <Heart className="h-5 w-5" />
-                  Donar ahora
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                size="xl"
-                className="text-white border border-white/30 hover:bg-white/10"
-                asChild
-              >
-                <Link to="/transparencia">Ver transparencia</Link>
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      <section className="py-20 lg:py-28 max-w-7xl mx-auto px-5 sm:px-8 lg:px-10"><div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-10"><div><p className="text-[#f0644a] font-bold text-sm uppercase tracking-[.15em]">Historias que empiezan aquí</p><h2 className="font-heading text-4xl sm:text-5xl font-extrabold tracking-[-.05em] mt-3">Ellos tienen algo que decirte.</h2></div><Link to="/adopta" className="font-bold text-[#f0644a] inline-flex items-center gap-2">Ver todos los perritos <ArrowRight className="h-4 w-4" /></Link></div><div className="grid md:grid-cols-3 gap-6">{STORIES.map((dog, i) => <motion.article key={dog.name} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * .08 }} className="group"><Link to="/adopta" className="block"><div className="rounded-[1.5rem] overflow-hidden bg-[#ede5da] aspect-[4/4.6]"><img src={dog.image} alt={`${dog.name}, perrito en adopción`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /></div><div className="pt-4"><div className="flex items-center justify-between"><h3 className="font-heading text-2xl font-extrabold">{dog.name}</h3><span className="text-xs text-[#6e6a64]">{dog.detail}</span></div><p className="mt-2 text-[#6e6a64] leading-relaxed"><span className="text-[#f0644a] font-extrabold">ME</span> llamo {dog.name}, {dog.text}</p></div></Link></motion.article>)}</div></section>
+
+      <section className="bg-[#ede5da] py-20"><div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 grid lg:grid-cols-[.9fr_1.1fr] gap-12 items-center"><div><div className="w-12 h-12 rounded-2xl bg-[#f0644a] text-white flex items-center justify-center mb-6"><Heart className="fill-current" /></div><p className="text-[#f0644a] font-bold text-sm uppercase tracking-[.15em]">Más que una compra</p><h2 className="font-heading text-4xl sm:text-5xl font-extrabold tracking-[-.05em] mt-3">Lleva la causa contigo.</h2><p className="mt-5 text-[#6e6a64] leading-relaxed max-w-lg">Cada pieza de nuestra tienda solidaria ayuda a pagar alimento, vacunas y tratamientos. Viste la historia de un rescate.</p><Button className="mt-7 bg-[#171717] hover:bg-[#333] text-white" size="lg" asChild><Link to="/tienda"><ShoppingBag /> Explorar tienda</Link></Button></div><div className="grid grid-cols-2 gap-4"><div className="bg-[#f0644a] rounded-[1.5rem] p-5 text-white min-h-48 flex flex-col justify-between"><Sparkles className="h-7 w-7" /><span className="font-heading text-2xl font-extrabold">Adopta<br />la actitud</span></div><div className="bg-[#ffcf5a] rounded-[1.5rem] p-5 text-[#171717] min-h-48 flex flex-col justify-end"><span className="text-4xl">🐾</span><span className="font-heading text-2xl font-extrabold mt-3">100% para<br />ellos</span></div></div></div></section>
+
+      <section className="py-20 max-w-6xl mx-auto px-5 sm:px-8 text-center"><ShieldCheck className="h-9 w-9 text-[#f0644a] mx-auto" /><h2 className="font-heading text-3xl sm:text-4xl font-extrabold mt-4">Adoptar es un compromiso para toda la vida.</h2><p className="mt-4 text-[#6e6a64] max-w-2xl mx-auto leading-relaxed">Te acompañamos antes, durante y después de la adopción para que la llegada de tu nuevo mejor amigo sea una historia feliz para ambos.</p><Link to="/faq" className="inline-flex items-center gap-2 mt-6 text-[#f0644a] font-bold">Conoce el proceso <ArrowRight className="h-4 w-4" /></Link></section>
     </div>
   );
 }

@@ -2,39 +2,39 @@
 
 @layer base {
   :root {
-    /* ── Paleta Café — Modo Claro ── */
-    --color-background: hsl(36, 33%, 97%);
-    --color-foreground: hsl(25, 40%, 15%);
+    /* Identidad AdoptaME: crema, tinta y coral */
+    --color-background: #f8f4ee;
+    --color-foreground: #171717;
 
-    --color-card: hsl(36, 25%, 99%);
-    --color-card-foreground: hsl(25, 40%, 15%);
+    --color-card: #fffdf9;
+    --color-card-foreground: #171717;
 
-    --color-popover: hsl(36, 25%, 99%);
-    --color-popover-foreground: hsl(25, 40%, 15%);
+    --color-popover: #fffdf9;
+    --color-popover-foreground: #171717;
 
     /* Café cálido principal */
-    --color-primary: hsl(25, 55%, 40%);
-    --color-primary-foreground: hsl(36, 33%, 97%);
+    --color-primary: #f0644a;
+    --color-primary-foreground: #fffdf9;
 
     /* Arena / Beige */
-    --color-secondary: hsl(34, 30%, 90%);
-    --color-secondary-foreground: hsl(25, 40%, 25%);
+    --color-secondary: #ede5da;
+    --color-secondary-foreground: #171717;
 
-    --color-muted: hsl(34, 20%, 93%);
-    --color-muted-foreground: hsl(25, 20%, 50%);
+    --color-muted: #eee8df;
+    --color-muted-foreground: #6e6a64;
 
-    --color-accent: hsl(30, 60%, 88%);
-    --color-accent-foreground: hsl(25, 50%, 25%);
+    --color-accent: #ffe0d7;
+    --color-accent-foreground: #9b321f;
 
     --color-destructive: hsl(0, 72%, 51%);
     --color-destructive-foreground: hsl(0, 0%, 100%);
 
-    --color-border: hsl(30, 20%, 85%);
-    --color-input: hsl(30, 20%, 85%);
-    --color-ring: hsl(25, 55%, 40%);
+    --color-border: #e3dbd0;
+    --color-input: #d8cec2;
+    --color-ring: #f0644a;
 
     /* ── Tokens de diseño ── */
-    --radius: 0.75rem;
+    --radius: 1rem;
     --card-opacity: 0.9;
     --surface-shadow: 0 1px 4px 0 rgba(139, 90, 50, 0.08), 0 4px 16px 0 rgba(139, 90, 50, 0.06);
     --backdrop-blur: blur(12px);
@@ -42,46 +42,46 @@
     --font-tracking: 0em;
 
     /* ── Gradientes café ── */
-    --grad-start: hsl(25, 55%, 40%);
-    --grad-end: hsl(35, 70%, 55%);
+    --grad-start: #f0644a;
+    --grad-end: #ff9a62;
     --brand-gradient: linear-gradient(135deg, var(--grad-start), var(--grad-end));
     --brand-gradient-r: linear-gradient(to right, var(--grad-start), var(--grad-end));
-    --brand-gradient-text: linear-gradient(135deg, hsl(25, 55%, 40%) 0%, hsl(35, 70%, 55%) 100%);
+    --brand-gradient-text: linear-gradient(135deg, #e94f3a 0%, #f0644a 100%);
 
     /* ── Huellas decorativas ── */
-    --paw-color: hsl(25, 55%, 40%);
+    --paw-color: #f0644a;
     --paw-opacity: 0.04;
   }
 
   .dark {
     /* ── Paleta Café — Modo Oscuro ── */
-    --color-background: hsl(22, 30%, 8%);
-    --color-foreground: hsl(34, 30%, 90%);
+    --color-background: #171717;
+    --color-foreground: #f8f4ee;
 
-    --color-card: hsl(22, 28%, 11%);
-    --color-card-foreground: hsl(34, 30%, 90%);
+    --color-card: #22201f;
+    --color-card-foreground: #f8f4ee;
 
-    --color-popover: hsl(22, 28%, 11%);
-    --color-popover-foreground: hsl(34, 30%, 90%);
+    --color-popover: #22201f;
+    --color-popover-foreground: #f8f4ee;
 
-    --color-primary: hsl(30, 65%, 55%);
-    --color-primary-foreground: hsl(22, 30%, 8%);
+    --color-primary: #ff8069;
+    --color-primary-foreground: #171717;
 
-    --color-secondary: hsl(25, 20%, 20%);
-    --color-secondary-foreground: hsl(34, 30%, 85%);
+    --color-secondary: #302d2b;
+    --color-secondary-foreground: #f8f4ee;
 
-    --color-muted: hsl(25, 18%, 16%);
-    --color-muted-foreground: hsl(30, 15%, 55%);
+    --color-muted: #2a2826;
+    --color-muted-foreground: #b9afa5;
 
-    --color-accent: hsl(28, 30%, 22%);
-    --color-accent-foreground: hsl(34, 30%, 85%);
+    --color-accent: #472c27;
+    --color-accent-foreground: #ffd4c9;
 
     --color-destructive: hsl(0, 62%, 50%);
     --color-destructive-foreground: hsl(0, 0%, 100%);
 
-    --color-border: hsl(25, 18%, 22%);
-    --color-input: hsl(25, 18%, 22%);
-    --color-ring: hsl(30, 65%, 55%);
+    --color-border: #3a3532;
+    --color-input: #3a3532;
+    --color-ring: #ff8069;
 
     --surface-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.3), 0 4px 16px 0 rgba(0, 0, 0, 0.25);
 
@@ -163,12 +163,12 @@ body,
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6, .font-heading {
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* ── Accesibilidad ── */
@@ -258,4 +258,3 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     max-height: 92vh !important;
   }
 }
-

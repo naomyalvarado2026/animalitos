@@ -24,7 +24,7 @@ const METHODS: DonationMethod[] = [
     description: 'Realiza una transferencia directa a nuestra cuenta. No olvides incluir tu nombre en la referencia.',
     fields: [
       { label: 'Banco', value: 'Banco Nacional' },
-      { label: 'Nombre', value: 'Refugio Animalitos ONG' },
+      { label: 'Nombre', value: 'AdoptaME ONG' },
       { label: 'Número de cuenta', value: '0001-2345-6789-01', copyable: true },
       { label: 'IBAN / SWIFT', value: 'XX00BANK0001234567890', copyable: true },
     ],

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, Search, Filter, ShieldCheck, Sparkles, X, CheckCircle2, Share2, Bookmark } from 'lucide-react';
+import { Heart, Search, ShieldCheck, Sparkles, X, CheckCircle2, Share2 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { PawBackground } from '@/components/layout/PawBackground';
@@ -37,6 +37,8 @@ type AdoptionFormData = z.infer<typeof adoptionSchema>;
 export function AdoptionGalleryPage() {
   const [speciesFilter, setSpeciesFilter] = useState<AnimalSpecies | 'all' | 'favorites'>('all');
   const [search, setSearch] = useState('');
+  const [sizeFilter, setSizeFilter] = useState<'all' | 'small' | 'medium' | 'large'>('all');
+  const [ageFilter, setAgeFilter] = useState<'all' | 'puppy' | 'adult' | 'senior'>('all');
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailAnimal, setDetailAnimal] = useState<Animal | null>(null);
@@ -73,8 +75,8 @@ export function AdoptionGalleryPage() {
 
   const handleShare = async (animal: Animal) => {
     const shareData = {
-      title: `¡Adopta a ${animal.name}! - Fundación Animalitos`,
-      text: `Conoce a ${animal.name}, un/a ${animal.species === 'dog' ? 'perrito' : 'gatito'} en adopción en Fundación Animalitos.`,
+      title: `¡Adopta a ${animal.name}! - AdoptaME`,
+      text: `Conoce a ${animal.name}, un perrito en adopción en AdoptaME.`,
       url: window.location.href,
     };
 
@@ -97,19 +99,26 @@ export function AdoptionGalleryPage() {
         const { data, error } = await supabase
           .from('animals')
           .select('*')
+          .eq('species', 'dog')
           .order('created_at', { ascending: false });
         if (!error && data && data.length > 0) return data as Animal[];
       } catch {}
-      return dataStore.getAnimals();
+      return dataStore.getAnimals().filter((animal) => animal.species === 'dog');
     },
   });
 
   const filtered = animals.filter(animal => {
+    if (animal.species !== 'dog') return false;
+    if (!['available', 'medical_care'].includes(animal.status)) return false;
     if (speciesFilter === 'favorites') {
       if (!favorites.includes(animal.id)) return false;
     } else if (speciesFilter !== 'all' && animal.species !== speciesFilter) {
       return false;
     }
+    if (sizeFilter !== 'all' && animal.size !== sizeFilter) return false;
+    if (ageFilter === 'puppy' && animal.age_months > 12) return false;
+    if (ageFilter === 'adult' && (animal.age_months <= 12 || animal.age_months > 84)) return false;
+    if (ageFilter === 'senior' && animal.age_months <= 84) return false;
     const matchesSearch =
       animal.name.toLowerCase().includes(search.toLowerCase()) ||
       (animal.breed ?? '').toLowerCase().includes(search.toLowerCase());
@@ -123,24 +132,38 @@ export function AdoptionGalleryPage() {
         <PawBackground className="opacity-40" />
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <span className="text-5xl block mb-4">🐶🐱</span>
-            <h1 className="font-heading text-4xl sm:text-5xl font-bold mb-3">Encuentra a tu nuevo mejor amigo</h1>
+            <span className="text-5xl block mb-4">🐶</span>
+            <h1 className="font-heading text-4xl sm:text-5xl font-bold mb-3">Conoce a tu nuevo mejor amigo</h1>
             <p className="text-lg text-[var(--color-muted-foreground)] max-w-2xl mx-auto leading-relaxed">
-              Todos nuestros rescatados están vacunados, desparasitados y listos para llenar tu hogar de amor incondicional.
+              Cada perrito tiene una historia, una personalidad y muchas ganas de empezar de nuevo contigo.
             </p>
           </motion.div>
         </div>
       </section>
 
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            ['01', 'Conoce sus historias', 'Busca por tamaño, edad y personalidad para encontrar un buen match.'],
+            ['02', 'Conversemos', 'Completa una solicitud y cuéntanos cómo será su nueva vida contigo.'],
+            ['03', 'Empieza la aventura', 'Te acompañamos en la adaptación y resolvemos tus dudas después de adoptar.'],
+          ].map(([number, title, text]) => (
+            <div key={number} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 flex gap-4">
+              <span className="font-heading text-2xl font-extrabold text-[var(--color-primary)]">{number}</span>
+              <div><h2 className="font-heading font-bold">{title}</h2><p className="text-xs text-[var(--color-muted-foreground)] mt-1 leading-relaxed">{text}</p></div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Filter & Search Bar */}
       <section className="py-6 bg-[var(--color-card)] border-y border-[var(--color-border)] sticky top-16 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-3">
           {/* Species tabs */}
           <div className="flex items-center gap-1.5 bg-[var(--color-background)] p-1 rounded-xl border border-[var(--color-border)] overflow-x-auto max-w-full">
             {[
               { id: 'all', label: 'Todos 🐾' },
               { id: 'dog', label: 'Perros 🐶' },
-              { id: 'cat', label: 'Gatos 🐱' },
               { id: 'favorites', label: `Mis Favoritos (${favorites.length}) ❤️` },
             ].map(tab => (
               <button
@@ -157,15 +180,17 @@ export function AdoptionGalleryPage() {
             ))}
           </div>
 
-          {/* Search box */}
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted-foreground)]" />
-            <Input
-              placeholder="Buscar por nombre o raza..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-9 h-9 text-xs"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2 w-full">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted-foreground)]" />
+              <Input placeholder="Buscar por nombre o raza..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9 text-xs" />
+            </div>
+            <select aria-label="Filtrar por tamaño" value={sizeFilter} onChange={e => setSizeFilter(e.target.value as typeof sizeFilter)} className="h-9 rounded-lg border border-[var(--color-input)] bg-transparent px-3 text-xs">
+              <option value="all">Todos los tamaños</option><option value="small">Pequeños</option><option value="medium">Medianos</option><option value="large">Grandes</option>
+            </select>
+            <select aria-label="Filtrar por edad" value={ageFilter} onChange={e => setAgeFilter(e.target.value as typeof ageFilter)} className="h-9 rounded-lg border border-[var(--color-input)] bg-transparent px-3 text-xs">
+              <option value="all">Todas las edades</option><option value="puppy">Cachorros</option><option value="adult">Adultos</option><option value="senior">Senior</option>
+            </select>
           </div>
         </div>
       </section>
@@ -187,7 +212,7 @@ export function AdoptionGalleryPage() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-[var(--color-muted-foreground)] text-lg mb-2">No encontramos resultados con ese filtro.</p>
-            <Button variant="outline" size="sm" onClick={() => { setSpeciesFilter('all'); setSearch(''); }}>
+            <Button variant="outline" size="sm" onClick={() => { setSpeciesFilter('all'); setSearch(''); setSizeFilter('all'); setAgeFilter('all'); }}>
               Restablecer filtros
             </Button>
           </div>
@@ -213,7 +238,7 @@ export function AdoptionGalleryPage() {
                       />
                       <div className="absolute top-3 left-3 flex gap-2">
                         <Badge variant="warm" className="capitalize text-xs font-semibold shadow-xs">
-                          {animal.species === 'dog' ? 'Perro 🐶' : 'Gato 🐱'}
+                          Perro 🐶
                         </Badge>
                         {animal.is_special_needs && (
                           <Badge variant="warning" className="text-xs">Cuidados Especiales 💛</Badge>
@@ -264,7 +289,7 @@ export function AdoptionGalleryPage() {
                       </div>
                       <p className="text-xs font-medium text-[var(--color-primary)] mb-3">{animal.breed ?? 'Mestizo'}</p>
                       <p className="text-sm text-[var(--color-muted-foreground)] line-clamp-3 leading-relaxed">
-                        {animal.description}
+                        <span className="font-bold text-[var(--color-primary)]">ME llamo {animal.name}.</span>{' '}{animal.description}
                       </p>
                     </div>
 
@@ -490,7 +515,7 @@ function PetDetailModal({ animal, onClose, onAdopt }: { animal: Animal; onClose:
           <div className="relative h-64 rounded-xl overflow-hidden">
             <img src={animal.main_image_url} alt={animal.name} className="w-full h-full object-cover" />
             <div className="absolute top-3 left-3 flex gap-2">
-              <Badge variant="warm">{animal.species === 'dog' ? 'Perro 🐶' : 'Gato 🐱'}</Badge>
+              <Badge variant="warm">Perro 🐶</Badge>
               <Badge variant="outline" className="bg-black/60 text-white border-none text-xs">
                 {animal.gender === 'male' ? 'Macho ♂' : 'Hembra ♀'}
               </Badge>

@@ -28,7 +28,7 @@ const MOCK_STORIES: SuccessStory[] = [
     title: 'La gatita que llenó nuestro hogar de felicidad',
     story: 'Bella era una gatita tímida que pasaba desapercibida. Ana la vio en la web del refugio y supo que era para ella. Hoy se pasa las tardes ronroneando mientras su familia trabaja.',
     before_image_url: null,
-    after_image_url: '/images/cat_luna.jpg',
+    after_image_url: '/images/dog_max.jpg',
     adoption_date: '2026-01-20',
     is_featured: true,
     created_at: new Date().toISOString(),

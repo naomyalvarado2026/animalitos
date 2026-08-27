@@ -63,7 +63,7 @@ export function TransparencyPage() {
           <h2 className="font-heading text-3xl font-bold text-center mb-8">¿Por qué publicamos nuestras finanzas?</h2>
           <div className="prose prose-neutral dark:prose-invert max-w-none space-y-4 text-[var(--color-muted-foreground)] mb-12">
             <p className="text-base leading-relaxed">
-              Cuando decides donar a Animalitos, depositas tu confianza en nosotros.
+              Cuando decides donar a AdoptaME, depositas tu confianza en nosotros.
               Y la confianza se construye con hechos, no con palabras.
             </p>
             <p className="text-base leading-relaxed">

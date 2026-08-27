@@ -146,7 +146,7 @@ export function AboutPage() {
           <Clock className="h-12 w-12 text-[var(--color-primary)] mx-auto mb-4" />
           <h2 className="font-heading text-3xl font-bold mb-4">Conoce nuestra historia</h2>
           <p className="text-[var(--color-muted-foreground)] mb-8">
-            Todo comenzó con un sueño y mucha determinación. Descubre cómo Animalitos
+            Todo comenzó con un sueño y mucha determinación. Descubre cómo AdoptaME
             nació y cómo ha crecido hasta hoy.
           </p>
           <Button variant="outline" size="lg" asChild>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { MapPin, Phone, Mail, Clock, ChevronRight } from 'lucide-react';
+import { MapPin, Mail, Clock, ChevronRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -70,15 +70,11 @@ export function ContactPage() {
                 <div className="space-y-3">
                   <div className="flex items-start gap-3 text-sm">
                     <MapPin className="h-4 w-4 mt-0.5 text-[var(--color-primary)] shrink-0" />
-                    <span className="text-[var(--color-foreground)]">Tu dirección aquí, Ciudad, País</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <Phone className="h-4 w-4 text-[var(--color-primary)] shrink-0" />
-                    <a href="tel:+1234567890" className="hover:text-[var(--color-primary)] transition-colors">+1 (234) 567-890</a>
+                    <span className="text-[var(--color-foreground)]">Visitas con cita previa. Escríbenos para coordinar disponibilidad.</span>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <Mail className="h-4 w-4 text-[var(--color-primary)] shrink-0" />
-                    <a href="mailto:hola@animalitos.org" className="hover:text-[var(--color-primary)] transition-colors">hola@animalitos.org</a>
+                    <span>Respondemos desde este formulario</span>
                   </div>
                   <div className="flex items-start gap-3 text-sm">
                     <Clock className="h-4 w-4 mt-0.5 text-[var(--color-primary)] shrink-0" />

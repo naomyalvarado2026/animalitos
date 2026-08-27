@@ -30,6 +30,7 @@ const AdoptionGalleryPage = lazy(() => import('@/components/public/AdoptionGalle
 const SuccessStoriesPage = lazy(() => import('@/components/public/SuccessStoriesPage').then(m => ({ default: m.SuccessStoriesPage })));
 const VolunteerPage = lazy(() => import('@/components/public/VolunteerPage').then(m => ({ default: m.VolunteerPage })));
 const FaqPage = lazy(() => import('@/components/public/FaqPage').then(m => ({ default: m.FaqPage })));
+const StorePage = lazy(() => import('@/components/public/StorePage').then(m => ({ default: m.StorePage })));
 
 // Lazy-loaded Admin pages
 const AdminLoginPage = lazy(() => import('@/components/auth/AdminLoginPage').then(m => ({ default: m.AdminLoginPage })));
@@ -76,6 +77,7 @@ export default function App() {
                     <Route element={<PublicLayout />}>
                       <Route path="/" element={<HomePage />} />
                       <Route path="/adopta" element={<AdoptionGalleryPage />} />
+                      <Route path="/tienda" element={<StorePage />} />
                       <Route path="/nosotros" element={<AboutPage />} />
                       <Route path="/nosotros/historia" element={<HistoryPage />} />
                       <Route path="/historias-de-exito" element={<SuccessStoriesPage />} />
@@ -134,4 +136,3 @@ export default function App() {
     </ErrorBoundary>
   );
 }
-

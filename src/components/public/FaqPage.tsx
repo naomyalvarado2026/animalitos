@@ -25,12 +25,12 @@ const FAQS: FaqItem[] = [
   {
     category: 'donation',
     question: '¿Cómo sé que mi donación se usa correctamente?',
-    answer: 'En Animalitos publicamos periódicamente nuestros informes financieros detallados en la sección de Transparencia. Cada donación y gasto queda registrado públicamente.',
+    answer: 'En AdoptaME publicamos periódicamente nuestros informes financieros detallados en la sección de Transparencia. Cada donación y gasto queda registrado públicamente.',
   },
   {
     category: 'donation',
     question: '¿Reciben donaciones en especie?',
-    answer: '¡Sí! Recibimos alimento seco y húmedo para perros y gatos, medicamentos veterinarios, cobijas, transportadoras, productos de limpieza y juguetes.',
+    answer: '¡Sí! Recibimos alimento seco y húmedo para perros, medicamentos veterinarios, cobijas, productos de limpieza y juguetes.',
   },
   {
     category: 'visit',

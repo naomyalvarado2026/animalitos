@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Heart, ChevronRight, Copy, Check, Sparkles, CreditCard, Repeat, ShieldCheck } from 'lucide-react';
+import { Heart, ChevronRight, Repeat } from 'lucide-react';
 import { PawBackground } from '@/components/layout/PawBackground';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { toast } from 'sonner';
 
 const DONATION_OPTIONS = [
   {
@@ -69,16 +68,8 @@ export function DonatePage() {
   const [frequency, setFrequency] = useState<'once' | 'monthly'>('once');
   const [selectedUSD, setSelectedUSD] = useState<number>(50);
   const [customUSD, setCustomUSD] = useState<string>('');
-  const [copiedBank, setCopiedBank] = useState(false);
 
   const activeAmountUSD = customUSD ? (parseFloat(customUSD) || 0) : selectedUSD;
-
-  const handleCopyCLABE = () => {
-    navigator.clipboard.writeText('012180001234567890');
-    setCopiedBank(true);
-    toast.success('¡CLABE bancaria copiada al portapapeles!');
-    setTimeout(() => setCopiedBank(false), 3000);
-  };
 
   return (
     <div className="pt-16">
@@ -182,17 +173,11 @@ export function DonatePage() {
           <CardContent className="p-6 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-left text-xs text-[var(--color-muted-foreground)]">
               <p className="font-semibold text-sm text-[var(--color-foreground)] mb-1">
-                Cuenta CLABE Oficial (México):
+                ¿Prefieres transferencia bancaria?
               </p>
-              <p className="font-mono text-sm font-bold text-[var(--color-primary)]">
-                012180001234567890
-              </p>
-              <p>Banco BBVA · Fundación Animalitos AC</p>
+              <p>Solicita los datos oficiales desde nuestro formulario de contacto.</p>
             </div>
-            <Button variant="outline" size="sm" onClick={handleCopyCLABE} className="gap-2 shrink-0">
-              {copiedBank ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-              {copiedBank ? '¡Copiado!' : 'Copiar CLABE'}
-            </Button>
+            <Button variant="outline" size="sm" className="shrink-0" asChild><Link to="/contacto">Solicitar datos</Link></Button>
           </CardContent>
         </Card>
       </section>
@@ -284,4 +269,3 @@ export function DonatePage() {
     </div>
   );
 }
-
