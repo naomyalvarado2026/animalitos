@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // Auto-logout after 30 minutes of inactivity for logged in users
-    let inactivityTimer: ReturnType<setTimeout>;
+    let inactivityTimer: ReturnType<typeof setTimeout>;
 
     const resetInactivityTimer = () => {
       clearTimeout(inactivityTimer);
