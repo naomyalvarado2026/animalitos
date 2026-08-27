@@ -10,12 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 
 export function ContentManagement() {
-  const qc = useQueryClient();
   const [socialLinks, setSocialLinks] = useState({
-    facebook: 'https://facebook.com/animalitosrefugio',
-    instagram: 'https://instagram.com/animalitosrefugio',
-    twitter: 'https://x.com/animalitosorg',
-    tiktok: 'https://tiktok.com/@animalitosrefugio',
+    facebook: '',
+    instagram: '',
+    twitter: '',
+    tiktok: '',
   });
 
   const [heroText, setHeroText] = useState('Cada vida merece una segunda oportunidad');

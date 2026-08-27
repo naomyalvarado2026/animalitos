@@ -5,15 +5,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 export function SettingsManagement() {
   const [shelterName, setShelterName] = useState('AdoptaME');
-  const [email, setEmail] = useState('hola@animalitos.org');
-  const [phone, setPhone] = useState('+1 (234) 567-890');
-  const [address, setAddress] = useState('Tu dirección aquí, Ciudad, País');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    setSaving(true);
+    const { error } = await supabase.from('site_settings').upsert([
+      { key: 'shelter_name', value: shelterName.trim() },
+      { key: 'shelter_email', value: email.trim() },
+      { key: 'shelter_phone', value: phone.trim() },
+      { key: 'shelter_address', value: address.trim() },
+    ], { onConflict: 'key' });
+    setSaving(false);
+    if (error) {
+      toast.error('No se pudo guardar. Verifica la conexión con Supabase.');
+      return;
+    }
     toast.success('Configuración guardada correctamente.');
   }
 
@@ -56,8 +70,8 @@ export function SettingsManagement() {
               </div>
             </div>
 
-            <Button type="submit" variant="warm" className="mt-4">
-              <Save className="h-4 w-4 mr-2" /> Guardar Ajustes
+            <Button type="submit" variant="warm" className="mt-4" disabled={saving}>
+              <Save className="h-4 w-4 mr-2" /> {saving ? 'Guardando…' : 'Guardar Ajustes'}
             </Button>
           </form>
         </CardContent>

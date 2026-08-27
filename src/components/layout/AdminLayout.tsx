@@ -12,6 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  ShoppingBag,
+  BarChart3,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
@@ -39,6 +41,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Contenido & Redes', href: '/admin/contenido', icon: FileText, minLevel: 4 },
   { label: 'Usuarios', href: '/admin/usuarios', icon: Users, minLevel: 10 },
   { label: 'Configuración', href: '/admin/configuracion', icon: Settings, minLevel: 7 },
+  { label: 'Pedidos', href: '/admin/pedidos', icon: ShoppingBag, minLevel: 4 },
+  { label: 'Reportes', href: '/admin/reportes', icon: BarChart3, minLevel: 4 },
 ];
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {

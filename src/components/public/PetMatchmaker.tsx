@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
+import { assetUrl } from '@/lib/assets';
 
 interface Question {
   id: number;
@@ -48,7 +49,7 @@ const MATCHED_PETS = [
     species: 'Perro 🐶',
     breed: 'Mestizo de Labrador',
     matchScore: 98,
-    image: '/images/dog_max.jpg',
+    image: assetUrl('/images/dog_max.jpg'),
     reason: 'Ideal para personas activas y familias. Ama los paseos al aire libre y jugar con niños.',
   },
   {
@@ -56,7 +57,7 @@ const MATCHED_PETS = [
     species: 'Perra 🐶',
     breed: 'Mestiza tipo Golden',
     matchScore: 95,
-    image: '/images/dog_max.jpg',
+    image: assetUrl('/images/dog_max.jpg'),
     reason: 'Perfecta para familias que buscan una compañera cariñosa, noble y tranquila.',
   },
 ];

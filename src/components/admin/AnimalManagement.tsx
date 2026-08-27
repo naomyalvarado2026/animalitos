@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { dataStore } from '@/lib/dataStore';
 import { Plus, Edit2, Trash2, Heart, Check, X, Shield } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -42,9 +41,11 @@ export function AnimalManagement() {
     queryFn: async () => {
       try {
         const { data, error } = await supabase.from('animals').select('*').order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) return data as Animal[];
-      } catch {}
-      return dataStore.getAnimals();
+        if (error) throw error;
+        return (data ?? []) as Animal[];
+      } catch (error) {
+        throw error instanceof Error ? error : new Error('No se pudieron cargar los rescatados.');
+      }
     },
   });
 
@@ -65,15 +66,13 @@ export function AnimalManagement() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: AnimalForm) => {
-      const payload = editingAnimal ? { ...data, id: editingAnimal.id } : data;
-      dataStore.saveAnimal(payload);
-      try {
-        if (editingAnimal) {
-          await supabase.from('animals').update(data).eq('id', editingAnimal.id);
-        } else {
-          await supabase.from('animals').insert([data]);
-        }
-      } catch {}
+      if (editingAnimal) {
+        const { error } = await supabase.from('animals').update(data).eq('id', editingAnimal.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('animals').insert([data]);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-animals'] });
@@ -83,21 +82,20 @@ export function AnimalManagement() {
       setEditingAnimal(null);
       form.reset();
     },
-    onError: () => toast.error('Error al guardar el registro.'),
+    onError: () => toast.error('No se pudo guardar el registro en Supabase.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      dataStore.deleteAnimal(id);
-      try {
-        await supabase.from('animals').delete().eq('id', id);
-      } catch {}
+      const { error } = await supabase.from('animals').delete().eq('id', id);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-animals'] });
       qc.invalidateQueries({ queryKey: ['animals-public'] });
       toast.success('Animal eliminado.');
     },
+    onError: () => toast.error('No se pudo eliminar el animal en Supabase.'),
   });
 
   function startEdit(animal: Animal) {

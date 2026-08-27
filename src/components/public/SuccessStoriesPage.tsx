@@ -82,7 +82,7 @@ export function SuccessStoriesPage() {
                     {/* Image section */}
                     <div className="lg:col-span-5 relative bg-muted min-h-[300px]">
                       <img
-                        src={story.after_image_url}
+                        src={assetUrl(story.after_image_url)}
                         alt={story.animal_name}
                         className="w-full h-full object-cover min-h-[300px]"
                       />

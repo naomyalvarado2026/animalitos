@@ -47,6 +47,8 @@ const ApplicationsManagement = lazy(() => import('@/components/admin/Application
 const ContentManagement = lazy(() => import('@/components/admin/ContentManagement').then(m => ({ default: m.ContentManagement })));
 const DonorManagement = lazy(() => import('@/components/admin/DonorManagement').then(m => ({ default: m.DonorManagement })));
 const SettingsManagement = lazy(() => import('@/components/admin/SettingsManagement').then(m => ({ default: m.SettingsManagement })));
+const OrdersManagement = lazy(() => import('@/components/admin/OrdersManagement').then(m => ({ default: m.OrdersManagement })));
+const AdminReportsPage = lazy(() => import('@/components/admin/AdminReportsPage').then(m => ({ default: m.AdminReportsPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -118,6 +120,8 @@ export default function App() {
                         <Route path="/admin/contenido" element={<ContentManagement />} />
                         <Route path="/admin/usuarios" element={<UserManagement />} />
                         <Route path="/admin/configuracion" element={<SettingsManagement />} />
+                        <Route path="/admin/pedidos" element={<OrdersManagement />} />
+                        <Route path="/admin/reportes" element={<AdminReportsPage />} />
                       </Route>
                     </Route>
 

@@ -9,14 +9,13 @@ import { supabase } from '@/lib/supabase';
 import { assetUrl } from '@/lib/assets';
 
 const PRODUCTS = [
-  { name: 'Camiseta AdoptaME', type: 'Ropa solidaria', price: 'Consultar', image: assetUrl('/images/hero.jpg'), color: 'coral' },
-  { name: 'Pañuelo “ME eligieron”', type: 'Para tu mejor amigo', price: 'Consultar', image: assetUrl('/images/dog_max.jpg'), color: 'yellow' },
-  { name: 'Tote bag AdoptaME', type: 'Uso diario', price: 'Consultar', image: assetUrl('/images/shelter_hero_1785817115197.jpg'), color: 'cream' },
+  { slug: 'camiseta-adoptame', name: 'Camiseta AdoptaME', type: 'Ropa solidaria', price: 'Consultar en USD', image: assetUrl('/images/hero.jpg'), color: 'coral' },
+  { slug: 'panuelo-me-eligieron', name: 'Pañuelo “ME eligieron”', type: 'Para tu mejor amigo', price: 'Consultar en USD', image: assetUrl('/images/dog_max.jpg'), color: 'yellow' },
+  { slug: 'tote-bag-adoptame', name: 'Tote bag AdoptaME', type: 'Uso diario', price: 'Consultar en USD', image: assetUrl('/images/shelter_hero_1785817115197.jpg'), color: 'cream' },
 ];
 
 export function StorePage() {
   const [added, setAdded] = useState<string[]>([]);
-  const [pending, setPending] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<typeof PRODUCTS[number] | null>(null);
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -25,17 +24,10 @@ export function StorePage() {
     event.preventDefault();
     if (!selectedProduct || !form.name || !form.email || !form.phone) return;
     setSubmitting(true);
-    const message = `Pedido de merchandising: ${selectedProduct.name} (${selectedProduct.price}). WhatsApp: ${form.phone}. Contactar para confirmar talla, envío y pago.`;
-    const { error } = await supabase.from('contact_messages').insert([{ name: form.name, email: form.email, subject: `Pedido tienda · ${selectedProduct.name}`, message, type: 'support' }]);
+    const { error } = await supabase.rpc('create_merchandise_order', { p_customer_name: form.name, p_customer_email: form.email, p_customer_phone: form.phone, p_product_slug: selectedProduct.slug, p_quantity: 1, p_idempotency_key: crypto.randomUUID() });
     setSubmitting(false);
     if (error) {
-      const pending = JSON.parse(localStorage.getItem('adoptame_pending_orders') ?? '[]');
-      localStorage.setItem('adoptame_pending_orders', JSON.stringify([...pending, { ...form, product: selectedProduct.name, created_at: new Date().toISOString() }]));
-      toast.info('Pedido guardado en este dispositivo. Activa la base de datos para recibirlo en el panel.');
-      setAdded((items) => items.includes(selectedProduct.name) ? items : [...items, selectedProduct.name]);
-      setPending((items) => items.includes(selectedProduct.name) ? items : [...items, selectedProduct.name]);
-      setSelectedProduct(null);
-      setForm({ name: '', email: '', phone: '' });
+      toast.error('No pudimos enviar tu pedido. Intenta nuevamente en unos minutos.');
       return;
     }
     setAdded((items) => items.includes(selectedProduct.name) ? items : [...items, selectedProduct.name]);
@@ -55,7 +47,7 @@ export function StorePage() {
 
       <section className="py-20 max-w-7xl mx-auto px-5 sm:px-8 lg:px-10">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10"><div><p className="text-[#f0644a] uppercase tracking-[.15em] font-bold text-sm">Colección 01</p><h2 className="font-heading text-4xl font-extrabold tracking-[-.05em] mt-2">Hecho para hablar de adopción.</h2></div><p className="text-[#6e6a64] text-sm max-w-xs">Envíos y tallas se coordinan contigo después de tu pedido.</p></div>
-        <div className="grid md:grid-cols-3 gap-7">{PRODUCTS.map((product) => <article key={product.name} className="group"><div className={`relative rounded-[1.5rem] overflow-hidden aspect-square ${product.color === 'coral' ? 'bg-[#f0644a]' : product.color === 'yellow' ? 'bg-[#ffcf5a]' : 'bg-[#ede5da]'}`}><img src={product.image} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:scale-105 transition-transform duration-500" /><div className="absolute top-4 left-4 rounded-full bg-[#fffdf9] px-3 py-1 text-xs font-bold text-[#171717]">AdoptaME</div></div><div className="pt-4"><div className="flex justify-between gap-3"><div><p className="font-heading text-xl font-bold">{product.name}</p><p className="text-sm text-[#6e6a64] mt-1">{product.type}</p></div><span className="font-bold text-[#f0644a]">{product.price}</span></div><Button onClick={() => addProduct(product)} className="mt-4 w-full bg-[#171717] hover:bg-[#333] text-white" variant="default">{pending.includes(product.name) ? <><Check /> Pendiente de sincronizar</> : added.includes(product.name) ? <><Check /> Pedido recibido</> : <><ShoppingBag /> Lo quiero</>}</Button></div></article>)}</div>
+        <div className="grid md:grid-cols-3 gap-7">{PRODUCTS.map((product) => <article key={product.name} className="group"><div className={`relative rounded-[1.5rem] overflow-hidden aspect-square ${product.color === 'coral' ? 'bg-[#f0644a]' : product.color === 'yellow' ? 'bg-[#ffcf5a]' : 'bg-[#ede5da]'}`}><img src={product.image} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:scale-105 transition-transform duration-500" /><div className="absolute top-4 left-4 rounded-full bg-[#fffdf9] px-3 py-1 text-xs font-bold text-[#171717]">AdoptaME</div></div><div className="pt-4"><div className="flex justify-between gap-3"><div><p className="font-heading text-xl font-bold">{product.name}</p><p className="text-sm text-[#6e6a64] mt-1">{product.type}</p></div><span className="font-bold text-[#f0644a]">{product.price}</span></div><Button onClick={() => addProduct(product)} className="mt-4 w-full bg-[#171717] hover:bg-[#333] text-white" variant="default">{added.includes(product.name) ? <><Check /> Pedido recibido</> : <><ShoppingBag /> Lo quiero</>}</Button></div></article>)}</div>
       </section>
 
       <section className="bg-[#ede5da] py-16"><div className="max-w-5xl mx-auto px-5 sm:px-8 grid sm:grid-cols-3 gap-8 text-center"><div><div className="mx-auto w-11 h-11 rounded-full bg-[#fffdf9] flex items-center justify-center text-[#f0644a]"><Heart className="fill-current h-5 w-5" /></div><h3 className="font-heading font-bold mt-4">Compra con causa</h3><p className="text-sm text-[#6e6a64] mt-2">Publicaremos el destino de cada venta cuando estén definidos los costos reales.</p></div><div><div className="mx-auto w-11 h-11 rounded-full bg-[#fffdf9] flex items-center justify-center text-[#f0644a] font-bold">2</div><h3 className="font-heading font-bold mt-4">Recibe confirmación</h3><p className="text-sm text-[#6e6a64] mt-2">Te escribimos para confirmar talla, envío y pago.</p></div><div><div className="mx-auto w-11 h-11 rounded-full bg-[#fffdf9] flex items-center justify-center text-[#f0644a]"><Sparkles className="h-5 w-5" /></div><h3 className="font-heading font-bold mt-4">Comparte el mensaje</h3><p className="text-sm text-[#6e6a64] mt-2">Cada producto abre una conversación sobre adopción.</p></div></div></section>

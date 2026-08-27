@@ -11,12 +11,16 @@ Estas migraciones son una capa posterior a `supabase/migrations/001`–`008`. No
 5. `0005_merchandise_orders.sql` — crea productos, variantes, pedidos e historial.
 6. `0006_public_forms_hardening.sql` — limita y valida formularios públicos.
 7. `0007_public_metrics.sql` — crea métricas agregadas sin exponer finanzas sensibles.
+8. `0008_audit_and_adoption_history.sql` — registra cambios administrativos y estados de adopción.
+9. `0009_public_merchandise_checkout.sql` — crea el checkout público transaccional en USD y el historial de estados de pedidos.
+10. `0010_admin_access_levels.sql` — corrige perfiles administrativos antiguos que solo muestran Dashboard.
 
 ## Antes de ejecutar
 
 - Ejecuta primero las migraciones base 001–008 o el esquema equivalente.
 - Haz un respaldo del proyecto.
-- Revisa la moneda y reemplaza `COP` si la operación usa otra.
+- La moneda operativa de AdoptaME es `USD`; verifica que productos y pedidos conserven ese valor.
+- Antes de probar la tienda, crea los productos reales en `products` con `slug`, precio en centavos USD, inventario e `is_active = true`.
 - Crea manualmente el primer usuario administrativo desde Supabase Auth y asigna su perfil de forma controlada.
 - No ejecutes los seeds antiguos en producción: contienen contactos, cuentas y animales de demostración.
 - Después de aplicar las migraciones, cambia la aplicación para leer las vistas públicas y usa la función transaccional de adopción.

@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { dataStore } from '@/lib/dataStore';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { TrendingUp, TrendingDown, Plus, Edit2, Trash2, X, Check } from 'lucide-react';
+import { AlertCircle, Loader2, TrendingUp, TrendingDown, Plus, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -75,27 +74,26 @@ export function FinanceManagement() {
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
 
-  const { data: incomeRecords = [] } = useQuery({
+  const incomeQuery = useQuery({
     queryKey: ['admin-income'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase.from('income_records').select('*').order('date', { ascending: false }).limit(50);
-        if (!error && data && data.length > 0) return data as IncomeRecord[];
-      } catch {}
-      return dataStore.getIncome();
+      const { data, error } = await supabase.from('income_records').select('*').order('date', { ascending: false }).limit(50);
+      if (error) throw error;
+      return (data ?? []) as IncomeRecord[];
     },
   });
 
-  const { data: expenseRecords = [] } = useQuery({
+  const expenseQuery = useQuery({
     queryKey: ['admin-expense'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase.from('expense_records').select('*').order('date', { ascending: false }).limit(50);
-        if (!error && data && data.length > 0) return data as ExpenseRecord[];
-      } catch {}
-      return dataStore.getExpenses();
+      const { data, error } = await supabase.from('expense_records').select('*').order('date', { ascending: false }).limit(50);
+      if (error) throw error;
+      return (data ?? []) as ExpenseRecord[];
     },
   });
+
+  const incomeRecords = incomeQuery.data ?? [];
+  const expenseRecords = expenseQuery.data ?? [];
 
   const incomeForm = useForm<IncomeForm>({
     resolver: zodResolver(incomeSchema) as any,
@@ -109,10 +107,8 @@ export function FinanceManagement() {
 
   const addIncome = useMutation({
     mutationFn: async (data: IncomeForm) => {
-      dataStore.addIncome(data);
-      try {
-        await supabase.from('income_records').insert([data]);
-      } catch {}
+      const { error } = await supabase.from('income_records').insert([data]);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-income'] });
@@ -122,15 +118,13 @@ export function FinanceManagement() {
       incomeForm.reset();
       setShowIncomeForm(false);
     },
-    onError: () => toast.error('Error al registrar ingreso.'),
+    onError: (error) => toast.error(`No se registró el ingreso: ${error.message}`),
   });
 
   const addExpense = useMutation({
     mutationFn: async (data: ExpenseForm) => {
-      dataStore.addExpense(data);
-      try {
-        await supabase.from('expense_records').insert([data]);
-      } catch {}
+      const { error } = await supabase.from('expense_records').insert([data]);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-expense'] });
@@ -140,21 +134,20 @@ export function FinanceManagement() {
       expenseForm.reset();
       setShowExpenseForm(false);
     },
-    onError: () => toast.error('Error al registrar egreso.'),
+    onError: (error) => toast.error(`No se registró el egreso: ${error.message}`),
   });
 
   const deleteIncome = useMutation({
     mutationFn: async (id: string) => {
-      dataStore.deleteIncome(id);
-      try {
-        await supabase.from('income_records').delete().eq('id', id);
-      } catch {}
+      const { error } = await supabase.from('income_records').delete().eq('id', id);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-income'] });
       qc.invalidateQueries({ queryKey: ['transparency-income'] });
       toast.success('Ingreso eliminado.');
     },
+    onError: (error) => toast.error(`No se eliminó el ingreso: ${error.message}`),
   });
 
   const deleteExpense = useMutation({
@@ -166,6 +159,7 @@ export function FinanceManagement() {
       qc.invalidateQueries({ queryKey: ['admin-expense'] });
       toast.success('Egreso eliminado.');
     },
+    onError: (error) => toast.error(`No se eliminó el egreso: ${error.message}`),
   });
 
   const totalIncome = incomeRecords.reduce((s, r) => s + r.amount_usd, 0);
@@ -173,6 +167,23 @@ export function FinanceManagement() {
 
   return (
     <div className="space-y-6">
+      {(incomeQuery.error || expenseQuery.error) && (
+        <div role="alert" className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold">No se pudieron cargar todos los registros financieros.</p>
+            <p className="mt-1">Los totales y listados pueden estar incompletos. Revisa la conexión con la base de datos.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => { incomeQuery.refetch(); expenseQuery.refetch(); }}>
+            Reintentar
+          </Button>
+        </div>
+      )}
+      {(incomeQuery.isLoading || expenseQuery.isLoading) && (
+        <div className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]" role="status">
+          <Loader2 className="h-4 w-4 animate-spin" /> Cargando registros financieros…
+        </div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h1 className="font-heading text-2xl font-bold">Gestión Financiera</h1>
         <div className="flex gap-2">
@@ -242,7 +253,9 @@ export function FinanceManagement() {
               </div>
               <div className="sm:col-span-2 flex justify-end gap-2">
                 <Button type="button" variant="ghost" onClick={() => setShowIncomeForm(false)}>Cancelar</Button>
-                <Button type="submit" variant="default" disabled={addIncome.isPending}>Guardar Ingreso</Button>
+                <Button type="submit" variant="default" disabled={addIncome.isPending}>
+                  {addIncome.isPending && <Loader2 className="h-4 w-4 animate-spin" />} {addIncome.isPending ? 'Guardando…' : 'Guardar Ingreso'}
+                </Button>
               </div>
             </form>
           </CardContent>
@@ -284,7 +297,9 @@ export function FinanceManagement() {
               </div>
               <div className="sm:col-span-2 flex justify-end gap-2">
                 <Button type="button" variant="ghost" onClick={() => setShowExpenseForm(false)}>Cancelar</Button>
-                <Button type="submit" variant="destructive" disabled={addExpense.isPending}>Guardar Egreso</Button>
+                <Button type="submit" variant="destructive" disabled={addExpense.isPending}>
+                  {addExpense.isPending && <Loader2 className="h-4 w-4 animate-spin" />} {addExpense.isPending ? 'Guardando…' : 'Guardar Egreso'}
+                </Button>
               </div>
             </form>
           </CardContent>
@@ -329,6 +344,7 @@ export function FinanceManagement() {
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">+{formatAmount(r.amount_usd)}</span>
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-[var(--color-destructive)]"
+                      disabled={deleteIncome.isPending}
                       onClick={() => { if (confirm('¿Eliminar este ingreso?')) deleteIncome.mutate(r.id); }}
                       aria-label="Eliminar ingreso">
                       <Trash2 className="h-4 w-4" />
@@ -353,6 +369,7 @@ export function FinanceManagement() {
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="font-semibold text-rose-600 dark:text-rose-400">-{formatAmount(r.amount_usd)}</span>
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-[var(--color-destructive)]"
+                      disabled={deleteExpense.isPending}
                       onClick={() => { if (confirm('¿Eliminar este egreso?')) deleteExpense.mutate(r.id); }}
                       aria-label="Eliminar egreso">
                       <Trash2 className="h-4 w-4" />

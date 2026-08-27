@@ -4,12 +4,16 @@ import { Separator } from '@/components/ui/separator';
 
 const QUICK_LINKS = [
   { label: 'Inicio', href: '/' },
-  { label: 'Adóptame', href: '/adopta' },
+  { label: 'Adoptar', href: '/adopta' },
+  { label: 'Cómo funciona', href: '/como-funciona' },
   { label: 'Tienda solidaria', href: '/tienda' },
+  { label: 'Santuario', href: '/santuario' },
+  { label: 'Recursos educativos', href: '/recursos' },
   { label: 'Nosotros', href: '/nosotros' },
   { label: 'Preguntas Frecuentes', href: '/faq' },
   { label: 'Transparencia', href: '/transparencia' },
   { label: 'Donaciones', href: '/donaciones' },
+  { label: 'En memoria de', href: '/en-memoria' },
   { label: 'Contacto', href: '/contacto' },
 ];
 

@@ -119,7 +119,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isSuperAdmin = profile?.role === 'super_admin';
 
   function hasAccessLevel(level: number): boolean {
-    return (profile?.access_level ?? 0) >= level;
+    const roleMinimums: Record<Profile['role'], number> = {
+      viewer: 1,
+      editor: 4,
+      admin: 7,
+      super_admin: 10,
+    };
+    return Math.max(profile?.access_level ?? 0, profile ? roleMinimums[profile.role] : 0) >= level;
   }
 
   return (

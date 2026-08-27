@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { dataStore } from '@/lib/dataStore';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { Heart, Plus, Star, Trash2, Edit2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,26 +26,30 @@ export function DonorManagement() {
     queryFn: async () => {
       try {
         const { data, error } = await supabase.from('donors').select('*').order('total_donated_usd', { ascending: false });
-        if (!error && data && data.length > 0) return data as Donor[];
-      } catch {}
-      return dataStore.getDonors();
+        if (error) throw error;
+        return (data ?? []) as Donor[];
+      } catch (error) {
+        throw error instanceof Error ? error : new Error('No se pudieron cargar los donadores.');
+      }
     },
   });
 
   const addDonor = useMutation({
     mutationFn: async () => {
+      const parsedAmount = Number.parseFloat(amount);
+      if (!name.trim() || !Number.isFinite(parsedAmount) || parsedAmount < 0) {
+        throw new Error('Completa un nombre y un monto válido.');
+      }
       const payload = {
-        name,
+        name: name.trim(),
         type,
-        total_donated_usd: parseFloat(amount),
-        message: message || null,
+        total_donated_usd: parsedAmount,
+        message: message.trim() || null,
         is_featured: isFeatured,
         is_anonymous: false,
       };
-      dataStore.saveDonor(payload);
-      try {
-        await supabase.from('donors').insert([payload]);
-      } catch {}
+      const { error } = await supabase.from('donors').insert([payload]);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-donors'] });
@@ -56,21 +59,20 @@ export function DonorManagement() {
       setName('');
       setMessage('');
     },
-    onError: () => toast.error('Error al agregar el donador.'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'No se pudo agregar el donador en Supabase.'),
   });
 
   const deleteDonor = useMutation({
     mutationFn: async (id: string) => {
-      dataStore.deleteDonor(id);
-      try {
-        await supabase.from('donors').delete().eq('id', id);
-      } catch {}
+      const { error } = await supabase.from('donors').delete().eq('id', id);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-donors'] });
       qc.invalidateQueries({ queryKey: ['top-donors-public'] });
       toast.success('Donador eliminado.');
     },
+    onError: () => toast.error('No se pudo eliminar el donador en Supabase.'),
   });
 
   return (

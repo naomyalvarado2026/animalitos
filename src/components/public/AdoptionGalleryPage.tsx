@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { Heart, Search, ShieldCheck, Sparkles, X, CheckCircle2, Share2 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { assetUrl } from '@/lib/assets';
 import { PawBackground } from '@/components/layout/PawBackground';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,7 +80,7 @@ export function AdoptionGalleryPage() {
     const shareData = {
       title: `¡Adopta a ${animal.name}! - AdoptaME`,
       text: `Conoce a ${animal.name}, un perrito en adopción en AdoptaME.`,
-      url: `${window.location.origin}/adopta/${slugify(animal.name)}`,
+      url: `${window.location.origin}${window.location.pathname}#/adopta/${slugify(animal.name)}`,
     };
 
     if (navigator.share) {
@@ -89,7 +90,7 @@ export function AdoptionGalleryPage() {
         // User cancelled share
       }
     } else {
-      navigator.clipboard.writeText(`${window.location.origin}/adopta/${slugify(animal.name)}`);
+      navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}#/adopta/${slugify(animal.name)}`);
       toast.success('¡Enlace copiado al portapapeles!');
     }
   };
@@ -244,7 +245,7 @@ export function AdoptionGalleryPage() {
                     {/* Image container */}
                     <div className="relative h-64 overflow-hidden bg-muted">
                       <img
-                        src={animal.main_image_url}
+                        src={assetUrl(animal.main_image_url)}
                         alt={animal.name}
                         loading="lazy"
                         decoding="async"
@@ -430,7 +431,7 @@ function AdoptionModal({ animal, onClose }: { animal: Animal; onClose: () => voi
         </button>
 
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[var(--color-border)]">
-          <img src={animal.main_image_url} alt={animal.name} className="w-12 h-12 rounded-full object-cover border" />
+          <img src={assetUrl(animal.main_image_url)} alt={animal.name} className="w-12 h-12 rounded-full object-cover border" />
           <div>
             <h2 className="font-heading text-xl font-bold">Adopta a {animal.name} 🐾</h2>
             <p className="text-xs text-[var(--color-muted-foreground)]">Completa el formulario para iniciar la solicitud.</p>
@@ -521,7 +522,7 @@ function PetDetailModal({ animal, onClose, onAdopt }: { animal: Animal; onClose:
 
         <div className="space-y-4">
           <div className="relative h-64 rounded-xl overflow-hidden">
-            <img src={animal.main_image_url} alt={animal.name} className="w-full h-full object-cover" />
+            <img src={assetUrl(animal.main_image_url)} alt={animal.name} className="w-full h-full object-cover" />
             <div className="absolute top-3 left-3 flex gap-2">
               <Badge variant="warm">Perro 🐶</Badge>
               <Badge variant="outline" className="bg-black/60 text-white border-none text-xs">

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
-import { PawIcon } from './PawBackground';
 import { Button } from '@/components/ui/button';
 import { useMobile } from '@/hooks/useMobile';
 import { cn } from '@/lib/utils';
@@ -19,7 +18,6 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Inicio', href: '/' },
   { label: 'Adoptar', href: '/adopta' },
   { label: 'Cómo funciona', href: '/como-funciona' },
   { label: 'Tienda', href: '/tienda' },
@@ -42,33 +40,21 @@ const NAV_ITEMS: NavItem[] = [
         { label: 'En memoria de', href: '/en-memoria' },
       ],
     },
-  { label: 'Recursos', href: '/recursos' },
   {
-    label: 'Transparencia',
-    href: '/transparencia',
+    label: 'Más',
+    href: '/recursos',
     children: [
-      { label: 'Ingresos', href: '/transparencia/ingresos' },
-      { label: 'Egresos', href: '/transparencia/egresos' },
-    ],
-  },
-  {
-    label: 'Donaciones',
-    href: '/donaciones',
-    children: [
-      { label: 'Donadores Principales', href: '/donaciones/donadores-principales' },
-    ],
-  },
-  {
-    label: 'Contacto',
-    href: '/contacto',
-    children: [
+      { label: 'Recursos', href: '/recursos' },
+      { label: 'Transparencia', href: '/transparencia' },
+      { label: 'Ingresos y egresos', href: '/transparencia/ingresos' },
+      { label: 'Donadores principales', href: '/donaciones/donadores-principales' },
+      { label: 'Contacto', href: '/contacto' },
       { label: 'Quiero Apoyar', href: '/contacto/quiero-apoyar' },
     ],
   },
 ];
 
 export function PublicHeader() {
-  const [, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const isMobile = useMobile();
@@ -197,83 +183,6 @@ export function PublicHeader() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {false && isMobile && (
-        <div className="border-t border-[var(--color-border)] bg-[var(--color-card)] shadow-lg animate-fade-in">
-          <nav className="max-w-7xl mx-auto px-4 py-3 space-y-1" role="navigation" aria-label="Menú móvil">
-            {NAV_ITEMS.map((item) => (
-              <div key={item.href}>
-                <div className="flex items-center justify-between">
-                  <NavLink
-                    to={item.href}
-                    end={item.href === '/'}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex-1 flex items-center px-3.5 py-3 rounded-lg text-base font-medium transition-colors mobile-touch-target',
-                        isActive
-                          ? 'text-[var(--color-primary)] bg-[var(--color-accent)]'
-                          : 'text-[var(--color-foreground)] hover:bg-[var(--color-accent)]'
-                      )
-                    }
-                    onClick={() => {
-                      if (!item.children) setIsMenuOpen(false);
-                    }}
-                  >
-                    {item.label}
-                  </NavLink>
-                  {item.children && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenDropdown(openDropdown === item.href ? null : item.href);
-                      }}
-                      className="p-3 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] mobile-touch-target"
-                      aria-label="Expandir submenú"
-                    >
-                      <ChevronDown
-                        className={cn(
-                          'h-5 w-5 transition-transform duration-200',
-                          openDropdown === item.href && 'rotate-180'
-                        )}
-                      />
-                    </button>
-                  )}
-                </div>
-
-                {item.children && openDropdown === item.href && (
-                  <div className="ml-4 mt-1 space-y-1">
-                    {item.children.map((child) => (
-                      <NavLink
-                        key={child.href}
-                        to={child.href}
-                        className={({ isActive }) =>
-                          cn(
-                            'block px-3 py-2 rounded-lg text-sm transition-colors',
-                            isActive
-                              ? 'text-[var(--color-primary)] font-medium bg-[var(--color-accent)]'
-                              : 'text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-accent)]'
-                          )
-                        }
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        {child.label}
-                      </NavLink>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            <div className="pt-2 pb-1">
-              <Button variant="warm" className="w-full" asChild>
-                <Link to="/contacto/quiero-apoyar" onClick={() => setIsMenuOpen(false)}>
-                  ❤️ Donar
-                </Link>
-              </Button>
-            </div>
-          </nav>
-        </div>
-      )}
     </header>
   );
 }

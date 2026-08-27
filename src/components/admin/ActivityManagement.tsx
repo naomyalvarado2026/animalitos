@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { dataStore } from '@/lib/dataStore';
 import { Calendar, Plus, Edit2, Trash2, Users, Clock, MapPin, Check, UserPlus } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -49,9 +48,11 @@ export function ActivityManagement() {
           .from('volunteer_activities')
           .select('*')
           .order('activity_date', { ascending: true });
-        if (!error && data && data.length > 0) return data as VolunteerActivity[];
-      } catch {}
-      return dataStore.getActivities();
+        if (error) throw error;
+        return (data ?? []) as VolunteerActivity[];
+      } catch (error) {
+        throw error instanceof Error ? error : new Error('No se pudieron cargar las actividades.');
+      }
     },
   });
 
@@ -72,15 +73,13 @@ export function ActivityManagement() {
 
   const saveMutation = useMutation({
     mutationFn: async (data: ActivityForm) => {
-      const payload = editingAct ? { ...data, id: editingAct.id } : data;
-      dataStore.saveActivity(payload);
-      try {
-        if (editingAct) {
-          await supabase.from('volunteer_activities').update(data).eq('id', editingAct.id);
-        } else {
-          await supabase.from('volunteer_activities').insert([data]);
-        }
-      } catch {}
+      if (editingAct) {
+        const { error } = await supabase.from('volunteer_activities').update(data).eq('id', editingAct.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('volunteer_activities').insert([data]);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-activities'] });
@@ -90,21 +89,20 @@ export function ActivityManagement() {
       setEditingAct(null);
       form.reset();
     },
-    onError: () => toast.error('Error al guardar la actividad.'),
+    onError: () => toast.error('No se pudo guardar la actividad en Supabase.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      dataStore.deleteActivity(id);
-      try {
-        await supabase.from('volunteer_activities').delete().eq('id', id);
-      } catch {}
+      const { error } = await supabase.from('volunteer_activities').delete().eq('id', id);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-activities'] });
       qc.invalidateQueries({ queryKey: ['volunteer-activities-public'] });
       toast.success('Actividad eliminada.');
     },
+    onError: () => toast.error('No se pudo eliminar la actividad en Supabase.'),
   });
 
   function startEdit(act: VolunteerActivity) {
