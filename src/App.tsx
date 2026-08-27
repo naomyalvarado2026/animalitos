@@ -49,6 +49,13 @@ const DonorManagement = lazy(() => import('@/components/admin/DonorManagement').
 const SettingsManagement = lazy(() => import('@/components/admin/SettingsManagement').then(m => ({ default: m.SettingsManagement })));
 const OrdersManagement = lazy(() => import('@/components/admin/OrdersManagement').then(m => ({ default: m.OrdersManagement })));
 const AdminReportsPage = lazy(() => import('@/components/admin/AdminReportsPage').then(m => ({ default: m.AdminReportsPage })));
+const ProductManagement = lazy(() => import('@/components/admin/ProductManagement').then(m => ({ default: m.ProductManagement })));
+const SuccessStoryManagement = lazy(() => import('@/components/admin/SuccessStoryManagement').then(m => ({ default: m.SuccessStoryManagement })));
+const EditorialManagement = lazy(() => import('@/components/admin/EditorialManagement').then(m => ({ default: m.EditorialManagement })));
+const StructureManagement = lazy(() => import('@/components/admin/StructureManagement').then(m => ({ default: m.StructureManagement })));
+const MemoryManagement = lazy(() => import('@/components/admin/MemoryManagement').then(m => ({ default: m.MemoryManagement })));
+const TeamManagement = lazy(() => import('@/components/admin/TeamManagement').then(m => ({ default: m.TeamManagement })));
+const DonationImpactManagement = lazy(() => import('@/components/admin/DonationImpactManagement').then(m => ({ default: m.DonationImpactManagement })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -122,6 +129,13 @@ export default function App() {
                         <Route path="/admin/configuracion" element={<SettingsManagement />} />
                         <Route path="/admin/pedidos" element={<OrdersManagement />} />
                         <Route path="/admin/reportes" element={<AdminReportsPage />} />
+                        <Route path="/admin/productos" element={<ProductManagement />} />
+                        <Route path="/admin/historias" element={<SuccessStoryManagement />} />
+                        <Route path="/admin/editorial" element={<EditorialManagement />} />
+                        <Route path="/admin/estructura" element={<StructureManagement />} />
+                        <Route path="/admin/memoria" element={<MemoryManagement />} />
+                        <Route path="/admin/equipo" element={<TeamManagement />} />
+                        <Route path="/admin/impacto-donaciones" element={<DonationImpactManagement />} />
                       </Route>
                     </Route>
 

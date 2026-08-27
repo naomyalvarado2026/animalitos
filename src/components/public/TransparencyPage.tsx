@@ -19,7 +19,7 @@ const PILLARS = [
   {
     icon: TrendingDown,
     title: 'Egresos',
-    description: 'Detallamos en qué se usa cada peso: alimento, medicamentos, infraestructura, personal y servicios.',
+    description: 'Detallamos en qué se usa cada dólar: alimento, medicamentos, infraestructura, personal y servicios.',
     href: '/transparencia/egresos',
     color: 'text-rose-500',
     bg: 'bg-rose-50 dark:bg-rose-950/20',

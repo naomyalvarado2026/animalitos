@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { MotionConfig } from 'motion/react';
 import { PublicHeader } from './PublicHeader';
 import { PublicFooter } from './PublicFooter';
 import { EmergencyBanner } from './EmergencyBanner';
@@ -27,22 +28,25 @@ export function PublicLayout() {
                   ? { title: 'Recursos de tenencia responsable | AdoptaME', description: 'Guías para cuidar, adaptar y convivir mejor con un perro.' }
           : { title: 'AdoptaME | Cada perro merece una historia feliz', description: 'Rescatamos perros, les devolvemos la confianza y encontramos hogares responsables.' };
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-background)]">
-      <Helmet>
-        <title>{seo.title}</title>
-        <meta name="description" content={seo.description} />
-        <link rel="canonical" href={`${window.location.origin}${pathname}`} />
-        <meta property="og:title" content={seo.title} />
-        <meta property="og:description" content={seo.description} />
-        <meta property="og:image" content={`${window.location.origin}${assetUrl('/images/dog_max.jpg')}`} />
-      </Helmet>
-      <EmergencyBanner />
-      <PublicHeader />
-      <main className="flex-1 pb-20 md:pb-0" id="main-content">
-        <Outlet />
-      </main>
-      <PublicFooter />
-      <PublicMobileNav />
-    </div>
+    <MotionConfig reducedMotion="user">
+      <div className="public-shell flex flex-col min-h-screen bg-[var(--color-background)]">
+        <Helmet>
+          <title>{seo.title}</title>
+          <meta name="description" content={seo.description} />
+          <link rel="canonical" href={`${window.location.origin}${pathname}`} />
+          <meta property="og:title" content={seo.title} />
+          <meta property="og:description" content={seo.description} />
+          <meta property="og:image" content={`${window.location.origin}${assetUrl('/images/dog_max.jpg')}`} />
+        </Helmet>
+        <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
+        <EmergencyBanner />
+        <PublicHeader />
+        <main className="flex-1 pb-20 md:pb-0" id="main-content" tabIndex={-1}>
+          <Outlet />
+        </main>
+        <PublicFooter />
+        <PublicMobileNav />
+      </div>
+    </MotionConfig>
   );
 }

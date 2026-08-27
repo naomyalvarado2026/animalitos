@@ -1,10 +1,20 @@
 import { useState } from 'react';
 import { AlertCircle, X, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 export function EmergencyBanner() {
   const [dismissed, setDismissed] = useState(false);
-  const message = '';
+  const { data: message = '' } = useQuery({
+    queryKey: ['public-emergency-banner'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('site_settings').select('value').eq('key', 'emergency_banner').maybeSingle();
+      if (error) throw error;
+      return data?.value?.trim() ?? '';
+    },
+    staleTime: 60_000,
+  });
 
   if (dismissed || !message) return null;
 

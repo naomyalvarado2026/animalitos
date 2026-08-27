@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import type { ExpenseRecord, ExpenseCategory } from '@/types';
 import { formatDateShort } from '@/lib/utils';
 
-import { dataStore } from '@/lib/dataStore';
 
 const CATEGORY_META: Record<ExpenseCategory, { label: string; icon: typeof TrendingDown; color: string; bg: string }> = {
   food: { label: 'Alimentación', icon: UtensilsCrossed, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-950/20' },
@@ -27,16 +26,14 @@ export function ExpensesPage() {
   const { data: records = [], isLoading } = useQuery({
     queryKey: ['transparency-expense'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
+      const { data, error } = await supabase
           .from('expense_records')
           .select('*')
           .eq('is_public', true)
           .order('date', { ascending: false })
           .limit(60);
-        if (!error && data && data.length > 0) return data as ExpenseRecord[];
-      } catch {}
-      return dataStore.getExpenses();
+      if (error) throw error;
+      return (data ?? []) as ExpenseRecord[];
     },
   });
 

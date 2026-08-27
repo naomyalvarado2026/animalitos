@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Heart, Star, Sparkles, Quote } from 'lucide-react';
+import { Star, Sparkles, Quote } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { PawBackground } from '@/components/layout/PawBackground';
@@ -8,46 +8,22 @@ import { Badge } from '@/components/ui/badge';
 import type { SuccessStory } from '@/types';
 import { formatDateShort } from '@/lib/utils';
 import { assetUrl } from '@/lib/assets';
-
-const MOCK_STORIES: SuccessStory[] = [
-  {
-    id: 'mock-story-1',
-    animal_name: 'Toby',
-    adopter_name: 'Familia Martínez',
-    title: 'De la calle a convertirse en el rey de la casa',
-    story: 'Toby fue encontrado con desnutrición severa y mucho temor a las personas. Gracias a los cuidados médicos del refugio y al amor incondicional de la familia Martínez, hoy Toby es un perrito radiante, juguetón y lleno de energía.',
-    before_image_url: assetUrl('/images/dog_max.jpg'),
-    after_image_url: assetUrl('/images/hero.jpg'),
-    adoption_date: '2025-12-10',
-    is_featured: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'mock-story-2',
-    animal_name: 'Bella',
-    adopter_name: 'Ana María & Carlos',
-    title: 'La perrita que llenó nuestro hogar de felicidad',
-    story: 'Bella era una perrita tímida que pasaba desapercibida. Ana la vio en la web del refugio y supo que era para ella. Hoy disfruta los paseos y acompaña a su familia cada tarde.',
-    before_image_url: null,
-    after_image_url: assetUrl('/images/dog_max.jpg'),
-    adoption_date: '2026-01-20',
-    is_featured: true,
-    created_at: new Date().toISOString(),
-  },
-];
+import { ResilientImage } from '@/components/ui/ResilientImage';
 
 export function SuccessStoriesPage() {
-  const { data: stories = MOCK_STORIES } = useQuery({
+  const storiesQuery = useQuery({
     queryKey: ['success-stories-public'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('success_stories')
         .select('*')
         .order('adoption_date', { ascending: false });
-      if (error || !data || data.length === 0) return MOCK_STORIES;
+      if (error) throw error;
       return data as SuccessStory[];
     },
   });
+
+  const stories = storiesQuery.data ?? [];
 
   return (
     <div className="pt-16">
@@ -67,6 +43,8 @@ export function SuccessStoriesPage() {
 
       {/* Stories list */}
       <section className="py-12 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {storiesQuery.error && <div role="alert" className="mb-8 rounded-2xl border border-rose-300 bg-rose-50 p-5 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-100">No pudimos cargar las historias publicadas. Intenta nuevamente más tarde.</div>}
+        {!storiesQuery.isLoading && !storiesQuery.error && stories.length === 0 && <div className="rounded-2xl border border-dashed border-[var(--color-border)] p-12 text-center text-[var(--color-muted-foreground)]">Pronto compartiremos nuevas historias de adopción.</div>}
         <div className="space-y-12">
           {stories.map((story, i) => (
             <motion.div
@@ -81,7 +59,7 @@ export function SuccessStoriesPage() {
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
                     {/* Image section */}
                     <div className="lg:col-span-5 relative bg-muted min-h-[300px]">
-                      <img
+                      <ResilientImage
                         src={assetUrl(story.after_image_url)}
                         alt={story.animal_name}
                         className="w-full h-full object-cover min-h-[300px]"

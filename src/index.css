@@ -131,13 +131,43 @@
   background: var(--brand-gradient);
 }
 
-/* ── Animaciones de hover en cards ── */
-.hover-card {
+/* ── Interacciones de la experiencia pública ── */
+.public-shell :focus-visible {
+  outline: 3px solid var(--color-ring);
+  outline-offset: 3px;
+}
+
+.public-shell .skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 0.75rem;
+  left: 50%;
+  transform: translate(-50%, -150%);
+  border-radius: 0.75rem;
+  background: var(--color-foreground);
+  color: var(--color-background);
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  box-shadow: var(--surface-shadow);
+  transition: transform 0.2s ease;
+}
+
+.public-shell .skip-link:focus-visible {
+  transform: translate(-50%, 0);
+}
+
+.public-shell .hover-card {
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.hover-card:hover {
-  transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+  .public-shell .hover-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px -8px rgba(139, 90, 50, 0.25) !important;
+  }
+}
+
+.public-shell .hover-card:focus-visible {
   box-shadow: 0 12px 40px -8px rgba(139, 90, 50, 0.25) !important;
 }
 
@@ -188,6 +218,18 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     transition: none !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-shell *,
+  .public-shell *::before,
+  .public-shell *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .public-shell .skip-link {
+    transition: none;
   }
 }
 

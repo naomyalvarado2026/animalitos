@@ -14,6 +14,13 @@ import {
   Menu,
   ShoppingBag,
   BarChart3,
+  Package,
+  BookHeart,
+  BookOpen,
+  Workflow,
+  Archive,
+  UserRound,
+  HandHeart,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
@@ -43,6 +50,13 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Configuración', href: '/admin/configuracion', icon: Settings, minLevel: 7 },
   { label: 'Pedidos', href: '/admin/pedidos', icon: ShoppingBag, minLevel: 4 },
   { label: 'Reportes', href: '/admin/reportes', icon: BarChart3, minLevel: 4 },
+  { label: 'Productos', href: '/admin/productos', icon: Package, minLevel: 4 },
+  { label: 'Historias', href: '/admin/historias', icon: BookHeart, minLevel: 4 },
+  { label: 'Editorial', href: '/admin/editorial', icon: BookOpen, minLevel: 4 },
+  { label: 'Estructura', href: '/admin/estructura', icon: Workflow, minLevel: 4 },
+  { label: 'En memoria', href: '/admin/memoria', icon: Archive, minLevel: 4 },
+  { label: 'Equipo', href: '/admin/equipo', icon: UserRound, minLevel: 4 },
+  { label: 'Impacto donaciones', href: '/admin/impacto-donaciones', icon: HandHeart, minLevel: 4 },
 ];
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {

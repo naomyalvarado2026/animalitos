@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, ClipboardCheck, Home, HeartHandshake, ShieldCheck } from 'lucide-react';
+import { usePublicSettings } from '@/lib/publicSettings';
+import { useMemo } from 'react';
 
 const STEPS = [
   { number: '01', title: 'Conoce', text: 'Explora la personalidad, energía, salud y necesidades de cada perrito.', icon: HeartHandshake },
@@ -9,22 +11,25 @@ const STEPS = [
 ];
 
 export function AdoptionProcessPage() {
+  const { data: settings } = usePublicSettings(['process_intro']);
+  const { data: structure } = usePublicSettings(['adoption_process_steps']);
+  const steps = useMemo(() => { try { const parsed = JSON.parse(structure?.adoption_process_steps ?? 'null'); return Array.isArray(parsed) && parsed.length ? parsed : STEPS; } catch { return STEPS; } }, [structure]);
   return (
     <div className="pt-16">
       <section className="bg-[#171717] text-[#fffdf9] py-20 sm:py-28">
         <div className="max-w-5xl mx-auto px-5 sm:px-8">
           <p className="text-[#ff8069] uppercase tracking-[.16em] text-sm font-bold">Adoptar es una decisión de vida</p>
           <h1 className="font-heading text-5xl sm:text-7xl font-extrabold tracking-[-.06em] mt-4 max-w-4xl">Un proceso claro para encontrar el hogar correcto.</h1>
-          <p className="text-white/70 text-lg leading-relaxed max-w-2xl mt-6">Queremos que la conexión sea bonita, pero también responsable. Te explicamos cada paso antes de pedirte un compromiso.</p>
+          <p className="text-white/70 text-lg leading-relaxed max-w-2xl mt-6">{settings?.process_intro?.trim() || 'Queremos que la conexión sea bonita, pero también responsable. Te explicamos cada paso antes de pedirte un compromiso.'}</p>
           <Link to="/adopta" className="inline-flex items-center gap-2 mt-8 rounded-xl bg-[#f0644a] px-5 py-3 font-bold hover:bg-[#ff8069]">Ver perritos disponibles <ArrowRight className="h-4 w-4" /></Link>
         </div>
       </section>
       <section className="py-20 max-w-6xl mx-auto px-5 sm:px-8">
         <div className="grid md:grid-cols-4 gap-5">
-          {STEPS.map(({ number, title, text, icon: Icon }) => (
+          {steps.map(({ number, title, text, emoji }: { number: string; title: string; text: string; emoji?: string }) => (
             <article key={number} className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-6">
               <span className="text-[#f0644a] font-heading font-extrabold text-sm">{number}</span>
-              <Icon className="h-7 w-7 text-[#f0644a] mt-8" />
+              <span className="block text-3xl mt-7" aria-hidden="true">{emoji || '🐾'}</span>
               <h2 className="font-heading text-2xl font-extrabold mt-5">{title}</h2>
               <p className="text-[var(--color-muted-foreground)] leading-relaxed mt-3">{text}</p>
             </article>

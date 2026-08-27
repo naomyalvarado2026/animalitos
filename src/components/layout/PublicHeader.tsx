@@ -102,9 +102,24 @@ export function PublicHeader() {
                     className="relative"
                     onMouseEnter={() => setOpenDropdown(item.href)}
                     onMouseLeave={() => setOpenDropdown(null)}
+                    onFocus={() => setOpenDropdown(item.href)}
+                    onBlur={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                        setOpenDropdown(null);
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        setOpenDropdown(null);
+                        event.currentTarget.querySelector<HTMLAnchorElement>('a')?.focus();
+                      }
+                    }}
                   >
                     <NavLink
                       to={item.href}
+                      aria-haspopup="true"
+                      aria-controls={`submenu-${item.href.slice(1)}`}
+                      aria-expanded={openDropdown === item.href}
                       className={({ isActive }) =>
                         cn(
                           'flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
@@ -125,7 +140,7 @@ export function PublicHeader() {
 
                     {/* Dropdown */}
                     {openDropdown === item.href && (
-                      <div className="absolute top-full left-0 mt-1 min-w-[180px] rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg py-1 animate-fade-in">
+                      <div id={`submenu-${item.href.slice(1)}`} className="absolute top-full left-0 mt-1 min-w-[180px] rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg py-1 animate-fade-in" aria-label={`Enlaces de ${item.label}`}>
                         {item.children.map((child) => (
                           <NavLink
                             key={child.href}

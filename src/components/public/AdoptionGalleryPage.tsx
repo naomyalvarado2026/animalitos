@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useParams } from 'react-router-dom';
-import { Heart, Search, ShieldCheck, Sparkles, X, CheckCircle2, Share2 } from 'lucide-react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { Heart, Search, X, CheckCircle2, Share2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { assetUrl } from '@/lib/assets';
 import { PawBackground } from '@/components/layout/PawBackground';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ResilientImage } from '@/components/ui/ResilientImage';
 import { Textarea } from '@/components/ui/textarea';
 import { SkeletonCard } from '@/components/ui/SkeletonLoader';
 import { useForm } from 'react-hook-form';
@@ -18,9 +19,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { PetMatchmaker } from './PetMatchmaker';
-import type { Animal, AnimalSpecies, HousingType } from '@/types';
+import type { Animal, AnimalSpecies } from '@/types';
 
-import { dataStore } from '@/lib/dataStore';
 
 const adoptionSchema = z.object({
   applicant_name: z.string().min(2, 'Ingresa tu nombre completo'),
@@ -95,18 +95,16 @@ export function AdoptionGalleryPage() {
     }
   };
 
-  const { data: animals = [], isLoading } = useQuery({
+  const { data: animals = [], isLoading, isError } = useQuery({
     queryKey: ['animals-public'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('animals')
-          .select('*')
-          .eq('species', 'dog')
-          .order('created_at', { ascending: false });
-        if (!error && data && data.length > 0) return data as Animal[];
-      } catch {}
-      return dataStore.getAnimals().filter((animal) => animal.species === 'dog');
+      const { data, error } = await supabase
+        .from('animals')
+        .select('*')
+        .eq('species', 'dog')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Animal[];
     },
   });
 
@@ -149,6 +147,7 @@ export function AdoptionGalleryPage() {
             <p className="text-lg text-[var(--color-muted-foreground)] max-w-2xl mx-auto leading-relaxed">
               Cada perrito tiene una historia, una personalidad y muchas ganas de empezar de nuevo contigo.
             </p>
+            {isError && <p role="alert" className="mt-4 text-sm text-rose-600 dark:text-rose-300">No pudimos cargar los perfiles en este momento. Intenta nuevamente en unos minutos.</p>}
           </motion.div>
         </div>
       </section>
@@ -244,7 +243,7 @@ export function AdoptionGalleryPage() {
                   <Card className="hover-card overflow-hidden h-full flex flex-col group border-[var(--color-border)] relative">
                     {/* Image container */}
                     <div className="relative h-64 overflow-hidden bg-muted">
-                      <img
+                      <ResilientImage
                         src={assetUrl(animal.main_image_url)}
                         alt={animal.name}
                         loading="lazy"
@@ -431,7 +430,7 @@ function AdoptionModal({ animal, onClose }: { animal: Animal; onClose: () => voi
         </button>
 
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[var(--color-border)]">
-          <img src={assetUrl(animal.main_image_url)} alt={animal.name} className="w-12 h-12 rounded-full object-cover border" />
+          <ResilientImage src={assetUrl(animal.main_image_url)} alt={animal.name} className="w-12 h-12 rounded-full object-cover border" />
           <div>
             <h2 className="font-heading text-xl font-bold">Adopta a {animal.name} 🐾</h2>
             <p className="text-xs text-[var(--color-muted-foreground)]">Completa el formulario para iniciar la solicitud.</p>
@@ -522,7 +521,7 @@ function PetDetailModal({ animal, onClose, onAdopt }: { animal: Animal; onClose:
 
         <div className="space-y-4">
           <div className="relative h-64 rounded-xl overflow-hidden">
-            <img src={assetUrl(animal.main_image_url)} alt={animal.name} className="w-full h-full object-cover" />
+            <ResilientImage src={assetUrl(animal.main_image_url)} alt={animal.name} className="w-full h-full object-cover" />
             <div className="absolute top-3 left-3 flex gap-2">
               <Badge variant="warm">Perro 🐶</Badge>
               <Badge variant="outline" className="bg-black/60 text-white border-none text-xs">

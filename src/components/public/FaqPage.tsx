@@ -4,6 +4,7 @@ import { HelpCircle, ChevronDown, Search } from 'lucide-react';
 import { PawBackground } from '@/components/layout/PawBackground';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { usePublicSettings } from '@/lib/publicSettings';
 
 interface FaqItem {
   question: string;
@@ -45,10 +46,19 @@ const FAQS: FaqItem[] = [
 ];
 
 export function FaqPage() {
+  const { data: settings } = usePublicSettings(['faq_items']);
   const [search, setSearch] = useState('');
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
-  const filteredFaqs = FAQS.filter(
+  let publishedFaqs = FAQS;
+  if (settings?.faq_items) {
+    try {
+      const parsed = JSON.parse(settings.faq_items) as FaqItem[];
+      if (Array.isArray(parsed) && parsed.length > 0) publishedFaqs = parsed.filter((item) => item.question?.trim() && item.answer?.trim());
+    } catch { /* usar el contenido base mientras se corrige la configuración */ }
+  }
+
+  const filteredFaqs = publishedFaqs.filter(
     f =>
       f.question.toLowerCase().includes(search.toLowerCase()) ||
       f.answer.toLowerCase().includes(search.toLowerCase())

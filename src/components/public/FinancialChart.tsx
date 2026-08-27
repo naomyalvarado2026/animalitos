@@ -16,18 +16,12 @@ interface MonthlyData {
   expense: number;
 }
 
-const MOCK_FINANCIAL_DATA: MonthlyData[] = [
-  { month: 'Ene', income: 1200, expense: 950 },
-  { month: 'Feb', income: 1500, expense: 1100 },
-  { month: 'Mar', income: 1800, expense: 1400 },
-  { month: 'Abr', income: 2100, expense: 1600 },
-  { month: 'May', income: 2600, expense: 1900 },
-  { month: 'Jun', income: 3450, expense: 2150 },
-  { month: 'Jul', income: 3950, expense: 2280 },
-];
-
-export function FinancialChart({ data = MOCK_FINANCIAL_DATA }: { data?: MonthlyData[] }) {
+export function FinancialChart({ data = [] }: { data?: MonthlyData[] }) {
   const { formatAmount } = useCurrency();
+
+  if (data.length === 0) {
+    return <div className="flex h-72 items-center justify-center rounded-xl border border-dashed border-[var(--color-border)] px-6 text-center text-sm text-[var(--color-muted-foreground)]">Aún no hay datos financieros publicados.</div>;
+  }
 
   return (
     <div className="w-full h-72 pt-4">

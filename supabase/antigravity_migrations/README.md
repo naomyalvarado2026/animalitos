@@ -14,6 +14,9 @@ Estas migraciones son una capa posterior a `supabase/migrations/001`–`008`. No
 8. `0008_audit_and_adoption_history.sql` — registra cambios administrativos y estados de adopción.
 9. `0009_public_merchandise_checkout.sql` — crea el checkout público transaccional en USD y el historial de estados de pedidos.
 10. `0010_admin_access_levels.sql` — corrige perfiles administrativos antiguos que solo muestran Dashboard.
+11. `0011_product_admin_policies.sql` — habilita la gestión administrativa segura del catálogo.
+12. `0012_memory_memorial.sql` — crea el memorial público “En memoria de” y sus políticas RLS.
+13. `0013_merchandising_catalog_drafts.sql` — carga productos iniciales como borradores, sin publicarlos ni asignar inventario.
 
 ## Antes de ejecutar
 

@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import type { IncomeRecord } from '@/types';
 import { formatDateShort } from '@/lib/utils';
 
-import { dataStore } from '@/lib/dataStore';
 
 const CATEGORY_LABEL: Record<string, string> = {
   donation: 'Donación',
@@ -31,16 +30,14 @@ export function IncomePage() {
   const { data: records = [], isLoading } = useQuery({
     queryKey: ['transparency-income'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
+      const { data, error } = await supabase
           .from('income_records')
           .select('*, donor:donors(name, is_anonymous)')
           .eq('is_public', true)
           .order('date', { ascending: false })
           .limit(50);
-        if (!error && data && data.length > 0) return data as IncomeRecord[];
-      } catch {}
-      return dataStore.getIncome();
+      if (error) throw error;
+      return (data ?? []) as IncomeRecord[];
     },
   });
 

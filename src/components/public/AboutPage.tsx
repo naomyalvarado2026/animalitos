@@ -4,13 +4,7 @@ import { Heart, Clock, ChevronRight } from 'lucide-react';
 import { PawBackground } from '@/components/layout/PawBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-
-const TEAM = [
-  { name: 'María González', role: 'Fundadora & Directora', emoji: '👩‍⚕️' },
-  { name: 'Carlos Ruiz', role: 'Veterinario Jefe', emoji: '🧑‍⚕️' },
-  { name: 'Ana Martínez', role: 'Coordinadora de Adopciones', emoji: '👩‍💼' },
-  { name: 'Luis Pérez', role: 'Voluntario Coordinador', emoji: '🧑‍🤝‍🧑' },
-];
+import { usePublicSettings } from '@/lib/publicSettings';
 
 const VALUES = [
   { emoji: '❤️', title: 'Amor', description: 'Cada animal merece recibir amor y cuidado incondicional.' },
@@ -20,6 +14,9 @@ const VALUES = [
 ];
 
 export function AboutPage() {
+  const { data: settings } = usePublicSettings(['about_team', 'about_intro', 'about_mission', 'about_vision']);
+  let team: { name: string; role: string; emoji: string }[] = [];
+  try { const parsed = settings?.about_team ? JSON.parse(settings.about_team) : []; if (Array.isArray(parsed)) team = parsed.filter((member) => member?.name && member?.role); } catch { /* mostrar estado vacío */ }
   return (
     <div className="pt-16">
       {/* Hero */}
@@ -36,8 +33,7 @@ export function AboutPage() {
               Nosotros
             </h1>
             <p className="text-lg text-[var(--color-muted-foreground)] max-w-2xl mx-auto leading-relaxed">
-              Somos más que un refugio. Somos una familia comprometida con dar
-              esperanza y un hogar a cada animal que llega a nuestras puertas.
+              {settings?.about_intro?.trim() || 'Somos más que un refugio. Somos una familia comprometida con dar esperanza y un hogar responsable a cada perro que llega a nuestras puertas.'}
             </p>
           </motion.div>
         </div>
@@ -60,9 +56,7 @@ export function AboutPage() {
                 <h2 className="font-heading text-2xl font-bold">Misión</h2>
               </div>
               <p className="text-[var(--color-muted-foreground)] leading-relaxed">
-                Rescatar, rehabilitar y reubicar animales domésticos en situación de
-                abandono o riesgo, promoviendo la tenencia responsable de mascotas
-                y el respeto por la vida animal en nuestra comunidad.
+                {settings?.about_mission?.trim() || 'Rescatar, rehabilitar y encontrar hogares responsables para perros en situación de abandono o riesgo, promoviendo la tenencia responsable en nuestra comunidad.'}
               </p>
             </motion.div>
 
@@ -79,9 +73,7 @@ export function AboutPage() {
                 <h2 className="font-heading text-2xl font-bold">Visión</h2>
               </div>
               <p className="text-[var(--color-muted-foreground)] leading-relaxed">
-                Ser el refugio de referencia de nuestra región, reconocido por
-                su transparencia, efectividad y el impacto positivo que generamos
-                en el bienestar animal y la educación comunitaria.
+                {settings?.about_vision?.trim() || 'Ser una organización de referencia por su transparencia, cuidado integral y capacidad de construir mejores oportunidades para los perros y sus familias.'}
               </p>
             </motion.div>
           </div>
@@ -118,8 +110,8 @@ export function AboutPage() {
       <section className="py-16 bg-[var(--color-card)] border-y border-[var(--color-border)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-heading text-3xl font-bold text-center mb-10">Nuestro Equipo</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {TEAM.map((member, i) => (
+          {team.length ? <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {team.map((member, i) => (
               <motion.div
                 key={member.name}
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -136,7 +128,7 @@ export function AboutPage() {
                 </Card>
               </motion.div>
             ))}
-          </div>
+          </div> : <p className="mx-auto max-w-xl rounded-2xl border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-muted-foreground)]">El equipo se presentará aquí cuando sus perfiles estén confirmados y autorizados.</p>}
         </div>
       </section>
 

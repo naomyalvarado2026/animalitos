@@ -4,11 +4,8 @@ import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  Filter,
-  Users,
   Clock,
   MapPin,
-  CheckCircle2,
   List,
   Grid,
 } from 'lucide-react';
@@ -18,101 +15,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ActivityDetailModal } from './ActivityDetailModal';
-import type { VolunteerActivity, ActivityCategory } from '@/types';
+import type { VolunteerActivity } from '@/types';
 import { formatDateShort } from '@/lib/utils';
-
-const MOCK_ACTIVITIES: VolunteerActivity[] = [
-  {
-    id: 'act-1',
-    title: 'Jornada de Paseo y Socialización 🐕',
-    description: 'Paseo matutino, ejercitación y juego al aire libre con los perritos del área B.',
-    category: 'dog_walking',
-    activity_date: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0],
-    end_date: null,
-    event_type: 'single_day',
-    recurrence_pattern: 'none',
-    parent_event_id: null,
-    start_time: '09:00',
-    end_time: '12:00',
-    location: 'Parque Central & Refugio',
-    max_volunteers: 8,
-    current_volunteers: 5,
-    coordinator_name: 'Carlos Gómez',
-    coordinator_phone: '+123456789',
-    requirements: ['Traer agua', 'Calzado cómodo'],
-    status: 'scheduled',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'act-2',
-    title: 'Campaña de Sanidad & Cepillado 🏥',
-    description: 'Apoyo al equipo veterinario en pesaje, cepillado y aplicación de desparasitantes a los perritos.',
-    category: 'medical',
-    activity_date: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
-    end_date: null,
-    event_type: 'single_day',
-    recurrence_pattern: 'none',
-    parent_event_id: null,
-    start_time: '10:00',
-    end_time: '13:00',
-    location: 'Área Médica Refugio',
-    max_volunteers: 4,
-    current_volunteers: 2,
-    coordinator_name: 'Dra. María Elena',
-    coordinator_phone: null,
-    requirements: ['Mascarilla', 'Guantes'],
-    status: 'scheduled',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'act-3',
-    title: 'Bazar Solidario & Colecta 🎟️',
-    description: 'Atención en stand de donaciones y venta de artículos promocionales.',
-    category: 'events',
-    activity_date: new Date(Date.now() + 8 * 86400000).toISOString().split('T')[0],
-    end_date: null,
-    event_type: 'single_day',
-    recurrence_pattern: 'none',
-    parent_event_id: null,
-    start_time: '11:00',
-    end_time: '17:00',
-    location: 'Plaza Principal',
-    max_volunteers: 6,
-    current_volunteers: 6,
-    coordinator_name: 'Laura Méndez',
-    coordinator_phone: null,
-    requirements: ['Camiseta institucional'],
-    status: 'scheduled',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'act-4',
-    title: 'Mantenimiento de Caniles & Pintura 🛠️',
-    description: 'Reparación de cercas, impermeabilización y embellecimiento de áreas habitables.',
-    category: 'maintenance',
-    activity_date: new Date(Date.now() + 12 * 86400000).toISOString().split('T')[0],
-    end_date: null,
-    event_type: 'single_day',
-    recurrence_pattern: 'none',
-    parent_event_id: null,
-    start_time: '08:30',
-    end_time: '14:00',
-    location: 'Refugio Principal',
-    max_volunteers: 10,
-    current_volunteers: 4,
-    coordinator_name: 'Ing. Roberto Ramos',
-    coordinator_phone: null,
-    requirements: ['Guantes de trabajo'],
-    status: 'scheduled',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-import { dataStore } from '@/lib/dataStore';
 
 const CATEGORY_TABS = [
   { id: 'all', label: 'Todas las Actividades 🐾' },
@@ -131,14 +35,12 @@ export function VolunteerCalendar() {
   const { data: activities = [], refetch } = useQuery({
     queryKey: ['volunteer-activities-public'],
     queryFn: async () => {
-      try {
         const { data, error } = await supabase
           .from('volunteer_activities')
           .select('*')
           .order('activity_date', { ascending: true });
-        if (!error && data && data.length > 0) return data as VolunteerActivity[];
-      } catch {}
-      return dataStore.getActivities();
+        if (error) throw error;
+        return (data ?? []) as VolunteerActivity[];
     },
   });
 

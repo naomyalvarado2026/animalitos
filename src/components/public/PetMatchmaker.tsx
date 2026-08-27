@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Heart, RefreshCw, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Sparkles, RefreshCw, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
+import { ResilientImage } from '@/components/ui/ResilientImage';
 import { assetUrl } from '@/lib/assets';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import type { Animal } from '@/types';
 
 interface Question {
   id: number;
@@ -43,29 +47,30 @@ const QUESTIONS: Question[] = [
   },
 ];
 
-const MATCHED_PETS = [
-  {
-    name: 'Max',
-    species: 'Perro 🐶',
-    breed: 'Mestizo de Labrador',
-    matchScore: 98,
-    image: assetUrl('/images/dog_max.jpg'),
-    reason: 'Ideal para personas activas y familias. Ama los paseos al aire libre y jugar con niños.',
-  },
-  {
-    name: 'Bella',
-    species: 'Perra 🐶',
-    breed: 'Mestiza tipo Golden',
-    matchScore: 95,
-    image: assetUrl('/images/dog_max.jpg'),
-    reason: 'Perfecta para familias que buscan una compañera cariñosa, noble y tranquila.',
-  },
-];
-
 export function PetMatchmaker() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showResult, setShowResult] = useState(false);
+  const animalsQuery = useQuery({
+    queryKey: ['public-matchmaker-dogs'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('animals').select('*').eq('species', 'dog').in('status', ['available', 'medical_care']).order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Animal[];
+    },
+    staleTime: 60_000,
+  });
+  const recommendations = useMemo(() => animalsQuery.data?.map((animal) => {
+    const activity = answers[2];
+    const home = answers[1];
+    let score = 70;
+    if (activity === 'active' && ['large', 'extra_large'].includes(animal.size)) score += 15;
+    if (activity === 'calm' && animal.size === 'small') score += 12;
+    if (home === 'apartment' && animal.size === 'small') score += 10;
+    if (home === 'farm' && ['large', 'extra_large'].includes(animal.size)) score += 8;
+    if (animal.is_special_needs && activity === 'calm') score += 5;
+    return { animal, score: Math.min(99, score) };
+  }).sort((a, b) => b.score - a.score).slice(0, 2) ?? [], [animalsQuery.data, answers]);
 
   function handleSelectOption(value: string) {
     const updated = { ...answers, [QUESTIONS[currentStep].id]: value };
@@ -144,26 +149,27 @@ export function PetMatchmaker() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-                {MATCHED_PETS.map((pet) => (
-                  <Card key={pet.name} className="overflow-hidden border-[var(--color-border)] hover-card">
+                {recommendations.map(({ animal, score }) => (
+                  <Card key={animal.id} className="overflow-hidden border-[var(--color-border)] hover-card">
                     <div className="h-36 relative">
-                      <img src={pet.image} alt={pet.name} className="w-full h-full object-cover" />
+                      <ResilientImage src={assetUrl(animal.main_image_url)} alt={animal.name} className="w-full h-full object-cover" />
                       <div className="absolute top-2 right-2">
                         <Badge variant="success" className="shadow-xs font-bold">
-                          {pet.matchScore}% Match!
+                          {score}% Match
                         </Badge>
                       </div>
                     </div>
                     <CardContent className="p-4 space-y-2">
-                      <h4 className="font-heading font-bold text-lg">{pet.name}</h4>
-                      <p className="text-xs text-[var(--color-primary)] font-semibold">{pet.breed}</p>
-                      <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">{pet.reason}</p>
+                      <h4 className="font-heading font-bold text-lg">{animal.name}</h4>
+                      <p className="text-xs text-[var(--color-primary)] font-semibold">{animal.breed || 'Perrito rescatado'}</p>
+                      <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">{animal.description || 'Conoce su historia y descubre si son un buen match.'}</p>
                       <Button variant="warm" size="sm" className="w-full mt-2" asChild>
-                        <Link to="/adopta">Adoptar a {pet.name} <ArrowRight className="h-3.5 w-3.5 ml-1" /></Link>
+                        <Link to={`/adopta/${animal.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>Conocer a {animal.name} <ArrowRight className="h-3.5 w-3.5 ml-1" /></Link>
                       </Button>
                     </CardContent>
                   </Card>
                 ))}
+                {!recommendations.length && <p className="sm:col-span-2 rounded-xl border border-dashed border-[var(--color-border)] p-6 text-center text-sm text-[var(--color-muted-foreground)]">No hay perritos publicados para generar un match todavía.</p>}
               </div>
 
               <Button variant="outline" size="sm" onClick={handleReset} className="mt-2">

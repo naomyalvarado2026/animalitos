@@ -7,8 +7,8 @@ import { PawBackground } from '@/components/layout/PawBackground';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Donor, DonorType } from '@/types';
+import { ResilientImage } from '@/components/ui/ResilientImage';
 
-import { dataStore } from '@/lib/dataStore';
 
 const TYPE_LABEL: Record<DonorType, string> = {
   individual: 'Persona',
@@ -22,16 +22,14 @@ export function TopDonorsPage() {
   const { data: donors = [], isLoading } = useQuery({
     queryKey: ['top-donors-public'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
+      const { data, error } = await supabase
           .from('donors')
           .select('*')
           .eq('is_featured', true)
           .eq('is_anonymous', false)
           .order('total_donated_usd', { ascending: false });
-        if (!error && data && data.length > 0) return data as Donor[];
-      } catch {}
-      return dataStore.getDonors();
+      if (error) throw error;
+      return (data ?? []) as Donor[];
     },
   });
 
@@ -81,7 +79,7 @@ export function TopDonorsPage() {
                 <Card className="hover-card text-center h-full">
                   <CardContent className="pt-8 pb-6 px-6 flex flex-col items-center gap-3">
                     {donor.logo_url ? (
-                      <img
+                      <ResilientImage
                         src={donor.logo_url}
                         alt={`Logo de ${donor.name}`}
                         className="w-16 h-16 rounded-2xl object-cover border border-[var(--color-border)]"

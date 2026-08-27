@@ -103,6 +103,7 @@ export function AdminDashboard() {
 
   const stats = statsQuery.data;
   const hasErrors = Boolean(stats?.errors.length || activityQuery.data?.error);
+  const profileNeedsSync = Boolean(profile && profile.role !== 'viewer' && profile.access_level < (profile.role === 'super_admin' ? 10 : profile.role === 'admin' ? 7 : 4));
   const formatMetric = (value: number | null | undefined, currency = false) => {
     if (value === null || value === undefined) return 'No disponible';
     return currency ? formatAmount(value) : String(value);
@@ -119,6 +120,7 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      {profileNeedsSync && <div role="alert" className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><p className="font-semibold">Tu rol administrativo necesita sincronización</p><p className="mt-1">El perfil figura como <strong>{profile?.role}</strong>, pero tiene nivel {profile?.access_level}. Por eso solo aparece Dashboard. Un Super Admin debe corregirlo desde Usuarios o aplicar la migración <code>0010_admin_access_levels.sql</code>.</p></div>}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
         <h1 className="font-heading text-2xl font-bold">

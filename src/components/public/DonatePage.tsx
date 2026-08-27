@@ -7,51 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCurrency } from '@/contexts/CurrencyContext';
-
-const DONATION_OPTIONS = [
-  {
-    emoji: '🏦',
-    title: 'Transferencia Bancaria',
-    description: 'Realiza una transferencia directa a nuestra cuenta bancaria.',
-    href: '/contacto/quiero-apoyar',
-    highlight: false,
-  },
-  {
-    emoji: '💳',
-    title: 'PayPal',
-    description: 'Dona de forma segura con tu cuenta de PayPal o tarjeta.',
-    href: '/contacto/quiero-apoyar',
-    highlight: true,
-  },
-  {
-    emoji: '📱',
-    title: 'Mercado Pago',
-    description: 'Escanea nuestro QR o usa el enlace de cobro de Mercado Pago.',
-    href: '/contacto/quiero-apoyar',
-    highlight: false,
-  },
-  {
-    emoji: '₿',
-    title: 'Criptomonedas',
-    description: 'Aceptamos Bitcoin, Ethereum, USDT y otras criptomonedas.',
-    href: '/contacto/quiero-apoyar',
-    highlight: false,
-  },
-  {
-    emoji: '📦',
-    title: 'Donación en Especie',
-    description: 'Alimento, medicamentos, cobijas, jaulas… todo suma.',
-    href: '/contacto',
-    highlight: false,
-  },
-  {
-    emoji: '🤝',
-    title: 'Voluntariado',
-    description: 'Tu tiempo y amor también son una donación invaluable.',
-    href: '/contacto',
-    highlight: false,
-  },
-];
+import { usePublicSettings } from '@/lib/publicSettings';
 
 const PRESET_AMOUNTS_USD = [10, 25, 50, 100, 250];
 
@@ -65,11 +21,19 @@ const IMPACT = [
 
 export function DonatePage() {
   const { formatAmount } = useCurrency();
+  const { data: settings } = usePublicSettings(['donations_intro', 'donation_methods', 'donation_impact']);
   const [frequency, setFrequency] = useState<'once' | 'monthly'>('once');
   const [selectedUSD, setSelectedUSD] = useState<number>(50);
   const [customUSD, setCustomUSD] = useState<string>('');
 
   const activeAmountUSD = customUSD ? (parseFloat(customUSD) || 0) : selectedUSD;
+  let donationMethods: { emoji: string; title: string; description: string; link?: { text: string; url: string } }[] = [];
+  try {
+    const parsed = settings?.donation_methods ? JSON.parse(settings.donation_methods) : null;
+    if (Array.isArray(parsed)) donationMethods = parsed.filter((method) => method?.title && method?.description);
+  } catch { /* mostrar estado sin datos verificados */ }
+  let impactItems = IMPACT;
+  try { const parsed = settings?.donation_impact ? JSON.parse(settings.donation_impact) : null; if (Array.isArray(parsed) && parsed.length) impactItems = parsed; } catch { /* usar guía base */ }
 
   return (
     <div className="pt-16">
@@ -85,8 +49,7 @@ export function DonatePage() {
             <Heart className="h-14 w-14 text-rose-500 mx-auto mb-4 fill-rose-100" />
             <h1 className="font-heading text-4xl sm:text-5xl font-bold mb-4">Donaciones</h1>
             <p className="text-lg text-[var(--color-muted-foreground)] max-w-2xl mx-auto leading-relaxed">
-              Cada donación salva una vida. Tu aporte nos permite continuar rescatando, cuidando
-              y alimentando a cientos de animales en peligro.
+              {settings?.donations_intro?.trim() || 'Cada donación ayuda a rescatar, cuidar y encontrar hogares responsables para nuestros perros.'}
             </p>
           </motion.div>
         </div>
@@ -189,7 +152,7 @@ export function DonatePage() {
             ¿Cuánto impacto genera tu ayuda?
           </h2>
           <div className="space-y-3">
-            {IMPACT.map((item, i) => (
+            {impactItems.map((item, i) => (
               <motion.div
                 key={item.amountUSD}
                 initial={{ opacity: 0, x: -20 }}
@@ -215,8 +178,8 @@ export function DonatePage() {
           <p className="text-center text-[var(--color-muted-foreground)] mb-10">
             Elige el medio de pago que prefieras.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {DONATION_OPTIONS.map((opt, i) => (
+          {donationMethods.length ? <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {donationMethods.map((opt, i) => (
               <motion.div
                 key={opt.title}
                 initial={{ opacity: 0, y: 20 }}
@@ -224,20 +187,20 @@ export function DonatePage() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08, duration: 0.4 }}
               >
-                <Link to={opt.href} className="block h-full group">
+                <Link to={opt.link?.url || '/contacto/quiero-apoyar'} className="block h-full group">
                   <Card
                     className={`h-full hover-card ${
-                      opt.highlight ? 'border-[var(--color-primary)] shadow-md' : ''
+                      i === 0 ? 'border-[var(--color-primary)] shadow-md' : ''
                     }`}
                   >
-                    {opt.highlight && (
+                    {i === 0 && (
                       <div className="px-6 pt-4">
                         <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">
                           ⭐ Recomendado
                         </span>
                       </div>
                     )}
-                    <CardContent className={`${opt.highlight ? 'pt-2' : 'pt-6'} pb-6 px-6`}>
+                    <CardContent className={`${i === 0 ? 'pt-2' : 'pt-6'} pb-6 px-6`}>
                       <span className="text-4xl block mb-3">{opt.emoji}</span>
                       <h3 className="font-heading text-xl font-semibold mb-2 group-hover:text-[var(--color-primary)] transition-colors">
                         {opt.title}
@@ -246,7 +209,7 @@ export function DonatePage() {
                         {opt.description}
                       </p>
                       <span className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-primary)]">
-                        Ver instrucciones
+                        {opt.link?.text || 'Ver instrucciones'}
                         <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </span>
                     </CardContent>
@@ -254,7 +217,7 @@ export function DonatePage() {
                 </Link>
               </motion.div>
             ))}
-          </div>
+          </div> : <div className="rounded-2xl border border-dashed border-[var(--color-border)] p-8 text-center text-sm text-[var(--color-muted-foreground)]">Los métodos de donación se publicarán cuando el equipo confirme los datos oficiales. <Link to="/contacto/quiero-apoyar" className="font-bold text-[var(--color-primary)]">Contáctanos para ayudar</Link>.</div>}
         </div>
       </section>
 

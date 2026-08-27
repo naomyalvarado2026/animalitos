@@ -1,59 +1,13 @@
 import { motion } from 'motion/react';
 import { PawBackground } from '@/components/layout/PawBackground';
+import { usePublicSettings } from '@/lib/publicSettings';
+import { useMemo } from 'react';
 
-const TIMELINE = [
-  {
-    year: '2016',
-    title: 'El Comienzo',
-    description:
-      'María González rescató su primera camada de cachorros de la calle. Sin saberlo, ese fue el primer paso de lo que hoy es AdoptaME.',
-    emoji: '🐶',
-  },
-  {
-    year: '2017',
-    title: 'Primeros Voluntarios',
-    description:
-      'Las redes sociales se convirtieron en nuestra voz. Sumamos los primeros 20 voluntarios y realizamos 50 adopciones en el año.',
-    emoji: '🤝',
-  },
-  {
-    year: '2018',
-    title: 'Primer Refugio Oficial',
-    description:
-      'Conseguimos nuestro primer espacio físico: un terreno donado donde construimos las primeras instalaciones para albergar hasta 40 animales.',
-    emoji: '🏠',
-  },
-  {
-    year: '2019',
-    title: 'Atención Veterinaria',
-    description:
-      'Firmamos convenio con clínicas veterinarias locales para brindar atención médica gratuita a todos nuestros rescatados.',
-    emoji: '🏥',
-  },
-  {
-    year: '2020',
-    title: 'Resiliencia',
-    description:
-      'Durante la pandemia, duplicamos los rescates. La comunidad respondió con donaciones récord y adoptamos modalidades virtuales de seguimiento.',
-    emoji: '💪',
-  },
-  {
-    year: '2022',
-    title: 'Expansión',
-    description:
-      'Ampliamos las instalaciones, sumamos un veterinario de planta y lanzamos nuestro programa de transparencia financiera.',
-    emoji: '🌱',
-  },
-  {
-    year: '2024',
-    title: 'Hoy',
-    description:
-      'Más de 1,200 rescates, 890 adopciones y una comunidad de más de 120 voluntarios. Seguimos creciendo, guiados por el amor a los animales.',
-    emoji: '⭐',
-  },
-];
+const TIMELINE: { year: string; title: string; description: string; emoji: string }[] = [];
 
 export function HistoryPage() {
+  const { data: settings } = usePublicSettings(['history_timeline']);
+  const timeline = useMemo(() => { try { const parsed = JSON.parse(settings?.history_timeline ?? 'null'); return Array.isArray(parsed) ? parsed : TIMELINE; } catch { return TIMELINE; } }, [settings]);
   return (
     <div className="pt-16">
       {/* Hero */}
@@ -85,7 +39,7 @@ export function HistoryPage() {
             <div className="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-[var(--color-primary)] via-[var(--color-accent)] to-transparent" />
 
             <div className="space-y-10">
-              {TIMELINE.map((item, i) => (
+              {timeline.length === 0 ? <div className="rounded-2xl border border-dashed border-[var(--color-border)] p-8 text-center text-[var(--color-muted-foreground)]">Pronto compartiremos los principales hitos de AdoptaME.</div> : timeline.map((item, i) => (
                 <motion.div
                   key={item.year}
                   initial={{ opacity: 0, x: -30 }}
