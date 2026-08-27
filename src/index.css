@@ -1,0 +1,261 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* ── Paleta Café — Modo Claro ── */
+    --color-background: hsl(36, 33%, 97%);
+    --color-foreground: hsl(25, 40%, 15%);
+
+    --color-card: hsl(36, 25%, 99%);
+    --color-card-foreground: hsl(25, 40%, 15%);
+
+    --color-popover: hsl(36, 25%, 99%);
+    --color-popover-foreground: hsl(25, 40%, 15%);
+
+    /* Café cálido principal */
+    --color-primary: hsl(25, 55%, 40%);
+    --color-primary-foreground: hsl(36, 33%, 97%);
+
+    /* Arena / Beige */
+    --color-secondary: hsl(34, 30%, 90%);
+    --color-secondary-foreground: hsl(25, 40%, 25%);
+
+    --color-muted: hsl(34, 20%, 93%);
+    --color-muted-foreground: hsl(25, 20%, 50%);
+
+    --color-accent: hsl(30, 60%, 88%);
+    --color-accent-foreground: hsl(25, 50%, 25%);
+
+    --color-destructive: hsl(0, 72%, 51%);
+    --color-destructive-foreground: hsl(0, 0%, 100%);
+
+    --color-border: hsl(30, 20%, 85%);
+    --color-input: hsl(30, 20%, 85%);
+    --color-ring: hsl(25, 55%, 40%);
+
+    /* ── Tokens de diseño ── */
+    --radius: 0.75rem;
+    --card-opacity: 0.9;
+    --surface-shadow: 0 1px 4px 0 rgba(139, 90, 50, 0.08), 0 4px 16px 0 rgba(139, 90, 50, 0.06);
+    --backdrop-blur: blur(12px);
+    --border-width: 1px;
+    --font-tracking: 0em;
+
+    /* ── Gradientes café ── */
+    --grad-start: hsl(25, 55%, 40%);
+    --grad-end: hsl(35, 70%, 55%);
+    --brand-gradient: linear-gradient(135deg, var(--grad-start), var(--grad-end));
+    --brand-gradient-r: linear-gradient(to right, var(--grad-start), var(--grad-end));
+    --brand-gradient-text: linear-gradient(135deg, hsl(25, 55%, 40%) 0%, hsl(35, 70%, 55%) 100%);
+
+    /* ── Huellas decorativas ── */
+    --paw-color: hsl(25, 55%, 40%);
+    --paw-opacity: 0.04;
+  }
+
+  .dark {
+    /* ── Paleta Café — Modo Oscuro ── */
+    --color-background: hsl(22, 30%, 8%);
+    --color-foreground: hsl(34, 30%, 90%);
+
+    --color-card: hsl(22, 28%, 11%);
+    --color-card-foreground: hsl(34, 30%, 90%);
+
+    --color-popover: hsl(22, 28%, 11%);
+    --color-popover-foreground: hsl(34, 30%, 90%);
+
+    --color-primary: hsl(30, 65%, 55%);
+    --color-primary-foreground: hsl(22, 30%, 8%);
+
+    --color-secondary: hsl(25, 20%, 20%);
+    --color-secondary-foreground: hsl(34, 30%, 85%);
+
+    --color-muted: hsl(25, 18%, 16%);
+    --color-muted-foreground: hsl(30, 15%, 55%);
+
+    --color-accent: hsl(28, 30%, 22%);
+    --color-accent-foreground: hsl(34, 30%, 85%);
+
+    --color-destructive: hsl(0, 62%, 50%);
+    --color-destructive-foreground: hsl(0, 0%, 100%);
+
+    --color-border: hsl(25, 18%, 22%);
+    --color-input: hsl(25, 18%, 22%);
+    --color-ring: hsl(30, 65%, 55%);
+
+    --surface-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.3), 0 4px 16px 0 rgba(0, 0, 0, 0.25);
+
+    --grad-start: hsl(30, 65%, 55%);
+    --grad-end: hsl(40, 75%, 65%);
+
+    --paw-opacity: 0.03;
+  }
+
+  /* ── Transiciones suaves de tema ── */
+  * {
+    transition: background-color 0.35s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* ── Superficies Glassmorphism ── */
+  nav,
+  header,
+  aside,
+  .glass-surface {
+    background-color: color-mix(in srgb, var(--color-card) calc(var(--card-opacity, 0.9) * 100%), transparent) !important;
+    border-color: color-mix(in srgb, var(--color-border) 70%, transparent) !important;
+    box-shadow: var(--surface-shadow) !important;
+    backdrop-filter: var(--backdrop-blur) !important;
+  }
+}
+
+/* ── Utilidades de gradiente ── */
+.brand-gradient-text {
+  background: var(--brand-gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.brand-gradient-bg {
+  background: var(--brand-gradient);
+}
+
+/* ── Animaciones de hover en cards ── */
+.hover-card {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.hover-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px -8px rgba(139, 90, 50, 0.25) !important;
+}
+
+/* ── Patrón de huellas decorativas ── */
+.paw-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='65' rx='18' ry='15' fill='%238B5E3C' opacity='0.06'/%3E%3Cellipse cx='30' cy='44' rx='7' ry='9' fill='%238B5E3C' opacity='0.06'/%3E%3Cellipse cx='46' cy='36' rx='7' ry='9' fill='%238B5E3C' opacity='0.06'/%3E%3Cellipse cx='62' cy='36' rx='7' ry='9' fill='%238B5E3C' opacity='0.06'/%3E%3Cellipse cx='74' cy='44' rx='7' ry='9' fill='%238B5E3C' opacity='0.06'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 80px 80px;
+}
+
+@theme {
+  --radius-sm: calc(var(--radius, 0.75rem) * 0.5);
+  --radius-md: calc(var(--radius, 0.75rem) * 0.75);
+  --radius-lg: var(--radius, 0.75rem);
+  --radius-xl: calc(var(--radius, 0.75rem) * 1.33);
+  --radius-2xl: calc(var(--radius, 0.75rem) * 1.75);
+  --radius-3xl: calc(var(--radius, 0.75rem) * 2.5);
+  --radius-full: 9999px;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ── Accesibilidad ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ── Keyframes ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes paw-walk {
+  0% { transform: translateX(-100px) rotate(-15deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(calc(100vw + 100px)) rotate(-15deg); opacity: 0; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease both;
+}
+
+/* ── Scrollbar premium ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--grad-start), var(--grad-end));
+  border-radius: 20px;
+  border: 2px solid var(--color-background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  border: 1px solid var(--color-background);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--grad-start) var(--color-background);
+}
+
+/* ── Mobile Touch Targets & Bottom Sheets ── */
+@media (max-width: 639px) {
+  .mobile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .mobile-bottom-sheet {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-top-left-radius: 1.5rem !important;
+    border-top-right-radius: 1.5rem !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-height: 92vh !important;
+  }
+}
+
