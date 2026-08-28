@@ -75,7 +75,7 @@ export function PublicHeader() {
     }
     closeTimeoutRef.current = setTimeout(() => {
       setOpenDropdown(null);
-    }, 220); // 220ms grace period so moving mouse is silky smooth and never closes prematurely
+    }, 300); // 300ms grace period so moving mouse is silky smooth and never closes prematurely
   };
 
   useEffect(() => {
@@ -101,8 +101,8 @@ export function PublicHeader() {
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
         scrolled
-          ? 'shadow-md border-b border-[var(--color-border)] bg-[var(--color-background)]/90 backdrop-blur-md'
-          : 'border-b border-transparent bg-[var(--color-background)]/80 backdrop-blur-sm'
+          ? 'shadow-md border-b border-[var(--color-border)] bg-[var(--color-background)]/95 backdrop-blur-md'
+          : 'border-b border-transparent bg-[var(--color-background)]/85 backdrop-blur-sm'
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -125,7 +125,7 @@ export function PublicHeader() {
                 item.children ? (
                   <div
                     key={item.href}
-                    className="relative py-2"
+                    className="relative"
                     onMouseEnter={() => handleMouseEnter(item.href)}
                     onMouseLeave={handleMouseLeave}
                     onFocus={() => handleMouseEnter(item.href)}
@@ -147,8 +147,10 @@ export function PublicHeader() {
                       aria-controls={`submenu-${item.href.slice(1)}`}
                       aria-expanded={openDropdown === item.href}
                       onClick={(e) => {
-                        // Allow clicking to toggle or keep open
-                        if (openDropdown !== item.href) {
+                        // Toggle on click
+                        if (openDropdown === item.href) {
+                          setOpenDropdown(null);
+                        } else {
                           handleMouseEnter(item.href);
                         }
                       }}
@@ -170,19 +172,19 @@ export function PublicHeader() {
                       />
                     </NavLink>
 
-                    {/* Dropdown with seamless hover tunnel / bridge */}
+                    {/* Dropdown positioned immediately next to the button with zero gap */}
                     {openDropdown === item.href && (
                       <div
                         id={`submenu-${item.href.slice(1)}`}
-                        className="absolute top-full left-0 pt-1.5 z-50 animate-fade-in"
+                        className="absolute top-[calc(100%+2px)] left-0 z-50 animate-fade-in"
                         onMouseEnter={() => handleMouseEnter(item.href)}
                         onMouseLeave={handleMouseLeave}
                       >
-                        {/* Invisible bridge to catch cursor movement seamlessly */}
-                        <div className="absolute -top-3 left-0 right-0 h-3 pointer-events-auto" />
+                        {/* Invisible bridge overlapping button edge to guarantee unbroken hover hit test */}
+                        <div className="absolute -top-3 left-0 right-0 h-4 pointer-events-auto" />
 
                         <div
-                          className="min-w-[210px] rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-xl p-1.5 backdrop-blur-md"
+                          className="min-w-[210px] rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-2xl p-1.5 backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10"
                           aria-label={`Enlaces de ${item.label}`}
                         >
                           {item.children.map((child) => (
