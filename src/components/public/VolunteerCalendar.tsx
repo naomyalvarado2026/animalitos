@@ -32,12 +32,14 @@ export function VolunteerCalendar() {
   const [selectedActivity, setSelectedActivity] = useState<VolunteerActivity | null>(null);
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
 
-  const { data: activities = [], refetch } = useQuery({
+  const { data: activities = [], refetch, isLoading, error } = useQuery({
     queryKey: ['volunteer-activities-public'],
     queryFn: async () => {
         const { data, error } = await supabase
           .from('volunteer_activities')
           .select('*')
+          .gte('activity_date', new Date().toISOString().slice(0, 10))
+          .neq('status', 'cancelled')
           .order('activity_date', { ascending: true });
         if (error) throw error;
         return (data ?? []) as VolunteerActivity[];
@@ -66,6 +68,7 @@ export function VolunteerCalendar() {
           {/* View mode toggle */}
           <div className="flex items-center gap-1 bg-[var(--color-background)] p-1 rounded-xl border border-[var(--color-border)]">
             <button
+            type="button"
             onClick={() => setViewMode('agenda')}
             aria-pressed={viewMode === 'agenda'}
               className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
@@ -77,6 +80,7 @@ export function VolunteerCalendar() {
               <List className="h-3.5 w-3.5" /> Agenda
             </button>
             <button
+            type="button"
             onClick={() => setViewMode('month')}
             aria-pressed={viewMode === 'month'}
               className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
@@ -95,6 +99,7 @@ export function VolunteerCalendar() {
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {CATEGORY_TABS.map((cat) => (
           <button
+            type="button"
             key={cat.id}
             onClick={() => setCategoryFilter(cat.id)}
             aria-pressed={categoryFilter === cat.id}
@@ -110,7 +115,11 @@ export function VolunteerCalendar() {
       </div>
 
       {/* View rendering */}
-      {viewMode === 'agenda' ? (
+      {isLoading ? (
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] py-12 text-center text-sm text-[var(--color-muted-foreground)]" role="status">Cargando próximas actividades…</div>
+      ) : error ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 py-10 text-center text-sm text-rose-800" role="alert">No pudimos cargar la agenda en este momento.</div>
+      ) : viewMode === 'agenda' ? (
         <div className="space-y-4">
           {filtered.length === 0 ? (
             <Card className="text-center py-12 text-[var(--color-muted-foreground)]">
@@ -234,6 +243,7 @@ export function VolunteerCalendar() {
                     <div className="space-y-1">
                       {dayActivities.slice(0, 2).map((act) => (
                         <button
+                          type="button"
                           key={act.id}
                           onClick={() => setSelectedActivity(act)}
                           className="w-full text-left truncate bg-[var(--color-card)] p-1 rounded border border-[var(--color-border)] text-[10px] font-semibold text-[var(--color-primary)] hover:underline block"

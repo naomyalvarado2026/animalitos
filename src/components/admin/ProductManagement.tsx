@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Edit3, Image, Package, Plus, Save, X } from 'lucide-react';
+import { Edit3, ExternalLink, Image, Package, Plus, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -132,12 +133,10 @@ export function ProductManagement() {
           </h1>
           <p className="text-sm text-[var(--color-muted-foreground)]">Control de productos, stock y visibilidad en la tienda solidaria.</p>
         </div>
-        {!isCreating && !editing && (
-          <Button onClick={() => setIsCreating(true)} variant="warm" className="w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo producto
-          </Button>
-        )}
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Button asChild variant="outline" className="w-full sm:w-auto"><Link to="/tienda" target="_blank"><ExternalLink className="mr-2 h-4 w-4" />Ver tienda pública</Link></Button>
+          {!isCreating && !editing && <Button onClick={() => setIsCreating(true)} variant="warm" className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" />Nuevo producto</Button>}
+        </div>
       </div>
 
       {(isCreating || editing) && (
@@ -183,6 +182,8 @@ export function ProductManagement() {
               <Label htmlFor="is_active" className="cursor-pointer text-sm font-semibold">Publicar en tienda inmediatamente</Label>
             </div>
 
+            {form.imageUrl.trim() && <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-muted)]"><img src={form.imageUrl.trim()} alt="Vista previa del producto" className="h-52 w-full object-cover" /><p className="px-4 py-2 text-xs text-[var(--color-muted-foreground)]">Así se verá la imagen principal en la tienda.</p></div>}
+
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="ghost" onClick={resetForm}>Cancelar</Button>
               <Button variant="warm" onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending}>
@@ -219,7 +220,7 @@ export function ProductManagement() {
               <p className="line-clamp-2 text-sm text-[var(--color-muted-foreground)]">{product.description || 'Sin descripción'}</p>
               <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-3 text-sm">
                 <span className="font-bold text-[var(--color-primary)]">${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD</span>
-                <span className="text-[var(--color-muted-foreground)]">{product.inventory ?? 0} disponibles</span>
+                <span className={`font-semibold ${(product.inventory ?? 0) === 0 ? 'text-rose-600' : (product.inventory ?? 0) <= 3 ? 'text-amber-600' : 'text-[var(--color-muted-foreground)]'}`}>{(product.inventory ?? 0) === 0 ? 'Agotado' : (product.inventory ?? 0) <= 3 ? `Stock bajo · ${product.inventory}` : `${product.inventory ?? 0} disponibles`}</span>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => startEdit(product)} disabled={Boolean(editing)}>

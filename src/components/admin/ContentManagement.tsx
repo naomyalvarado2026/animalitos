@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { FileText, Save, Share2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ const defaultFaq: EditableFaq[] = [
 ];
 
 export function ContentManagement() {
+  const queryClient = useQueryClient();
   const [socialLinks, setSocialLinks] = useState({
     facebook: '',
     instagram: '',
@@ -30,6 +31,7 @@ export function ContentManagement() {
   const [pageCopy, setPageCopy] = useState({
     resources_intro: '',
     process_intro: '',
+    volunteer_intro: '',
     sanctuary_intro: '',
     donations_intro: '',
     about_intro: '',
@@ -63,6 +65,7 @@ export function ContentManagement() {
     setPageCopy({
       resources_intro: settings.resources_intro ?? '',
       process_intro: settings.process_intro ?? '',
+      volunteer_intro: settings.volunteer_intro ?? '',
       sanctuary_intro: settings.sanctuary_intro ?? '',
       donations_intro: settings.donations_intro ?? '',
       about_intro: settings.about_intro ?? '',
@@ -91,6 +94,7 @@ export function ContentManagement() {
         { key: 'home_hero_image', value: heroImageUrl },
         { key: 'resources_intro', value: pageCopy.resources_intro },
         { key: 'process_intro', value: pageCopy.process_intro },
+        { key: 'volunteer_intro', value: pageCopy.volunteer_intro },
         { key: 'sanctuary_intro', value: pageCopy.sanctuary_intro },
         { key: 'donations_intro', value: pageCopy.donations_intro },
         { key: 'about_intro', value: pageCopy.about_intro },
@@ -103,6 +107,7 @@ export function ContentManagement() {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['public-settings'] });
       toast.success('Contenido y redes actualizados correctamente.');
       void settingsQuery.refetch();
     },
@@ -235,6 +240,7 @@ export function ContentManagement() {
           {([
             ['resources_intro', 'Recursos educativos'],
             ['process_intro', 'Proceso de adopción'],
+            ['volunteer_intro', 'Voluntariado / Ayudar'],
             ['sanctuary_intro', 'Santuario'],
             ['donations_intro', 'Donaciones'],
             ['about_intro', 'Introducción de Nosotros'],

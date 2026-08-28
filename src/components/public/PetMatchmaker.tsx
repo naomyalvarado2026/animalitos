@@ -100,15 +100,15 @@ export function PetMatchmaker() {
   }
 
   return (
-    <Card className="border-[var(--color-primary)] overflow-hidden shadow-lg bg-gradient-to-br from-[var(--color-card)] to-[var(--color-accent)]/20">
-      <CardContent className="p-8">
+    <Card className="overflow-hidden rounded-[2rem] border-0 bg-[#171717] text-white shadow-2xl">
+      <CardContent className="p-6 sm:p-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-amber-500" />
-            <h2 className="font-heading text-xl font-bold">Matchmaker de Mascotas 🐾</h2>
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ffcf5a] text-[#171717]"><Sparkles className="h-5 w-5" /></span>
+            <div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-[#ff9a62]">Match responsable</p><h2 className="font-heading text-xl font-extrabold">Descubre tu mejor conexión</h2></div>
           </div>
           {!showResult && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="border-white/20 text-xs text-white">
               Paso {currentStep + 1} de {QUESTIONS.length}
             </Badge>
           )}
@@ -124,19 +124,20 @@ export function PetMatchmaker() {
               transition={{ duration: 0.3 }}
               className="space-y-4"
             >
-              <h3 className="font-heading text-lg font-semibold text-[var(--color-foreground)]">
+              <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-white/10"><motion.div className="h-full rounded-full bg-[#f0644a]" animate={{ width: `${((currentStep + 1) / QUESTIONS.length) * 100}%` }} /></div>
+              <h3 className="font-heading text-2xl font-extrabold text-white">
                 {QUESTIONS[currentStep].title}
               </h3>
 
-              <div className="grid grid-cols-1 gap-3 pt-2">
+              <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-3">
                 {QUESTIONS[currentStep].options.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => handleSelectOption(opt.value)}
-                    className="flex items-center gap-3 p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-background)] hover:border-[var(--color-primary)] hover:bg-[var(--color-accent)] transition-all text-left group cursor-pointer"
+                    className="group flex min-h-32 cursor-pointer flex-col items-start gap-3 rounded-2xl border border-white/12 bg-white/[.045] p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[#f0644a] hover:bg-[#f0644a]/10"
                   >
                     <span className="text-2xl group-hover:scale-110 transition-transform">{opt.emoji}</span>
-                    <span className="text-sm font-medium text-[var(--color-foreground)] group-hover:text-[var(--color-primary)]">
+                    <span className="text-sm font-semibold leading-relaxed text-white/80 group-hover:text-white">
                       {opt.label}
                     </span>
                   </button>
@@ -151,16 +152,16 @@ export function PetMatchmaker() {
               className="space-y-6 text-center"
             >
               <div>
-                <Badge variant="warm" className="mb-2">¡Compatibilidad Encontrada!</Badge>
-                <h3 className="font-heading text-2xl font-bold">Tus Compañeros Ideales</h3>
-                <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
+                <Badge variant="warm" className="mb-2">Compatibilidad encontrada</Badge>
+                <h3 className="font-heading text-3xl font-extrabold">Tus conexiones más prometedoras</h3>
+                <p className="mt-2 text-xs text-white/60">
                   Basado en tu estilo de vida, estos peluditos encajarían perfectamente en tu hogar:
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                 {recommendations.map(({ animal, score }) => (
-                  <Card key={animal.id} className="overflow-hidden border-[var(--color-border)] hover-card">
+                  <Card key={animal.id} className="overflow-hidden rounded-2xl border-white/10 bg-[#fffdf9] text-[#171717]">
                     <div className="h-36 relative">
                       <ResilientImage src={getMatchmakerImageUrl(animal)} alt={animal.name || 'Perrito'} className="w-full h-full object-cover" />
                       <div className="absolute top-2 right-2">
@@ -170,19 +171,19 @@ export function PetMatchmaker() {
                       </div>
                     </div>
                     <CardContent className="p-4 space-y-2">
-                      <h4 className="font-heading font-bold text-lg">{animal.name}</h4>
-                      <p className="text-xs text-[var(--color-primary)] font-semibold">{animal.breed || 'Perrito rescatado'}</p>
-                      <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">{animal.description || 'Conoce su historia y descubre si son un buen match.'}</p>
+                      <h4 className="font-heading text-xl font-extrabold">{animal.name}</h4>
+                      <p className="text-xs font-semibold text-[#f0644a]">{animal.breed || 'Perrito rescatado'}</p>
+                      <p className="text-xs leading-relaxed text-[#6e6a64]">{animal.description || 'Conoce su historia y descubre si son un buen match.'}</p>
                       <Button variant="warm" size="sm" className="w-full mt-2" asChild>
                         <Link to={`/adopta/${(animal.name || 'amigo').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>Conocer a {animal.name} <ArrowRight className="h-3.5 w-3.5 ml-1" /></Link>
                       </Button>
                     </CardContent>
                   </Card>
                 ))}
-                {!recommendations.length && <p className="sm:col-span-2 rounded-xl border border-dashed border-[var(--color-border)] p-6 text-center text-sm text-[var(--color-muted-foreground)]">No hay perritos publicados para generar un match todavía.</p>}
+                {!recommendations.length && <p className="rounded-xl border border-dashed border-white/20 p-6 text-center text-sm text-white/60 sm:col-span-2">No hay perritos publicados para generar un match todavía.</p>}
               </div>
 
-              <Button variant="outline" size="sm" onClick={handleReset} className="mt-2">
+              <Button variant="outline" size="sm" onClick={handleReset} className="mt-2 border-white/20 text-white hover:bg-white/10">
                 <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Repetir Test
               </Button>
             </motion.div>

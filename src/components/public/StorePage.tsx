@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -67,6 +67,8 @@ type Product = {
   featured: boolean;
   isLive: boolean;
   price?: string;
+  priceCents?: number;
+  inventory?: number;
 };
 
 type DatabaseProduct = Product;
@@ -81,6 +83,7 @@ export function StorePage() {
   const [added, setAdded] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeCategory, setActiveCategory] = useState('Todo');
+  const [quantity, setQuantity] = useState(1);
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
   const productsQuery = useQuery({
@@ -88,7 +91,7 @@ export function StorePage() {
     queryFn: async () => {
       const { data, error } = await supabase.from('products').select('slug, name, description, price_cents, image_url, inventory').eq('is_active', true).eq('currency', 'USD').gt('inventory', 0).order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((product) => ({ ...product, category: 'Catálogo', details: [`${product.inventory ?? 0} disponibles`, 'Compra con propósito'], image: product.image_url || assetUrl('/images/hero.jpg'), color: 'cream' as const, featured: false, isLive: true, price: `$${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD` })) as DatabaseProduct[];
+      return (data ?? []).map((product) => ({ ...product, category: 'Catálogo', details: [`${product.inventory ?? 0} disponibles`, 'Compra con propósito'], image: product.image_url || assetUrl('/images/hero.jpg'), color: 'cream' as const, featured: false, isLive: true, priceCents: product.price_cents ?? 0, price: `$${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD` })) as DatabaseProduct[];
     },
   });
   const databaseProducts = productsQuery.data ?? [];
@@ -96,7 +99,14 @@ export function StorePage() {
   const categories = Array.from(new Set(['Todo', ...catalog.map((product) => product.category)]));
   const products = activeCategory === 'Todo' ? catalog : catalog.filter((product) => product.category === activeCategory);
 
-  const addProduct = (product: Product) => { if (!product.isLive) { toast.info('Este artículo está en preparación. Escríbenos para conocer disponibilidad.'); return; } setSelectedProduct(product); };
+  const addProduct = (product: Product) => { if (!product.isLive) { toast.info('Este artículo está en preparación. Escríbenos para conocer disponibilidad.'); return; } setQuantity(1); setSelectedProduct(product); };
+
+  useEffect(() => {
+    if (!selectedProduct) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setSelectedProduct(null); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [selectedProduct]);
 
   const submitOrder = async (event: FormEvent) => {
     event.preventDefault();
@@ -108,7 +118,7 @@ export function StorePage() {
       p_customer_email: form.email,
       p_customer_phone: form.phone,
       p_product_slug: selectedProduct.slug,
-      p_quantity: 1,
+      p_quantity: quantity,
       p_idempotency_key: crypto.randomUUID(),
     });
     setSubmitting(false);
@@ -120,7 +130,9 @@ export function StorePage() {
 
     setAdded((items) => items.includes(selectedProduct.name) ? items : [...items, selectedProduct.name]);
     toast.success('¡Pedido recibido! Te contactaremos para coordinar los detalles. 🐾');
+    void productsQuery.refetch();
     setSelectedProduct(null);
+    setQuantity(1);
     setForm({ name: '', email: '', phone: '' });
   };
 
@@ -211,9 +223,13 @@ export function StorePage() {
                   <p className="text-xs font-bold uppercase tracking-[.12em] text-[#6e6a64]">Valor</p>
                   <p className="mt-1 font-heading text-lg font-extrabold text-[#f0644a]">{product.price || 'Precio en USD por confirmar'}</p>
                 </div>
-                <Button onClick={() => addProduct(product)} className="mt-5 w-full bg-[#171717] text-white hover:bg-[#38332f]">
-                  {added.includes(product.name) ? <><Check /> Pedido recibido</> : <><ShoppingBag /> {product.isLive ? 'Lo quiero' : 'Consultar disponibilidad'}</>}
-                </Button>
+                {product.isLive ? (
+                  <Button onClick={() => addProduct(product)} className="mt-5 w-full bg-[#171717] text-white hover:bg-[#38332f]">
+                    {added.includes(product.name) ? <><Check /> Pedido recibido</> : <><ShoppingBag /> Lo quiero</>}
+                  </Button>
+                ) : (
+                  <Button asChild className="mt-5 w-full bg-[#171717] text-white hover:bg-[#38332f]"><Link to="/contacto"><ShoppingBag /> Consultar disponibilidad</Link></Button>
+                )}
               </div>
             </article>
           ))}
@@ -242,20 +258,25 @@ export function StorePage() {
       </section>
 
       {selectedProduct && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Solicitar producto">
-          <form onSubmit={submitOrder} className="w-full max-w-md rounded-[1.5rem] bg-[#fffdf9] p-6 text-[#171717] shadow-2xl sm:p-8">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Solicitar producto" onMouseDown={(event) => { if (event.currentTarget === event.target) setSelectedProduct(null); }}>
+          <form onSubmit={submitOrder} className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-[1.75rem] bg-[#fffdf9] p-6 text-[#171717] shadow-2xl sm:p-8">
             <div className="mb-2 flex justify-between gap-4">
               <div><p className="text-xs font-bold uppercase tracking-[.14em] text-[#f0644a]">Tu pedido</p><h2 className="mt-1 font-heading text-2xl font-extrabold">{selectedProduct.name}</h2></div>
               <button type="button" onClick={() => setSelectedProduct(null)} className="text-xl text-[#6e6a64]" aria-label="Cerrar">×</button>
             </div>
-            <p className="mb-3 text-sm font-semibold text-[#f0644a]">Precio en USD por confirmar</p>
-            <p className="mb-6 text-sm text-[#6e6a64]">Déjanos tus datos y te escribiremos para confirmar disponibilidad, detalles, envío y forma de pago.</p>
+            <div className="mb-5 grid grid-cols-[88px_1fr] gap-4 rounded-2xl bg-[#ede5da] p-3">
+              <ResilientImage src={selectedProduct.image} alt={selectedProduct.name} className="h-24 w-full rounded-xl object-cover" />
+              <div className="self-center"><p className="text-sm font-semibold text-[#f0644a]">{selectedProduct.price || 'Precio por confirmar'}</p><p className="mt-1 text-xs leading-relaxed text-[#6e6a64]">{selectedProduct.inventory ?? 0} unidades disponibles</p></div>
+            </div>
+            <p className="mb-6 text-sm text-[#6e6a64]">Déjanos tus datos. El equipo recibirá el pedido en el panel para confirmar envío y forma de pago.</p>
             <div className="space-y-4">
+              <div><Label htmlFor="order-quantity">Cantidad</Label><div className="mt-1 flex items-center justify-between rounded-xl border border-[#171717]/15 bg-white p-2"><button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} disabled={quantity <= 1} className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ede5da] text-xl font-bold disabled:opacity-40" aria-label="Reducir cantidad">−</button><div className="text-center"><output id="order-quantity" className="font-heading text-xl font-extrabold">{quantity}</output><p className="text-[10px] uppercase tracking-[.12em] text-[#6e6a64]">unidades</p></div><button type="button" onClick={() => setQuantity((value) => Math.min(Math.min(20, selectedProduct.inventory ?? 20), value + 1))} disabled={quantity >= Math.min(20, selectedProduct.inventory ?? 20)} className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#171717] text-xl font-bold text-white disabled:opacity-40" aria-label="Aumentar cantidad">+</button></div></div>
               <div><Label htmlFor="order-name">Nombre</Label><Input id="order-name" required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Tu nombre" /></div>
               <div><Label htmlFor="order-email">Correo</Label><Input id="order-email" required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="tu@email.com" /></div>
               <div><Label htmlFor="order-phone">WhatsApp</Label><Input id="order-phone" required value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="Tu número" /></div>
             </div>
-            <Button disabled={submitting} className="mt-6 w-full bg-[#f0644a] text-white hover:bg-[#e94f3a]" type="submit">{submitting ? 'Enviando…' : 'Enviar pedido'}</Button>
+            {selectedProduct.priceCents !== undefined && <div className="mt-5 flex items-center justify-between border-t border-[#171717]/10 pt-4"><span className="text-sm text-[#6e6a64]">Total del producto</span><strong className="font-heading text-xl text-[#f0644a]">${((selectedProduct.priceCents * quantity) / 100).toFixed(2)} USD</strong></div>}
+            <Button disabled={submitting} className="mt-5 w-full bg-[#f0644a] text-white hover:bg-[#e94f3a]" type="submit">{submitting ? 'Enviando…' : `Enviar pedido de ${quantity}`}</Button>
           </form>
         </div>
       )}
