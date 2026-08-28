@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
-import { AlertTriangle, ClipboardList, Database, DollarSign, Heart, PawPrint, RefreshCw, TrendingDown, TrendingUp, Users } from 'lucide-react';
+import { AlertTriangle, CalendarClock, ClipboardList, Database, DollarSign, Heart, PawPrint, RefreshCw, Stethoscope, TrendingDown, TrendingUp, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -27,12 +28,23 @@ type DashboardData = {
   updatedAt: string;
 };
 
+type ActionCenterData = {
+  applications: number | null;
+  medicalDogs: number | null;
+  volunteers: number | null;
+  upcomingActivities: number | null;
+};
+
 function responseError(resource: string, error: { message?: string } | null) {
   return error ? `${resource}: ${error.message || 'no fue posible consultar Supabase'}` : null;
 }
 
 function sumAmounts(rows: Array<{ amount_usd?: number | null }> | null) {
   return rows?.reduce((sum, row) => sum + Number(row.amount_usd ?? 0), 0) ?? null;
+}
+
+function countResult(result: { count: number | null; error: { message?: string } | null }) {
+  return result.error ? null : result.count ?? 0;
 }
 
 interface StatItem {
@@ -101,7 +113,27 @@ export function AdminDashboard() {
     },
   });
 
+  const actionCenterQuery = useQuery<ActionCenterData>({
+    queryKey: ['admin-action-center'],
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const [applications, medicalDogs, volunteers, upcomingActivities] = await Promise.all([
+        supabase.from('adoption_applications').select('id', { count: 'exact', head: true }).in('status', ['pending', 'under_review']),
+        supabase.from('animals').select('id', { count: 'exact', head: true }).eq('species', 'dog').eq('status', 'medical_care'),
+        supabase.from('volunteer_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('volunteer_activities').select('id', { count: 'exact', head: true }).gte('activity_date', today).neq('status', 'cancelled'),
+      ]);
+      return {
+        applications: countResult(applications),
+        medicalDogs: countResult(medicalDogs),
+        volunteers: countResult(volunteers),
+        upcomingActivities: countResult(upcomingActivities),
+      };
+    },
+  });
+
   const stats = statsQuery.data;
+  const actions = actionCenterQuery.data;
   const hasErrors = Boolean(stats?.errors.length || activityQuery.data?.error);
   const profileNeedsSync = Boolean(profile && profile.role !== 'viewer' && profile.access_level < (profile.role === 'super_admin' ? 10 : profile.role === 'admin' ? 7 : 4));
   const formatMetric = (value: number | null | undefined, currency = false) => {
@@ -139,6 +171,42 @@ export function AdminDashboard() {
       <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-muted-foreground)]"><Database className="h-4 w-4" /><span>Fuente: Supabase · {stats?.updatedAt ? `Actualizado ${formatDateShort(stats.updatedAt)}` : 'Aún no actualizado'}</span>{statsQuery.isFetching && <span aria-live="polite">· Consultando…</span>}</div>
 
       {hasErrors && <div role="alert" className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" /><div><p className="font-semibold">Algunas métricas no están disponibles</p><p className="mt-1">No se muestran datos locales ni de demostración. Revisa la conexión, las tablas y las políticas RLS de Supabase.</p><p className="mt-2 break-words text-xs opacity-80">{[...(stats?.errors ?? []), activityQuery.data?.error].filter(Boolean).join(' · ')}</p></div></div>}
+
+      <section aria-labelledby="action-center-title" className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 id="action-center-title" className="font-heading text-lg font-bold">Centro operativo</h2>
+            <p className="text-sm text-[var(--color-muted-foreground)]">Lo que puede necesitar atención hoy.</p>
+          </div>
+          {actionCenterQuery.isFetching && <span className="text-xs text-[var(--color-muted-foreground)]" aria-live="polite">Actualizando…</span>}
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Link to="/admin/solicitudes" className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]">
+            <ClipboardList className="h-5 w-5 text-blue-500" />
+            <p className="mt-3 text-2xl font-bold">{actions?.applications ?? '—'}</p>
+            <p className="text-sm text-[var(--color-muted-foreground)]">Solicitudes por revisar</p>
+            <span className="mt-3 block text-xs font-semibold text-[var(--color-primary)] group-hover:underline">Abrir solicitudes →</span>
+          </Link>
+          <Link to="/admin/animales" className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]">
+            <Stethoscope className="h-5 w-5 text-rose-500" />
+            <p className="mt-3 text-2xl font-bold">{actions?.medicalDogs ?? '—'}</p>
+            <p className="text-sm text-[var(--color-muted-foreground)]">Perritos en tratamiento</p>
+            <span className="mt-3 block text-xs font-semibold text-[var(--color-primary)] group-hover:underline">Ver rescatados →</span>
+          </Link>
+          <Link to="/admin/solicitudes" className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]">
+            <Users className="h-5 w-5 text-emerald-500" />
+            <p className="mt-3 text-2xl font-bold">{actions?.volunteers ?? '—'}</p>
+            <p className="text-sm text-[var(--color-muted-foreground)]">Voluntarios pendientes</p>
+            <span className="mt-3 block text-xs font-semibold text-[var(--color-primary)] group-hover:underline">Gestionar postulaciones →</span>
+          </Link>
+          <Link to="/admin/actividades" className="group rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]">
+            <CalendarClock className="h-5 w-5 text-amber-500" />
+            <p className="mt-3 text-2xl font-bold">{actions?.upcomingActivities ?? '—'}</p>
+            <p className="text-sm text-[var(--color-muted-foreground)]">Actividades próximas</p>
+            <span className="mt-3 block text-xs font-semibold text-[var(--color-primary)] group-hover:underline">Ver calendario →</span>
+          </Link>
+        </div>
+      </section>
 
       {statsQuery.isLoading ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{statItems.map((stat) => <Card key={stat.label}><CardContent className="h-28 animate-pulse bg-[var(--color-muted)]/30" /></Card>)}</div> : statsQuery.error ? <div role="alert" className="rounded-2xl border border-rose-300 bg-rose-50 p-5 text-sm text-rose-950 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-100">No fue posible cargar el dashboard. Intenta actualizar nuevamente.</div> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {statItems.map((stat, i) => (

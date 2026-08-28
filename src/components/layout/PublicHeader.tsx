@@ -190,7 +190,7 @@ export function PublicHeader() {
                 size="sm"
                 asChild
               >
-                <Link to="/contacto/quiero-apoyar">❤️ Donar</Link>
+                <Link to="/donaciones">❤️ Donar</Link>
               </Button>
             )}
             {isMobile && <span className="sr-only">La navegación principal está en la barra inferior</span>}

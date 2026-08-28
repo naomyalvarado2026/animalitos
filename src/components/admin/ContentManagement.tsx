@@ -111,7 +111,7 @@ export function ContentManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
             <FileText className="h-6 w-6 text-[var(--color-primary)]" />
@@ -121,7 +121,7 @@ export function ContentManagement() {
             Edita los textos públicos, redes sociales y alertas de emergencia del sitio.
           </p>
         </div>
-        <Button variant="warm" onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
+        <Button variant="warm" className="w-full sm:w-auto" onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
           <Save className="h-4 w-4 mr-2" />
           Guardar Cambios
         </Button>

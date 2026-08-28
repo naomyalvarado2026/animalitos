@@ -21,6 +21,7 @@ import {
   Archive,
   UserRound,
   HandHeart,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
@@ -94,6 +95,7 @@ export function AdminLayout() {
             <p className="text-xs text-[var(--color-muted-foreground)] mt-0.5">Panel Admin</p>
           </div>
         )}
+        {isMobile && <button type="button" onClick={() => setMobileOpen(false)} className="ml-auto rounded-lg p-2 text-[var(--color-muted-foreground)] hover:bg-[var(--color-accent)] hover:text-[var(--color-foreground)]" aria-label="Cerrar menú"><X className="h-5 w-5" /></button>}
       </div>
 
       {/* Nav */}

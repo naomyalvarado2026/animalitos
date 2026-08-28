@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Plus, Edit2, Trash2, Heart, Check, X, Shield, Search } from 'lucide-react';
+import { Activity, Plus, Edit2, Trash2, Heart, Check, X, Shield, Search } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,6 +15,7 @@ import { ResilientImage } from '@/components/ui/ResilientImage';
 import { assetUrl } from '@/lib/assets';
 import { toast } from 'sonner';
 import type { Animal, AnimalSpecies, AnimalStatus, AnimalGender, AnimalSize } from '@/types';
+import { AnimalOperationsPanel } from './AnimalOperationsPanel';
 
 const animalSchema = z.object({
   name: z.string().min(1, 'Nombre requerido'),
@@ -48,6 +49,7 @@ export function AnimalManagement() {
   const [showForm, setShowForm] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
   const [search, setSearch] = useState('');
+  const [operationsAnimal, setOperationsAnimal] = useState<Animal | null>(null);
 
   const { data: animals = [], isLoading } = useQuery({
     queryKey: ['admin-animals'],
@@ -254,6 +256,8 @@ export function AnimalManagement() {
         </Card>
       )}
 
+      {operationsAnimal && <AnimalOperationsPanel animal={operationsAnimal} onClose={() => setOperationsAnimal(null)} />}
+
       {/* List */}
       <Card>
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
@@ -289,6 +293,9 @@ export function AnimalManagement() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      <Button size="icon" variant="ghost" onClick={() => setOperationsAnimal(animal)} aria-label={`Abrir ficha de ${animal.name}`}>
+                        <Activity className="h-4 w-4 text-[var(--color-primary)]" />
+                      </Button>
                       <Button size="icon" variant="ghost" onClick={() => startEdit(animal)} aria-label="Editar">
                         <Edit2 className="h-4 w-4" />
                       </Button>

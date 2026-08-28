@@ -110,6 +110,44 @@ export interface Animal {
   updated_at: string;
 }
 
+export type MedicalRecordType = 'exam' | 'vaccine' | 'medication' | 'procedure' | 'lab' | 'note';
+export interface AnimalMedicalRecord {
+  id: string;
+  animal_id: string;
+  record_type: MedicalRecordType;
+  title: string;
+  notes: string;
+  provider: string | null;
+  occurred_on: string;
+  next_due_on: string | null;
+  created_at: string;
+}
+
+export type AnimalTaskPriority = 'low' | 'normal' | 'high' | 'urgent';
+export type AnimalTaskStatus = 'open' | 'in_progress' | 'done' | 'cancelled';
+export interface AnimalTask {
+  id: string;
+  animal_id: string | null;
+  title: string;
+  description: string;
+  due_on: string | null;
+  priority: AnimalTaskPriority;
+  status: AnimalTaskStatus;
+  created_at: string;
+}
+
+export type AnimalMovementType = 'intake' | 'foster' | 'transfer' | 'adoption' | 'return' | 'medical' | 'quarantine' | 'other';
+export interface AnimalMovement {
+  id: string;
+  animal_id: string;
+  movement_type: AnimalMovementType;
+  from_location: string | null;
+  to_location: string | null;
+  moved_on: string;
+  notes: string;
+  created_at: string;
+}
+
 export type HousingType = 'house' | 'apartment' | 'farm';
 export type ApplicationStatus = 'pending' | 'under_review' | 'approved' | 'rejected';
 

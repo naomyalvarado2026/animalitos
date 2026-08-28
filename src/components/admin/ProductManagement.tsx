@@ -124,7 +124,7 @@ export function ProductManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
             <Package className="h-6 w-6 text-[var(--color-primary)]" />
@@ -133,7 +133,7 @@ export function ProductManagement() {
           <p className="text-sm text-[var(--color-muted-foreground)]">Control de productos, stock y visibilidad en la tienda solidaria.</p>
         </div>
         {!isCreating && !editing && (
-          <Button onClick={() => setIsCreating(true)} variant="warm">
+          <Button onClick={() => setIsCreating(true)} variant="warm" className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Nuevo producto
           </Button>
