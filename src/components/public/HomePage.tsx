@@ -1,97 +1,103 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { ArrowRight, Heart, PawPrint, ShoppingBag, ShieldCheck, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { assetUrl } from '@/lib/assets';
+import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { ArrowRight, CalendarDays, Check, Heart, PawPrint, ShieldCheck, Sparkles, Stethoscope, Users, Home as HomeIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import type { Animal } from '@/types';
+import { usePublicSettings } from '@/lib/publicSettings';
+import { Button } from '@/components/ui/button';
 import { ResilientImage } from '@/components/ui/ResilientImage';
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
+import { assetUrl } from '@/lib/assets';
+import { formatDateShort } from '@/lib/utils';
+import type { Animal, SuccessStory, VolunteerActivity } from '@/types';
 
-function getHomeDogImage(dog: Animal): string {
-  if (dog.main_image_url) return assetUrl(dog.main_image_url);
-  if (dog.gallery_urls && dog.gallery_urls.length > 0) return assetUrl(dog.gallery_urls[0]);
-  const raw = dog as unknown as Record<string, unknown>;
-  if (Array.isArray(raw.image_urls) && raw.image_urls.length > 0 && typeof raw.image_urls[0] === 'string') {
-    return assetUrl(raw.image_urls[0]);
+function animalImage(animal: Animal | undefined) { return assetUrl(animal?.main_image_url || animal?.gallery_urls?.[0] || '/images/dog_max.jpg'); }
+function animalAge(months = 12) { return months < 12 ? `${months} meses` : `${Math.floor(months / 12)} ${Math.floor(months / 12) === 1 ? 'año' : 'años'}`; }
+
+const helpWays = [
+  { title: 'Adoptar', text: 'Encuentra un compañero y empieza una historia para toda la vida.', href: '/adopta', icon: PawPrint, color: 'bg-[#f0644a] text-white' },
+  { title: 'Donar', text: 'Convierte una ayuda puntual en alimento, salud y recuperación.', href: '/donaciones', icon: Heart, color: 'bg-[#ffcf5a] text-[#171717]' },
+  { title: 'Ser voluntario', text: 'Comparte tiempo, habilidades y cariño con nuestra manada.', href: '/voluntariado', icon: Users, color: 'bg-[#ede5da] text-[#171717]' },
+  { title: 'Dar hogar temporal', text: 'Abre tu casa mientras encontramos su familia definitiva.', href: '/voluntariado', icon: HomeIcon, color: 'bg-[#171717] text-white' },
+];
+
+const rescueJourney = [
+  { number: '01', title: 'Rescatamos', text: 'Llegamos donde hay abandono y actuamos con cuidado, criterio y urgencia.', icon: PawPrint },
+  { number: '02', title: 'Recuperamos', text: 'Cada perro recibe atención veterinaria, alimento y tiempo para volver a confiar.', icon: Stethoscope },
+  { number: '03', title: 'Unimos familias', text: 'Conocemos a cada adoptante y acompañamos el vínculo antes y después de llegar a casa.', icon: Heart },
+];
+
+const trustHighlights = [
+  { title: 'Cuidado', label: 'veterinario', icon: Stethoscope },
+  { title: 'Adopción', label: 'responsable', icon: PawPrint },
+  { title: 'Seguimiento', label: 'cercano', icon: ShieldCheck },
+  { title: 'Ayuda', label: 'transparente', icon: Heart },
+];
+
+function StorySpotlight({ story }: { story: SuccessStory | null | undefined }) {
+  if (!story) {
+    return <div className="flex min-h-[28rem] flex-col justify-center rounded-[2rem] border border-[#e3dbd0] bg-[#fffdf9] p-7 text-[#171717] sm:p-10"><Sparkles className="h-8 w-8 text-[#f0644a]" /><h2 className="mt-4 font-heading text-3xl font-extrabold">Las historias felices empiezan con una oportunidad.</h2><p className="mt-4 leading-relaxed text-[#6e6a64]">Conoce el proceso y descubre cómo acompañamos cada adopción.</p><Link to="/como-funciona" className="mt-6 inline-flex items-center gap-2 font-bold text-[#f0644a]">Conocer el proceso <ArrowRight className="h-4 w-4" /></Link></div>;
   }
-  return assetUrl('/images/dog_max.jpg');
+
+  return <article className="group overflow-hidden rounded-[2rem] border border-[#e3dbd0] bg-[#fffdf9] text-[#171717]">
+    <div className="relative aspect-[16/10] overflow-hidden bg-[#ede5da]">
+      <ResilientImage src={assetUrl(story.after_image_url || '/images/dog_max.jpg')} alt={`${story.animal_name} después de encontrar familia`} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#171717]/60 to-transparent" />
+      <span className="absolute bottom-4 left-4 rounded-full bg-[#ffcf5a] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[.12em] text-[#171717]">Final feliz</span>
+    </div>
+    <div className="p-7 sm:p-8"><p className="text-sm font-bold uppercase tracking-[.15em] text-[#f0644a]">Una historia real</p><h2 className="mt-3 font-heading text-3xl font-extrabold tracking-[-.04em]">{story.title}</h2><p className="mt-4 line-clamp-3 leading-relaxed text-[#6e6a64]">{story.story}</p><p className="mt-4 text-sm font-semibold">{story.animal_name} · con {story.adopter_name}</p><Link to="/historias-de-exito" className="mt-6 inline-flex items-center gap-2 font-bold text-[#f0644a]">Leer su historia <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link></div>
+  </article>;
+}
+
+function HeroVisual({ image, alt, dogName, dogHref }: { image: string; alt: string; dogName?: string; dogHref: string }) {
+  const pointerX = useMotionValue(0.5);
+  const pointerY = useMotionValue(0.5);
+  const smoothX = useSpring(pointerX, { stiffness: 180, damping: 24, mass: 0.5 });
+  const smoothY = useSpring(pointerY, { stiffness: 180, damping: 24, mass: 0.5 });
+  const rotateY = useTransform(smoothX, [0, 1], [6, -6]);
+  const rotateX = useTransform(smoothY, [0, 1], [-5, 5]);
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    pointerX.set((event.clientX - bounds.left) / bounds.width);
+    pointerY.set((event.clientY - bounds.top) / bounds.height);
+  };
+  const resetPointer = () => { pointerX.set(0.5); pointerY.set(0.5); };
+  return <motion.div className="hero-3d-scene relative lg:translate-x-8" onPointerMove={handlePointerMove} onPointerLeave={resetPointer} style={{ rotateX, rotateY, transformPerspective: 1200 }}>
+    <div className="hero-3d-card relative rotate-[1.5deg] overflow-hidden rounded-[2rem] border-[10px] border-[#fffdf9]/10 shadow-2xl"><ResilientImage src={image} alt={alt} className="aspect-[4/5] w-full object-cover" /><div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-2xl bg-[#fffdf9] p-4 text-[#171717]"><div><p className="text-xs text-[#6e6a64]">Conoce a</p><p className="font-heading text-xl font-bold">{dogName ?? 'un perrito'}</p></div><Link to={dogHref} className="text-sm font-bold text-[#f0644a]">Ver ficha <span className="text-xl">→</span></Link></div></div>
+    <div className="pointer-events-none absolute -right-5 top-12 rounded-2xl border border-white/20 bg-[#171717]/85 px-4 py-3 text-white shadow-xl backdrop-blur-md" style={{ transform: 'translateZ(42px)' }}><PawPrint className="h-5 w-5 text-[#ffcf5a]" /><span className="mt-1 block text-xs font-semibold">Una oportunidad<br />lo cambia todo</span></div>
+    <div className="pointer-events-none absolute -bottom-5 -left-5 rotate-[-6deg] rounded-2xl bg-[#ffcf5a] px-4 py-3 font-heading text-sm font-bold text-[#171717] shadow-lg" style={{ transform: 'translateZ(36px) rotate(-6deg)' }}>Tu mejor amigo<br />te está esperando</div>
+  </motion.div>;
 }
 
 export function HomePage() {
-  const { data: settings } = useQuery({
-    queryKey: ['public-home-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('site_settings').select('key, value').in('key', ['home_hero_title', 'home_hero_subtitle', 'home_hero_image']);
-      if (error) throw error;
-      return Object.fromEntries((data ?? []).map((item) => [item.key, item.value]));
-    },
-    staleTime: 60_000,
-  });
-  const { data: featuredDogs = [] } = useQuery({
-    queryKey: ['public-home-dogs'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('animals')
-        .select('*')
-        .eq('species', 'dog')
-        .in('status', ['available', 'medical_care'])
-        .order('created_at', { ascending: false })
-        .limit(3);
-      if (error) throw error;
-      return (data ?? []) as Animal[];
-    },
-    staleTime: 60_000,
-  });
-  const { data: impact } = useQuery({
-    queryKey: ['public-impact-metrics'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('public_impact_metrics').select('adopted_dogs, dogs_in_care, published_stories, active_volunteers').maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    staleTime: 60_000,
-  });
+  const { data: settings } = usePublicSettings(['home_hero_title', 'home_hero_subtitle', 'home_hero_image', 'donation_impact']);
+  const dogsQuery = useQuery({ queryKey: ['public-home-dogs'], queryFn: async () => { const { data, error } = await supabase.from('animals').select('*').eq('species', 'dog').in('status', ['available', 'medical_care']).order('created_at', { ascending: false }).limit(3); if (error) throw error; return (data ?? []) as Animal[]; }, staleTime: 60_000 });
+  const impactQuery = useQuery({ queryKey: ['public-impact-metrics'], queryFn: async () => { const { data, error } = await supabase.from('public_impact_metrics').select('adopted_dogs, dogs_in_care, published_stories, active_volunteers').maybeSingle(); if (error) throw error; return data; }, staleTime: 60_000 });
+  const storyQuery = useQuery({ queryKey: ['public-home-story'], queryFn: async () => { const { data, error } = await supabase.from('success_stories').select('id, animal_name, adopter_name, title, story, after_image_url, adoption_date, is_featured').eq('is_featured', true).order('adoption_date', { ascending: false }).limit(1).maybeSingle(); if (error) throw error; return data as SuccessStory | null; }, staleTime: 60_000 });
+  const activityQuery = useQuery({ queryKey: ['public-home-activity'], queryFn: async () => { const { data, error } = await supabase.from('volunteer_activities').select('id, title, description, activity_date, start_time, location, current_volunteers, max_volunteers').gte('activity_date', new Date().toISOString().slice(0, 10)).neq('status', 'cancelled').order('activity_date', { ascending: true }).limit(1).maybeSingle(); if (error) throw error; return data as VolunteerActivity | null; }, staleTime: 60_000 });
+  const dogs = dogsQuery.data ?? [], impact = impactQuery.data, story = storyQuery.data, activity = activityQuery.data;
   const heroTitle = settings?.home_hero_title?.trim() || 'Una familia puede cambiarlo todo.';
-  const heroSubtitle = settings?.home_hero_subtitle?.trim() || 'En AdoptaME rescatamos perros, les devolvemos la confianza y encontramos el hogar donde puedan ser ellos mismos.';
-  const heroImage = settings?.home_hero_image?.trim() ? assetUrl(settings.home_hero_image) : assetUrl('/images/dog_max.jpg');
-  const featuredDog = featuredDogs[0];
-  const impactItems = [
-    { value: impact?.adopted_dogs != null ? String(impact.adopted_dogs) : '—', label: 'perritos adoptados' },
-    { value: impact?.published_stories != null ? String(impact.published_stories) : '—', label: 'historias compartidas' },
-    { value: impact?.active_volunteers != null ? String(impact.active_volunteers) : '—', label: 'voluntarios activos' },
-  ];
-  return (
-    <div className="overflow-hidden">
-      <section className="relative bg-[#171717] text-[#fffdf9] pt-20 pb-14 lg:pt-24 lg:pb-24">
-        <div className="absolute right-0 top-0 h-full w-1/2 bg-[#f0644a] hidden lg:block" />
-        <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 grid lg:grid-cols-[1.05fr_.95fr] gap-12 items-center">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }}>
-            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-[#ff9a62] mb-7"><PawPrint className="h-4 w-4" /> Rescate · cuidado · adopción</div>
-            <h1 className="font-heading text-5xl sm:text-6xl lg:text-[5.2rem] leading-[.98] tracking-[-.06em] font-extrabold max-w-2xl">{heroTitle}</h1>
-            <p className="mt-7 text-lg text-white/70 max-w-xl leading-relaxed">{heroSubtitle}</p>
-            <div className="flex flex-col sm:flex-row gap-3 mt-9"><Button size="xl" className="bg-[#f0644a] hover:bg-[#ff8069] text-white" asChild><Link to="/adopta">Conoce a los perritos <ArrowRight /></Link></Button><Button size="xl" variant="ghost" className="text-white border border-white/20 hover:bg-white/10" asChild><Link to="/donaciones">Quiero ayudar</Link></Button></div>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .7, delay: .12 }} className="relative lg:translate-x-8">
-            <div className="relative rounded-[2rem] overflow-hidden border-[10px] border-[#fffdf9]/10 shadow-2xl rotate-[1.5deg]"><ResilientImage src={heroImage} alt={featuredDog ? `${featuredDog.name}, perrito rescatado de AdoptaME` : 'Perrito rescatado de AdoptaME'} className="w-full aspect-[4/5] object-cover" /><div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-[#fffdf9] text-[#171717] p-4 flex items-center justify-between"><div><p className="text-xs text-[#6e6a64]">Conoce a</p><p className="font-heading text-xl font-bold">{featuredDog?.name ?? 'un perrito'}</p></div><span className="text-[#f0644a] font-bold text-sm">Adóptame <span className="text-xl">→</span></span></div></div>
-            <div className="absolute -bottom-5 -left-5 bg-[#ffcf5a] text-[#171717] px-4 py-3 rounded-2xl font-heading font-bold text-sm -rotate-6 shadow-lg">Tu mejor amigo<br />te está esperando</div>
-          </motion.div>
-        </div>
-      </section>
+  const heroSubtitle = settings?.home_hero_subtitle?.trim() || 'Rescatamos perros, les devolvemos la confianza y encontramos el hogar donde puedan ser ellos mismos.';
+  const heroDog = dogs[0];
+  const metrics = [{ value: impact?.adopted_dogs, label: 'perritos adoptados' }, { value: impact?.dogs_in_care, label: 'bajo nuestro cuidado' }, { value: impact?.published_stories, label: 'historias felices' }, { value: impact?.active_volunteers, label: 'voluntarios activos' }];
+  let donationImpact: Array<{ amountUSD: number; impact: string }> = [];
+  try { donationImpact = settings?.donation_impact ? JSON.parse(settings.donation_impact) : []; } catch { donationImpact = []; }
+  const donationOptions = donationImpact.length ? donationImpact.slice(0, 3) : [{ amountUSD: 10, impact: 'ayuda con alimento' }, { amountUSD: 25, impact: 'apoya una vacuna' }, { amountUSD: 50, impact: 'contribuye a un tratamiento' }];
 
-      <section className="bg-[#f0644a] text-white py-7"><div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 grid grid-cols-1 sm:grid-cols-3 gap-5">{impactItems.map((item) => <div key={item.label} className="flex sm:block items-baseline gap-3 sm:text-center"><span className="font-heading text-3xl font-extrabold">{item.value}</span><span className="text-sm text-white/80">{item.label}</span></div>)}</div></section>
-
-      <section className="py-20 lg:py-28 max-w-7xl mx-auto px-5 sm:px-8 lg:px-10"><div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-10"><div><p className="text-[#f0644a] font-bold text-sm uppercase tracking-[.15em]">Historias que empiezan aquí</p><h2 className="font-heading text-4xl sm:text-5xl font-extrabold tracking-[-.05em] mt-3">Ellos tienen algo que decirte.</h2></div><Link to="/adopta" className="font-bold text-[#f0644a] inline-flex items-center gap-2">Ver todos los perritos <ArrowRight className="h-4 w-4" /></Link></div>{featuredDogs.length ? <div className="grid md:grid-cols-3 gap-6">{featuredDogs.map((dog, i) => {
-        const dogImg = getHomeDogImage(dog);
-        const ageMonths = dog.age_months ?? (typeof (dog as any).age_years === 'number' ? (dog as any).age_years * 12 : 12);
-        return (
-          <motion.article key={dog.id} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * .08 }} className="group"><Link to={`/adopta/${(dog.name || 'amigo').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="block"><div className="rounded-[1.5rem] overflow-hidden bg-[#ede5da] aspect-[4/4.6]"><ResilientImage src={dogImg} alt={`${dog.name}, perrito en adopción`} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /></div><div className="pt-4"><div className="flex items-center justify-between"><h3 className="font-heading text-2xl font-extrabold">{dog.name}</h3><span className="text-xs text-[#6e6a64]">{ageMonths < 12 ? `${ageMonths} meses` : `${Math.floor(ageMonths / 12)} años`} · {dog.size}</span></div><p className="mt-2 text-[#6e6a64] leading-relaxed"><span className="text-[#f0644a] font-extrabold">ME</span> llamo {dog.name}, {dog.description || 'y estoy esperando una familia responsable.'}</p></div></Link></motion.article>
-        );
-      })}</div> : <div className="rounded-3xl border border-dashed border-[var(--color-border)] p-10 text-center text-[var(--color-muted-foreground)]">Pronto publicaremos nuevos perritos disponibles. <Link to="/adopta" className="font-bold text-[#f0644a]">Conoce el proceso de adopción</Link>.</div>}</section>
-
-      <section className="bg-[#ede5da] py-20"><div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 grid lg:grid-cols-[.9fr_1.1fr] gap-12 items-center"><div><div className="w-12 h-12 rounded-2xl bg-[#f0644a] text-white flex items-center justify-center mb-6"><Heart className="fill-current" /></div><p className="text-[#f0644a] font-bold text-sm uppercase tracking-[.15em]">Más que una compra</p><h2 className="font-heading text-4xl sm:text-5xl font-extrabold tracking-[-.05em] mt-3">Lleva la causa contigo.</h2><p className="mt-5 text-[#6e6a64] leading-relaxed max-w-lg">Cada pieza de nuestra tienda solidaria ayuda a pagar alimento, vacunas y tratamientos. Viste la historia de un rescate.</p><Button className="mt-7 bg-[#171717] hover:bg-[#333] text-white" size="lg" asChild><Link to="/tienda"><ShoppingBag /> Explorar tienda</Link></Button></div><div className="grid grid-cols-2 gap-4"><div className="bg-[#f0644a] rounded-[1.5rem] p-5 text-white min-h-48 flex flex-col justify-between"><Sparkles className="h-7 w-7" /><span className="font-heading text-2xl font-extrabold">Adopta<br />la actitud</span></div><div className="bg-[#ffcf5a] rounded-[1.5rem] p-5 text-[#171717] min-h-48 flex flex-col justify-end"><span className="text-4xl">🐾</span><span className="font-heading text-2xl font-extrabold mt-3">100% para<br />ellos</span></div></div></div></section>
-
-      <section className="py-20 max-w-6xl mx-auto px-5 sm:px-8 text-center"><ShieldCheck className="h-9 w-9 text-[#f0644a] mx-auto" /><h2 className="font-heading text-3xl sm:text-4xl font-extrabold mt-4">Adoptar es un compromiso para toda la vida.</h2><p className="mt-4 text-[#6e6a64] max-w-2xl mx-auto leading-relaxed">Te acompañamos antes, durante y después de la adopción para que la llegada de tu nuevo mejor amigo sea una historia feliz para ambos.</p><Link to="/como-funciona" className="inline-flex items-center gap-2 mt-6 text-[#f0644a] font-bold">Conoce el proceso <ArrowRight className="h-4 w-4" /></Link></section>
-    </div>
-  );
+  return <div className="overflow-hidden">
+    <section className="relative bg-[#171717] pt-20 pb-16 text-[#fffdf9] lg:pt-28 lg:pb-24"><div className="absolute right-0 top-0 hidden h-full w-[45%] bg-[#f0644a] lg:block" /><div className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-8 lg:grid-cols-[1.02fr_.98fr] lg:px-10"><motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }}><div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#ff9a62]/30 px-3 py-1.5 text-xs font-semibold uppercase tracking-[.16em] text-[#ff9a62]"><PawPrint className="h-4 w-4" /> Rescate · cuidado · adopción</div><h1 className="max-w-2xl font-heading text-5xl font-extrabold leading-[.98] tracking-[-.06em] sm:text-6xl lg:text-[5.3rem]">{heroTitle}</h1><p className="mt-7 max-w-xl text-lg leading-relaxed text-white/70">{heroSubtitle}</p><div className="mt-9 flex flex-col gap-3 sm:flex-row"><Button size="xl" className="bg-[#f0644a] text-white hover:bg-[#ff8069]" asChild><Link to="/adopta">Quiero adoptar <ArrowRight /></Link></Button><Button size="xl" variant="ghost" className="border border-white/20 text-white hover:bg-white/10" asChild><Link to="/donaciones">Ayudar ahora</Link></Button></div><div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-white/60"><span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-[#ffcf5a]" /> Proceso responsable</span><span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4 text-[#ffcf5a]" /> Acompañamiento real</span></div></motion.div><motion.div initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .7, delay: .12 }}><HeroVisual image={settings?.home_hero_image?.trim() ? assetUrl(settings.home_hero_image) : animalImage(heroDog)} alt={heroDog ? `${heroDog.name}, perrito rescatado de AdoptaME` : 'Perrito rescatado de AdoptaME'} dogName={heroDog?.name} dogHref={heroDog ? `/adopta/${heroDog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '/adopta'} /></motion.div></div></section>
+    <section aria-label="Impacto de AdoptaME" className="bg-[#f0644a] py-7 text-white"><div className="mx-auto grid max-w-7xl grid-cols-2 gap-5 px-5 sm:grid-cols-4 sm:px-8 lg:px-10">{impactQuery.isError || (!impactQuery.isLoading && metrics.every((item) => item.value == null)) ? trustHighlights.map(({ title, label, icon: Icon }) => <div key={title} className="flex items-center justify-center gap-2 text-center sm:block"><Icon className="h-5 w-5 shrink-0 text-[#ffcf5a] sm:mx-auto sm:mb-1" /><div><span className="block font-heading text-lg font-extrabold leading-tight">{title}</span><span className="text-xs text-white/80 sm:text-sm">{label}</span></div></div>) : metrics.map((item) => <div key={item.label} className="text-center">{impactQuery.isLoading ? <span className="mx-auto mb-1 block h-9 w-16 animate-pulse rounded-lg bg-white/20" /> : item.value != null ? <AnimatedCounter value={String(item.value)} className="block font-heading text-3xl font-extrabold" /> : <span className="block font-heading text-3xl font-extrabold">—</span>}<span className="text-xs text-white/80 sm:text-sm">{item.label}</span></div>)}</div></section>
+    <section className="relative bg-[#fffdf9] py-20 text-[#171717] lg:py-24"><div className="pointer-events-none absolute -left-40 top-16 h-52 w-52 rounded-full border-[44px] border-[#f0644a]/10" /><div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><div className="grid gap-10 lg:grid-cols-[.75fr_1.25fr] lg:items-end"><div><p className="text-sm font-bold uppercase tracking-[.15em] text-[#f0644a]">De la calle a casa</p><h2 className="mt-3 max-w-lg font-heading text-4xl font-extrabold tracking-[-.05em] sm:text-5xl">No solo rescatamos. Reconstruimos historias.</h2><p className="mt-5 max-w-md leading-relaxed text-[#6e6a64]">Cada adopción visible empezó mucho antes: con una llamada, una consulta veterinaria y alguien que decidió no mirar hacia otro lado.</p></div><div className="grid gap-3 md:grid-cols-3">{rescueJourney.map(({ number, title, text, icon: Icon }, index) => <motion.article key={number} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .35 }} transition={{ delay: index * .1 }} className="relative overflow-hidden rounded-[1.5rem] border border-[#e3dbd0] bg-[#f8f4ee] p-5"><span className="absolute right-3 top-0 font-heading text-7xl font-extrabold leading-none text-[#171717]/[.045]">{number}</span><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#171717] text-[#ffcf5a]"><Icon className="h-5 w-5" /></div><h3 className="mt-8 font-heading text-2xl font-extrabold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-[#6e6a64]">{text}</p></motion.article>)}</div></div></div></section>
+    <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28"><div className="mb-10 flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-sm font-bold uppercase tracking-[.15em] text-[#f0644a]">Conoce a la manada</p><h2 className="mt-3 max-w-2xl font-heading text-4xl font-extrabold tracking-[-.05em] sm:text-5xl">Ellos tienen una historia que compartir contigo.</h2></div><Link to="/adopta" className="inline-flex items-center gap-2 font-bold text-[#f0644a]">Ver todos los perritos <ArrowRight className="h-4 w-4" /></Link></div>{dogs.length ? <div className="grid gap-8 md:grid-cols-3">{dogs.map((dog, i) => <motion.article key={dog.id} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * .08 }} className="group"><Link to={`/adopta/${dog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="block"><div className="relative aspect-[4/4.6] overflow-hidden rounded-[1.5rem] bg-[#ede5da]"><ResilientImage src={animalImage(dog)} alt={`${dog.name}, perrito en adopción`} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />{dog.status === 'medical_care' && <span className="absolute left-3 top-3 rounded-full bg-[#171717]/80 px-3 py-1 text-xs font-semibold text-white">Necesita cuidados</span>}</div><div className="pt-4"><div className="flex items-center justify-between gap-2"><h3 className="font-heading text-2xl font-extrabold">{dog.name}</h3><span className="text-right text-xs text-[#6e6a64]">{animalAge(dog.age_months)}<br />{dog.size}</span></div><div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-[#6e6a64]"><span className="rounded-full bg-[#ede5da] px-2.5 py-1">{dog.gender === 'male' ? 'Macho' : 'Hembra'}</span>{dog.is_vaccinated && <span className="rounded-full bg-[#ede5da] px-2.5 py-1">Vacunado</span>}{dog.is_special_needs && <span className="rounded-full bg-[#ffe0d7] px-2.5 py-1 text-[#9b321f]">Cuidados especiales</span>}</div><p className="mt-3 line-clamp-3 leading-relaxed text-[#6e6a64]">{dog.description || 'Estoy esperando una familia responsable que quiera conocerme.'}</p></div></Link></motion.article>)}</div> : <div className="rounded-3xl border border-dashed border-[var(--color-border)] p-10 text-center text-[var(--color-muted-foreground)]">Pronto publicaremos nuevos perritos disponibles. <Link to="/como-funciona" className="font-bold text-[#f0644a]">Conoce el proceso de adopción</Link>.</div>}</section>
+    <section className="bg-[#ede5da] py-20 text-[#171717]"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><div className="mb-10 max-w-2xl"><p className="text-sm font-bold uppercase tracking-[.15em] text-[#f0644a]">Hay muchas formas de cambiar una vida</p><h2 className="mt-3 font-heading text-4xl font-extrabold tracking-[-.05em] sm:text-5xl">Elige cómo quieres ser parte.</h2></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{helpWays.map(({ title, text, href, icon: Icon, color }) => <Link key={title} to={href} className={`group min-h-56 rounded-[1.5rem] p-5 transition hover:-translate-y-1 hover:shadow-xl ${color}`}><Icon className="h-7 w-7" /><div className="mt-12"><h3 className="font-heading text-2xl font-extrabold">{title}</h3><p className="mt-2 text-sm leading-relaxed opacity-80">{text}</p><span className="mt-4 inline-flex items-center gap-2 text-sm font-bold">Conocer más <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span></div></Link>)}</div></div></section>
+    <section className="mx-auto grid max-w-7xl gap-8 px-5 py-20 sm:px-8 lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:py-28">
+      <div className="relative overflow-hidden rounded-[2rem] bg-[#171717] p-7 text-white sm:p-10">
+        <div className="pointer-events-none absolute -bottom-24 -right-16 h-64 w-64 rounded-full border-[54px] border-[#f0644a]/20" />
+        <div className="relative flex h-full flex-col"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-bold uppercase tracking-[.15em] text-[#ff9a62]">Tu ayuda se vuelve cuidado</p><h2 className="mt-3 max-w-lg font-heading text-4xl font-extrabold tracking-[-.05em]">Cada aporte tiene un destino real.</h2></div><Heart className="h-8 w-8 shrink-0 fill-[#f0644a] text-[#f0644a]" /></div><p className="mt-5 max-w-lg leading-relaxed text-white/70">Alimento, vacunas, tratamientos y traslados: tu apoyo sostiene el día a día de quienes todavía esperan una familia.</p><div className="mt-7 grid gap-3 sm:grid-cols-3">{donationOptions.map((item) => <div key={item.amountUSD} className="rounded-2xl border border-white/15 bg-white/[.04] p-4"><p className="font-heading text-2xl font-extrabold">${item.amountUSD}</p><p className="mt-1 text-xs text-white/65">{item.impact}</p></div>)}</div><Button className="mt-auto self-start bg-[#f0644a] text-white hover:bg-[#ff8069] lg:mt-8" asChild><Link to="/donaciones">Ayudar ahora <ArrowRight /></Link></Button></div>
+      </div>
+      <StorySpotlight story={story} />
+    </section>
+    <section className="border-y border-[#e3dbd0] bg-[#f8f4ee] py-8 text-[#171717]"><div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">{activity ? <div className="flex items-start gap-4"><div className="rounded-2xl bg-[#ffcf5a] p-3 text-[#171717]"><CalendarDays className="h-6 w-6" /></div><div><p className="text-xs font-bold uppercase tracking-[.15em] text-[#f0644a]">Próxima actividad</p><h2 className="mt-1 font-heading text-xl font-bold">{activity.title}</h2><p className="mt-1 text-sm text-[#6e6a64]">{formatDateShort(activity.activity_date)} · {activity.start_time} · {activity.location}</p></div></div> : <div className="flex items-center gap-3"><Stethoscope className="h-6 w-6 text-[#f0644a]" /><p className="font-heading text-lg font-bold">Adoptar es un compromiso para toda la vida.</p></div>}<Link to="/voluntariado" className="inline-flex items-center gap-2 font-bold text-[#f0644a]">Ver actividades <ArrowRight className="h-4 w-4" /></Link></div></section>
+    <section className="mx-auto max-w-5xl px-5 py-20 text-center sm:px-8 lg:py-24"><ShieldCheck className="mx-auto h-9 w-9 text-[#f0644a]" /><h2 className="mt-4 font-heading text-3xl font-extrabold sm:text-4xl">Una adopción responsable cambia dos vidas.</h2><p className="mx-auto mt-4 max-w-2xl leading-relaxed text-[#6e6a64]">Te acompañamos antes, durante y después para que la llegada de tu nuevo mejor amigo sea una historia feliz para ambos.</p><div className="mt-7 flex flex-wrap justify-center gap-3"><Button variant="warm" asChild><Link to="/como-funciona">Conoce el proceso <ArrowRight /></Link></Button><Button variant="outline" asChild><Link to="/faq">Resolver mis dudas</Link></Button></div></section>
+  </div>;
 }

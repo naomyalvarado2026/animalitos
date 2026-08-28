@@ -171,6 +171,25 @@
   box-shadow: 0 12px 40px -8px rgba(139, 90, 50, 0.25) !important;
 }
 
+.hero-3d-scene {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.hero-3d-card {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-3d-scene,
+  .hero-3d-card {
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
 /* ── Patrón de huellas decorativas ── */
 .paw-pattern {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='65' rx='18' ry='15' fill='%238B5E3C' opacity='0.06'/%3E%3Cellipse cx='30' cy='44' rx='7' ry='9' fill='%238B5E3C' opacity='0.06'/%3E%3Cellipse cx='46' cy='36' rx='7' ry='9' fill='%238B5E3C' opacity='0.06'/%3E%3Cellipse cx='62' cy='36' rx='7' ry='9' fill='%238B5E3C' opacity='0.06'/%3E%3Cellipse cx='74' cy='44' rx='7' ry='9' fill='%238B5E3C' opacity='0.06'/%3E%3C/svg%3E");

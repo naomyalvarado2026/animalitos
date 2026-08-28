@@ -20,6 +20,12 @@ export function AnimatedCounter({ value, duration = 1500, className = '' }: Anim
   const hasCommas = value.includes(',');
 
   useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplayValue(value);
+      setHasAnimated(true);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !hasAnimated) {

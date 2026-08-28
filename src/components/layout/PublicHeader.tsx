@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
+import { BookOpen, ChevronDown, HeartHandshake, PawPrint, Sparkles } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useMobile } from '@/hooks/useMobile';
@@ -14,16 +14,20 @@ interface SubItem {
 interface NavItem {
   label: string;
   href: string;
+  description: string;
+  icon: typeof PawPrint;
   children?: SubItem[];
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Adoptar', href: '/adopta' },
-  { label: 'Cómo funciona', href: '/como-funciona' },
-  { label: 'Tienda', href: '/tienda' },
+  { label: 'Adoptar', href: '/adopta', description: 'Conoce a quienes esperan una familia.', icon: PawPrint },
+  { label: 'Cómo funciona', href: '/como-funciona', description: 'Un proceso claro y responsable.', icon: BookOpen },
+  { label: 'Tienda', href: '/tienda', description: 'Compra con propósito.', icon: Sparkles },
   {
     label: 'Ayudar',
     href: '/voluntariado',
+    description: 'Hay muchas formas de cambiar una vida.',
+    icon: HeartHandshake,
     children: [
       { label: 'Voluntariado', href: '/voluntariado' },
       { label: 'Santuario', href: '/santuario' },
@@ -34,6 +38,8 @@ const NAV_ITEMS: NavItem[] = [
   {
     label: 'Nosotros',
     href: '/nosotros',
+    description: 'La historia detrás de cada rescate.',
+    icon: HeartHandshake,
     children: [
       { label: 'Historia', href: '/nosotros/historia' },
       { label: 'Historias de Éxito ✨', href: '/historias-de-exito' },
@@ -43,6 +49,8 @@ const NAV_ITEMS: NavItem[] = [
   {
     label: 'Más',
     href: '/recursos',
+    description: 'Recursos, transparencia y contacto.',
+    icon: BookOpen,
     children: [
       { label: 'Recursos', href: '/recursos' },
       { label: 'Transparencia', href: '/transparencia' },
@@ -146,7 +154,7 @@ export function PublicHeader() {
                       aria-haspopup="true"
                       aria-controls={`submenu-${item.href.slice(1)}`}
                       aria-expanded={openDropdown === item.href}
-                      onClick={(e) => {
+                      onClick={() => {
                         // Toggle on click
                         if (openDropdown === item.href) {
                           setOpenDropdown(null);
@@ -184,9 +192,10 @@ export function PublicHeader() {
                         <div className="absolute -top-3 left-0 right-0 h-4 pointer-events-auto" />
 
                         <div
-                          className="min-w-[210px] rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-2xl p-1.5 backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10"
+                          className="w-[310px] rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-2.5 shadow-2xl backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10"
                           aria-label={`Enlaces de ${item.label}`}
                         >
+                          <div className="mb-1 flex items-start gap-3 rounded-xl bg-[var(--color-background)] p-3"><div className="rounded-lg bg-[var(--color-accent)] p-2 text-[var(--color-primary)]"><item.icon className="h-4 w-4" /></div><div><p className="text-sm font-bold">{item.label}</p><p className="mt-0.5 text-xs leading-relaxed text-[var(--color-muted-foreground)]">{item.description}</p></div></div>
                           {item.children.map((child) => (
                             <NavLink
                               key={child.href}
