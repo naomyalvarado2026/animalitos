@@ -47,6 +47,16 @@ const QUESTIONS: Question[] = [
   },
 ];
 
+function getMatchmakerImageUrl(animal: Animal): string {
+  if (animal.main_image_url) return assetUrl(animal.main_image_url);
+  if (animal.gallery_urls && animal.gallery_urls.length > 0) return assetUrl(animal.gallery_urls[0]);
+  const raw = animal as unknown as Record<string, unknown>;
+  if (Array.isArray(raw.image_urls) && raw.image_urls.length > 0 && typeof raw.image_urls[0] === 'string') {
+    return assetUrl(raw.image_urls[0]);
+  }
+  return assetUrl('/images/dog_max.jpg');
+}
+
 export function PetMatchmaker() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -152,7 +162,7 @@ export function PetMatchmaker() {
                 {recommendations.map(({ animal, score }) => (
                   <Card key={animal.id} className="overflow-hidden border-[var(--color-border)] hover-card">
                     <div className="h-36 relative">
-                      <ResilientImage src={assetUrl(animal.main_image_url)} alt={animal.name} className="w-full h-full object-cover" />
+                      <ResilientImage src={getMatchmakerImageUrl(animal)} alt={animal.name || 'Perrito'} className="w-full h-full object-cover" />
                       <div className="absolute top-2 right-2">
                         <Badge variant="success" className="shadow-xs font-bold">
                           {score}% Match
@@ -164,7 +174,7 @@ export function PetMatchmaker() {
                       <p className="text-xs text-[var(--color-primary)] font-semibold">{animal.breed || 'Perrito rescatado'}</p>
                       <p className="text-xs text-[var(--color-muted-foreground)] leading-relaxed">{animal.description || 'Conoce su historia y descubre si son un buen match.'}</p>
                       <Button variant="warm" size="sm" className="w-full mt-2" asChild>
-                        <Link to={`/adopta/${animal.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>Conocer a {animal.name} <ArrowRight className="h-3.5 w-3.5 ml-1" /></Link>
+                        <Link to={`/adopta/${(animal.name || 'amigo').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>Conocer a {animal.name} <ArrowRight className="h-3.5 w-3.5 ml-1" /></Link>
                       </Button>
                     </CardContent>
                   </Card>

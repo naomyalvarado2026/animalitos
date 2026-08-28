@@ -21,7 +21,6 @@ import { toast } from 'sonner';
 import { PetMatchmaker } from './PetMatchmaker';
 import type { Animal, AnimalSpecies } from '@/types';
 
-
 const adoptionSchema = z.object({
   applicant_name: z.string().min(2, 'Ingresa tu nombre completo'),
   applicant_email: z.string().email('Email inválido'),
@@ -35,6 +34,21 @@ const adoptionSchema = z.object({
 });
 
 type AdoptionFormData = z.infer<typeof adoptionSchema>;
+
+export function getAnimalImageUrl(animal: Animal): string {
+  if (animal.main_image_url) return assetUrl(animal.main_image_url);
+  if (animal.gallery_urls && animal.gallery_urls.length > 0) return assetUrl(animal.gallery_urls[0]);
+  const raw = animal as unknown as Record<string, unknown>;
+  if (Array.isArray(raw.image_urls) && raw.image_urls.length > 0 && typeof raw.image_urls[0] === 'string') {
+    return assetUrl(raw.image_urls[0]);
+  }
+  return assetUrl('/images/dog_max.jpg');
+}
+
+export function slugify(value?: string | null): string {
+  if (!value || typeof value !== 'string') return '';
+  return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
 
 export function AdoptionGalleryPage() {
   const { slug } = useParams();
@@ -126,11 +140,12 @@ export function AdoptionGalleryPage() {
       return false;
     }
     if (sizeFilter !== 'all' && animal.size !== sizeFilter) return false;
-    if (ageFilter === 'puppy' && animal.age_months > 12) return false;
-    if (ageFilter === 'adult' && (animal.age_months <= 12 || animal.age_months > 84)) return false;
-    if (ageFilter === 'senior' && animal.age_months <= 84) return false;
+    const ageMonths = animal.age_months ?? (typeof (animal as any).age_years === 'number' ? (animal as any).age_years * 12 : 12);
+    if (ageFilter === 'puppy' && ageMonths > 12) return false;
+    if (ageFilter === 'adult' && (ageMonths <= 12 || ageMonths > 84)) return false;
+    if (ageFilter === 'senior' && ageMonths <= 84) return false;
     const matchesSearch =
-      animal.name.toLowerCase().includes(search.toLowerCase()) ||
+      (animal.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
       (animal.breed ?? '').toLowerCase().includes(search.toLowerCase());
     return matchesSearch;
   });
@@ -207,7 +222,6 @@ export function AdoptionGalleryPage() {
         </div>
       </section>
 
-
       {/* Matchmaker Quiz Section */}
       <section className="py-8 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <PetMatchmaker />
@@ -232,6 +246,8 @@ export function AdoptionGalleryPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {filtered.map((animal, i) => {
               const isFav = favorites.includes(animal.id);
+              const ageMonths = animal.age_months ?? (typeof (animal as any).age_years === 'number' ? (animal as any).age_years * 12 : 12);
+              const imgUrl = getAnimalImageUrl(animal);
               return (
                 <motion.div
                   key={animal.id}
@@ -244,8 +260,8 @@ export function AdoptionGalleryPage() {
                     {/* Image container */}
                     <div className="relative h-64 overflow-hidden bg-muted">
                       <ResilientImage
-                        src={assetUrl(animal.main_image_url)}
-                        alt={animal.name}
+                        src={imgUrl}
+                        alt={animal.name || 'Perrito en adopción'}
                         loading="lazy"
                         decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -289,7 +305,7 @@ export function AdoptionGalleryPage() {
 
                       <div className="absolute bottom-3 right-3">
                         <Badge variant="outline" className="bg-black/60 backdrop-blur-md text-white border-none text-xs">
-                          {Math.floor(animal.age_months / 12)} años {animal.age_months % 12 > 0 ? `${animal.age_months % 12}m` : ''}
+                          {Math.floor(ageMonths / 12)} años {ageMonths % 12 > 0 ? `${ageMonths % 12}m` : ''}
                         </Badge>
                       </div>
                     </div>
@@ -383,10 +399,6 @@ export function AdoptionGalleryPage() {
   );
 }
 
-function slugify(value: string) {
-  return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
-
 function AdoptionModal({ animal, onClose }: { animal: Animal; onClose: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const { register, handleSubmit, formState: { errors }, reset } = useForm<AdoptionFormData>({
@@ -430,7 +442,7 @@ function AdoptionModal({ animal, onClose }: { animal: Animal; onClose: () => voi
         </button>
 
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[var(--color-border)]">
-          <ResilientImage src={assetUrl(animal.main_image_url)} alt={animal.name} className="w-12 h-12 rounded-full object-cover border" />
+          <ResilientImage src={getAnimalImageUrl(animal)} alt={animal.name || 'Perrito'} className="w-12 h-12 rounded-full object-cover border" />
           <div>
             <h2 className="font-heading text-xl font-bold">Adopta a {animal.name} 🐾</h2>
             <p className="text-xs text-[var(--color-muted-foreground)]">Completa el formulario para iniciar la solicitud.</p>
@@ -521,7 +533,7 @@ function PetDetailModal({ animal, onClose, onAdopt }: { animal: Animal; onClose:
 
         <div className="space-y-4">
           <div className="relative h-64 rounded-xl overflow-hidden">
-            <ResilientImage src={assetUrl(animal.main_image_url)} alt={animal.name} className="w-full h-full object-cover" />
+            <ResilientImage src={getAnimalImageUrl(animal)} alt={animal.name || 'Perrito'} className="w-full h-full object-cover" />
             <div className="absolute top-3 left-3 flex gap-2">
               <Badge variant="warm">Perro 🐶</Badge>
               <Badge variant="outline" className="bg-black/60 text-white border-none text-xs">
@@ -532,7 +544,7 @@ function PetDetailModal({ animal, onClose, onAdopt }: { animal: Animal; onClose:
 
           <div>
             <h2 className="font-heading text-3xl font-bold">{animal.name}</h2>
-            <p className="text-sm font-medium text-[var(--color-primary)]">{animal.breed ?? 'Mestizo'} · {Math.floor(animal.age_months / 12)} años</p>
+            <p className="text-sm font-medium text-[var(--color-primary)]">{animal.breed ?? 'Mestizo'} · {Math.floor((animal.age_months ?? 12) / 12)} años</p>
           </div>
 
           <div className="space-y-2 text-sm text-[var(--color-muted-foreground)] leading-relaxed bg-[var(--color-background)] p-4 rounded-xl">
@@ -543,11 +555,11 @@ function PetDetailModal({ animal, onClose, onAdopt }: { animal: Animal; onClose:
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="p-3 rounded-lg border border-[var(--color-border)]">
               <span className="font-semibold block text-[var(--color-foreground)]">Estado de Salud</span>
-              <span className="text-[var(--color-muted-foreground)]">{animal.health_status}</span>
+              <span className="text-[var(--color-muted-foreground)]">{animal.health_status ?? 'En buena condición'}</span>
             </div>
             <div className="p-3 rounded-lg border border-[var(--color-border)]">
               <span className="font-semibold block text-[var(--color-foreground)]">Ubicación</span>
-              <span className="text-[var(--color-muted-foreground)]">{animal.location}</span>
+              <span className="text-[var(--color-muted-foreground)]">{animal.location ?? 'Refugio Principal'}</span>
             </div>
           </div>
 
