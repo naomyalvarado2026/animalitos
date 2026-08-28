@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
@@ -22,24 +22,24 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Cómo funciona', href: '/como-funciona' },
   { label: 'Tienda', href: '/tienda' },
   {
-      label: 'Ayudar',
-      href: '/voluntariado',
-      children: [
+    label: 'Ayudar',
+    href: '/voluntariado',
+    children: [
       { label: 'Voluntariado', href: '/voluntariado' },
       { label: 'Santuario', href: '/santuario' },
       { label: 'Tienda solidaria', href: '/tienda' },
       { label: 'Donaciones', href: '/donaciones' },
-      ],
-    },
+    ],
+  },
   {
-      label: 'Nosotros',
-      href: '/nosotros',
-      children: [
-        { label: 'Historia', href: '/nosotros/historia' },
-        { label: 'Historias de Éxito ✨', href: '/historias-de-exito' },
-        { label: 'En memoria de', href: '/en-memoria' },
-      ],
-    },
+    label: 'Nosotros',
+    href: '/nosotros',
+    children: [
+      { label: 'Historia', href: '/nosotros/historia' },
+      { label: 'Historias de Éxito ✨', href: '/historias-de-exito' },
+      { label: 'En memoria de', href: '/en-memoria' },
+    ],
+  },
   {
     label: 'Más',
     href: '/recursos',
@@ -59,15 +59,41 @@ export function PublicHeader() {
   const [scrolled, setScrolled] = useState(false);
   const isMobile = useMobile();
   const location = useLocation();
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = (href: string) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setOpenDropdown(href);
+  };
+
+  const handleMouseLeave = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpenDropdown(null);
+    }, 220); // 220ms grace period so moving mouse is silky smooth and never closes prematurely
+  };
 
   useEffect(() => {
     setOpenDropdown(null);
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
   }, [location.pathname]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
   }, []);
 
   return (
@@ -75,8 +101,8 @@ export function PublicHeader() {
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
         scrolled
-          ? 'shadow-md border-b border-[var(--color-border)]'
-          : 'border-b border-transparent'
+          ? 'shadow-md border-b border-[var(--color-border)] bg-[var(--color-background)]/90 backdrop-blur-md'
+          : 'border-b border-transparent bg-[var(--color-background)]/80 backdrop-blur-sm'
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -99,10 +125,10 @@ export function PublicHeader() {
                 item.children ? (
                   <div
                     key={item.href}
-                    className="relative"
-                    onMouseEnter={() => setOpenDropdown(item.href)}
-                    onMouseLeave={() => setOpenDropdown(null)}
-                    onFocus={() => setOpenDropdown(item.href)}
+                    className="relative py-2"
+                    onMouseEnter={() => handleMouseEnter(item.href)}
+                    onMouseLeave={handleMouseLeave}
+                    onFocus={() => handleMouseEnter(item.href)}
                     onBlur={(event) => {
                       if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
                         setOpenDropdown(null);
@@ -120,10 +146,16 @@ export function PublicHeader() {
                       aria-haspopup="true"
                       aria-controls={`submenu-${item.href.slice(1)}`}
                       aria-expanded={openDropdown === item.href}
+                      onClick={(e) => {
+                        // Allow clicking to toggle or keep open
+                        if (openDropdown !== item.href) {
+                          handleMouseEnter(item.href);
+                        }
+                      }}
                       className={({ isActive }) =>
                         cn(
-                          'flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150',
-                          isActive
+                          'flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 select-none cursor-pointer',
+                          isActive || openDropdown === item.href
                             ? 'text-[var(--color-primary)] bg-[var(--color-accent)]'
                             : 'text-[var(--color-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-accent)]'
                         )
@@ -133,30 +165,44 @@ export function PublicHeader() {
                       <ChevronDown
                         className={cn(
                           'h-3.5 w-3.5 transition-transform duration-200',
-                          openDropdown === item.href && 'rotate-180'
+                          openDropdown === item.href && 'rotate-180 text-[var(--color-primary)]'
                         )}
                       />
                     </NavLink>
 
-                    {/* Dropdown */}
+                    {/* Dropdown with seamless hover tunnel / bridge */}
                     {openDropdown === item.href && (
-                      <div id={`submenu-${item.href.slice(1)}`} className="absolute top-full left-0 mt-1 min-w-[180px] rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg py-1 animate-fade-in" aria-label={`Enlaces de ${item.label}`}>
-                        {item.children.map((child) => (
-                          <NavLink
-                            key={child.href}
-                            to={child.href}
-                            className={({ isActive }) =>
-                              cn(
-                                'block px-4 py-2 text-sm transition-colors',
-                                isActive
-                                  ? 'text-[var(--color-primary)] font-medium'
-                                  : 'text-[var(--color-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-accent)]'
-                              )
-                            }
-                          >
-                            {child.label}
-                          </NavLink>
-                        ))}
+                      <div
+                        id={`submenu-${item.href.slice(1)}`}
+                        className="absolute top-full left-0 pt-1.5 z-50 animate-fade-in"
+                        onMouseEnter={() => handleMouseEnter(item.href)}
+                        onMouseLeave={handleMouseLeave}
+                      >
+                        {/* Invisible bridge to catch cursor movement seamlessly */}
+                        <div className="absolute -top-3 left-0 right-0 h-3 pointer-events-auto" />
+
+                        <div
+                          className="min-w-[210px] rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-xl p-1.5 backdrop-blur-md"
+                          aria-label={`Enlaces de ${item.label}`}
+                        >
+                          {item.children.map((child) => (
+                            <NavLink
+                              key={child.href}
+                              to={child.href}
+                              onClick={() => setOpenDropdown(null)}
+                              className={({ isActive }) =>
+                                cn(
+                                  'flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
+                                  isActive
+                                    ? 'text-[var(--color-primary)] bg-[var(--color-accent)] font-semibold'
+                                    : 'text-[var(--color-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-accent)]'
+                                )
+                              }
+                            >
+                              {child.label}
+                            </NavLink>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -197,7 +243,6 @@ export function PublicHeader() {
           </div>
         </div>
       </div>
-
     </header>
   );
 }
