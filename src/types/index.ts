@@ -7,6 +7,7 @@ export interface Profile {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
+  phone?: string | null;
   role: UserRole;
   access_level: number; // 0–10
   is_active: boolean;
@@ -41,21 +42,12 @@ export interface IncomeRecord {
   event_name: string | null;
   receipt_url: string | null;
   is_public: boolean;
-  created_by: string | null;
   created_at: string;
   updated_at: string;
-  // joined
   donor?: Donor;
 }
 
-export type ExpenseCategory =
-  | 'food'
-  | 'medical'
-  | 'infrastructure'
-  | 'salary'
-  | 'utilities'
-  | 'supplies'
-  | 'other';
+export type ExpenseCategory = 'food' | 'medical' | 'infrastructure' | 'services' | 'other';
 
 export interface ExpenseRecord {
   id: string;
@@ -66,81 +58,33 @@ export interface ExpenseRecord {
   vendor: string | null;
   receipt_url: string | null;
   is_public: boolean;
-  created_by: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export type DonorType = 'individual' | 'company' | 'organization';
+export type DonorType = 'individual' | 'corporate';
 
 export interface Donor {
   id: string;
   name: string;
-  type: DonorType;
   email: string | null;
   phone: string | null;
-  total_donated_usd: number; // stored in USD
-  is_featured: boolean;
+  type: DonorType;
+  total_donated_usd: number;
+  first_donation_date: string;
+  last_donation_date: string;
   is_anonymous: boolean;
+  is_featured: boolean;
   logo_url: string | null;
   message: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export type ContactType = 'general' | 'support' | 'donation' | 'volunteer';
-
-export interface ContactMessage {
-  id: string;
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  type: ContactType;
-  is_read: boolean;
-  created_at: string;
-}
-
-export interface SiteSettings {
-  id: string;
-  key: string;
-  value: string;
-  description: string | null;
-  updated_by: string | null;
-  updated_at: string;
-}
-
-// ── UI / utility types ────────────────────────────────────────────
-
-export interface NavItem {
-  label: string;
-  href: string;
-  children?: NavItem[];
-}
-
-export interface StatCard {
-  label: string;
-  value: string | number;
-  icon?: string;
-  trend?: number; // percentage change
-  color?: string;
-}
-
-export interface DonationMethod {
-  id: string;
-  name: string;
-  type: 'bank_transfer' | 'paypal' | 'crypto' | 'cash' | 'other';
-  details: string; // JSON string or plain text
-  is_active: boolean;
-  logo_url: string | null;
-}
-
-// ── Extended Features Types ─────────────────────────────────────
-
+export type AnimalStatus = 'available' | 'pending' | 'adopted' | 'medical_care';
 export type AnimalSpecies = 'dog';
 export type AnimalGender = 'male' | 'female';
 export type AnimalSize = 'small' | 'medium' | 'large' | 'extra_large';
-export type AnimalStatus = 'available' | 'pending' | 'adopted' | 'medical_care';
 
 export interface Animal {
   id: string;
@@ -166,29 +110,35 @@ export interface Animal {
   updated_at: string;
 }
 
-export type ApplicationStatus = 'pending' | 'under_review' | 'approved' | 'rejected';
 export type HousingType = 'house' | 'apartment' | 'farm';
+export type ApplicationStatus = 'pending' | 'under_review' | 'approved' | 'rejected';
 
 export interface AdoptionApplication {
   id: string;
   animal_id: string;
-  animal?: Animal;
   applicant_name: string;
   applicant_email: string;
   applicant_phone: string;
   applicant_address: string;
+  city: string | null;
   housing_type: HousingType;
   has_yard: boolean;
   has_other_pets: boolean;
+  has_children: boolean;
   other_pets_desc: string | null;
+  housing_notes: string | null;
   reason: string;
   status: ApplicationStatus;
   admin_notes: string | null;
+  reviewed_by: string | null;
+  consent_at: string;
   created_at: string;
   updated_at: string;
+  animal?: Animal;
 }
 
 export type VolunteerArea = 'dog_walking' | 'medical_support' | 'events' | 'social_media' | 'shelter_maintenance' | 'foster';
+export type VolunteerStatus = 'pending' | 'contacted' | 'active' | 'archived';
 
 export interface VolunteerApplication {
   id: string;
@@ -198,7 +148,7 @@ export interface VolunteerApplication {
   area_of_interest: VolunteerArea;
   availability: string;
   experience: string | null;
-  status: 'pending' | 'contacted' | 'active' | 'archived';
+  status: VolunteerStatus;
   created_at: string;
 }
 
@@ -215,18 +165,7 @@ export interface SuccessStory {
   created_at: string;
 }
 
-// ── Volunteer Calendar & Task Types ─────────────────────────────
-
-export type ActivityCategory =
-  | 'dog_walking'
-  | 'medical'
-  | 'events'
-  | 'maintenance'
-  | 'cleaning'
-  | 'foster';
-
-export type EventType = 'single_day' | 'multi_day';
-export type RecurrencePattern = 'none' | 'weekly' | 'monthly' | 'yearly';
+export type ActivityCategory = 'dog_walking' | 'medical' | 'events' | 'maintenance' | 'cleaning' | 'foster';
 export type ActivityStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 
 export interface VolunteerActivity {
@@ -235,10 +174,6 @@ export interface VolunteerActivity {
   description: string;
   category: ActivityCategory;
   activity_date: string;
-  end_date: string | null;
-  event_type: EventType;
-  recurrence_pattern: RecurrencePattern;
-  parent_event_id: string | null;
   start_time: string;
   end_time: string;
   location: string;
@@ -259,7 +194,49 @@ export interface ActivityRegistration {
   volunteer_email: string;
   volunteer_phone: string;
   notes: string | null;
-  assigned_by_admin: boolean;
   created_at: string;
+  activity?: VolunteerActivity;
 }
 
+// ── Product & Orders ────────────────────────────────────────────────
+export interface Product {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  price_cents: number;
+  currency: string;
+  image_url: string | null;
+  inventory: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type OrderStatus = 'pending' | 'confirmed' | 'paid' | 'shipped' | 'completed' | 'cancelled';
+
+export interface Order {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string | null;
+  shipping_address: Record<string, unknown> | null;
+  status: OrderStatus;
+  currency: string;
+  total_cents: number;
+  payment_reference: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Financial summary ───────────────────────────────────────────────
+export interface FinancialSummary {
+  total_income_usd: number;
+  total_expenses_usd: number;
+  net_balance_usd: number;
+  top_income_category: IncomeCategory | null;
+  top_expense_category: ExpenseCategory | null;
+  donor_count: number;
+  adoption_count: number;
+}
