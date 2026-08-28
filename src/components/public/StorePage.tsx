@@ -88,7 +88,7 @@ export function StorePage() {
     queryFn: async () => {
       const { data, error } = await supabase.from('products').select('slug, name, description, price_cents, image_url, inventory').eq('is_active', true).eq('currency', 'USD').gt('inventory', 0).order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((product) => ({ ...product, category: 'Catálogo', details: [`${product.inventory} disponibles`, 'Compra con propósito'], image: product.image_url || assetUrl('/images/hero.jpg'), color: 'cream' as const, featured: false, isLive: true, price: `$${(product.price_cents / 100).toFixed(2)} USD` })) as DatabaseProduct[];
+      return (data ?? []).map((product) => ({ ...product, category: 'Catálogo', details: [`${product.inventory ?? 0} disponibles`, 'Compra con propósito'], image: product.image_url || assetUrl('/images/hero.jpg'), color: 'cream' as const, featured: false, isLive: true, price: `$${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD` })) as DatabaseProduct[];
     },
   });
   const databaseProducts = productsQuery.data ?? [];
@@ -205,7 +205,7 @@ export function StorePage() {
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-[#6e6a64]">{product.description}</p>
                 <ul className="mt-5 space-y-2 text-sm text-[#4d4944]">
-                  {product.details.map((detail) => <li key={detail} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#f0644a]" /> {detail}</li>)}
+                  {(product.details || []).map((detail) => <li key={detail} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#f0644a]" /> {detail}</li>)}
                 </ul>
                 <div className="mt-6 border-t border-[#171717]/10 pt-4">
                   <p className="text-xs font-bold uppercase tracking-[.12em] text-[#6e6a64]">Valor</p>

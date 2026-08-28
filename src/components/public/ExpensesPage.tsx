@@ -37,14 +37,14 @@ export function ExpensesPage() {
     },
   });
 
-  const total = records.reduce((s, r) => s + r.amount_usd, 0);
+  const total = records.reduce((s, r) => s + (r.amount_usd ?? 0), 0);
 
   // Group by category for summary
   const byCat = Object.keys(CATEGORY_META).map((cat) => {
     const catRecords = records.filter(r => r.category === cat as ExpenseCategory);
     return {
       cat: cat as ExpenseCategory,
-      total: catRecords.reduce((s, r) => s + r.amount_usd, 0),
+      total: catRecords.reduce((s, r) => s + (r.amount_usd ?? 0), 0),
       count: catRecords.length,
     };
   }).filter(c => c.count > 0);

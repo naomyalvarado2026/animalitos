@@ -86,7 +86,7 @@ export function UserManagement() {
   }
 
   const filtered = users.filter(u =>
-    u.email.toLowerCase().includes(search.toLowerCase()) ||
+    (u.email ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (u.full_name ?? '').toLowerCase().includes(search.toLowerCase())
   );
 

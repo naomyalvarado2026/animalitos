@@ -6,21 +6,26 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Formats a number as currency using Intl.NumberFormat.
+ * Formats a number as currency using Intl.NumberFormat safely.
  * The base is USD; the locale adapts if a specific currency code is provided.
  */
 export function formatCurrency(
-  amountUSD: number,
+  amountUSD?: number | null,
   currency: string = 'USD',
   locale?: string,
 ): string {
+  const safeAmount = typeof amountUSD === 'number' && !isNaN(amountUSD) ? amountUSD : 0;
   const resolvedLocale = locale ?? getCurrencyLocale(currency);
-  return new Intl.NumberFormat(resolvedLocale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amountUSD);
+  try {
+    return new Intl.NumberFormat(resolvedLocale, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(safeAmount);
+  } catch {
+    return `$${safeAmount.toFixed(2)} ${currency}`;
+  }
 }
 
 /** Returns a sensible locale string for a given currency code. */
@@ -40,30 +45,45 @@ function getCurrencyLocale(currency: string): string {
   return map[currency] ?? 'en-US';
 }
 
-export function formatDate(dateString: string, locale: string = 'es'): string {
+export function formatDate(dateString?: string | null, locale: string = 'es'): string {
   if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString(locale, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return String(dateString);
+    return d.toLocaleDateString(locale, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  } catch {
+    return String(dateString);
+  }
 }
 
-export function formatDateShort(dateString: string): string {
+export function formatDateShort(dateString?: string | null): string {
   if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('es', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return String(dateString);
+    return d.toLocaleDateString('es', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch {
+    return String(dateString);
+  }
 }
 
-export function slugify(text: string): string {
-  return text
-    .toString()
+export function slugify(text?: string | null): string {
+  if (!text) return '';
+  return String(text)
     .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .replace(/\s+/g, '-')
     .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-');
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }

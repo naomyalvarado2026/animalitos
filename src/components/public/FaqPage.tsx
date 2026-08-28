@@ -60,8 +60,8 @@ export function FaqPage() {
 
   const filteredFaqs = publishedFaqs.filter(
     f =>
-      f.question.toLowerCase().includes(search.toLowerCase()) ||
-      f.answer.toLowerCase().includes(search.toLowerCase())
+      (f.question ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (f.answer ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (

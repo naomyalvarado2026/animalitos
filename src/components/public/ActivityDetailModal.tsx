@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Calendar, Clock, MapPin, User, CheckCircle2, AlertCircle, Heart } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, User, CheckCircle2, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,7 @@ export function ActivityDetailModal({
     resolver: zodResolver(registrationSchema),
   });
 
-  const isFull = activity.current_volunteers >= activity.max_volunteers;
+  const isFull = (activity.current_volunteers ?? 0) >= (activity.max_volunteers ?? 5);
 
   async function onSubmit(data: RegistrationForm) {
     setSubmitting(true);
@@ -81,10 +81,10 @@ export function ActivityDetailModal({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Badge variant="warm" className="capitalize">
-                {activity.category.replace('_', ' ')}
+                {String(activity.category ?? 'Actividad').replace(/_/g, ' ')}
               </Badge>
               <Badge variant={isFull ? 'secondary' : 'success'} className="text-xs">
-                {isFull ? 'Cupos Llenos' : `${activity.current_volunteers} / ${activity.max_volunteers} Cupos`}
+                {isFull ? 'Cupos Llenos' : `${activity.current_volunteers ?? 0} / ${activity.max_volunteers ?? 5} Cupos`}
               </Badge>
             </div>
             <h2 className="font-heading text-2xl font-bold">{activity.title}</h2>
@@ -101,15 +101,15 @@ export function ActivityDetailModal({
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-[var(--color-primary)]" />
-              <span>{activity.start_time} - {activity.end_time}</span>
+              <span>{activity.start_time ?? '09:00'} - {activity.end_time ?? '12:00'}</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-[var(--color-primary)]" />
-              <span>{activity.location}</span>
+              <span>{activity.location ?? 'Refugio Principal'}</span>
             </div>
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-[var(--color-primary)]" />
-              <span>Encargado: {activity.coordinator_name}</span>
+              <span>Encargado: {activity.coordinator_name ?? 'Equipo AdoptaME'}</span>
             </div>
           </div>
 

@@ -91,14 +91,14 @@ export function TopDonorsPage() {
                     )}
 
                     <div>
-                      <h3 className="font-heading text-xl font-bold">{donor.name}</h3>
-                      <Badge variant="secondary" className="mt-1">{TYPE_LABEL[donor.type]}</Badge>
+                      <h3 className="font-heading text-xl font-bold">{donor.name || 'Donador Solidario'}</h3>
+                      <Badge variant="secondary" className="mt-1">{TYPE_LABEL[donor.type] || 'Donador'}</Badge>
                     </div>
 
                     <div className="mt-2 py-3 px-6 rounded-xl bg-[var(--color-accent)] w-full">
                       <p className="text-xs text-[var(--color-muted-foreground)] mb-0.5">Total donado</p>
                       <p className="font-heading text-2xl font-bold text-[var(--color-primary)]">
-                        {formatAmount(donor.total_donated_usd)}
+                        {formatAmount(donor.total_donated_usd || 0)}
                       </p>
                     </div>
 

@@ -41,9 +41,9 @@ export function IncomePage() {
     },
   });
 
-  const totalUSD = records.reduce((sum, r) => sum + r.amount_usd, 0);
-  const donationsTotal = records.filter(r => r.category === 'donation').reduce((s, r) => s + r.amount_usd, 0);
-  const eventsTotal = records.filter(r => r.category === 'event').reduce((s, r) => s + r.amount_usd, 0);
+  const totalUSD = records.reduce((sum, r) => sum + (r.amount_usd ?? 0), 0);
+  const donationsTotal = records.filter(r => r.category === 'donation').reduce((s, r) => s + (r.amount_usd ?? 0), 0);
+  const eventsTotal = records.filter(r => r.category === 'event').reduce((s, r) => s + (r.amount_usd ?? 0), 0);
 
   return (
     <div className="pt-16">

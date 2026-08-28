@@ -60,8 +60,8 @@ export function SuccessStoriesPage() {
                     {/* Image section */}
                     <div className="lg:col-span-5 relative bg-muted min-h-[300px]">
                       <ResilientImage
-                        src={assetUrl(story.after_image_url)}
-                        alt={story.animal_name}
+                        src={assetUrl(story.after_image_url || (story as any).before_image_url || '/images/shelter_hero_1785817115197.jpg')}
+                        alt={story.animal_name || 'Perrito adoptado'}
                         className="w-full h-full object-cover min-h-[300px]"
                       />
                       <div className="absolute top-4 left-4">
@@ -76,7 +76,7 @@ export function SuccessStoriesPage() {
                       <div>
                         <div className="flex items-center justify-between gap-4 mb-3">
                           <span className="text-xs font-semibold text-[var(--color-primary)] uppercase tracking-wider">
-                            Adoptado por {story.adopter_name}
+                            Adoptado por {story.adopter_name || 'Familia adoptiva'}
                           </span>
                           <span className="text-xs text-[var(--color-muted-foreground)]">
                             {formatDateShort(story.adoption_date)}
@@ -84,7 +84,7 @@ export function SuccessStoriesPage() {
                         </div>
 
                         <h2 className="font-heading text-2xl font-bold text-[var(--color-foreground)] mb-3">
-                          {story.title}
+                          {story.title || `La nueva vida de ${story.animal_name ?? 'un perrito'}`}
                         </h2>
 
                         <div className="relative pl-6 border-l-2 border-[var(--color-primary)] my-4">

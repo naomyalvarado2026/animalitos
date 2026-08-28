@@ -213,7 +213,11 @@ export function VolunteerCalendar() {
               if (dayIndex < firstDayOffset) return <div key={`empty-${dayIndex}`} className="min-h-[70px]" aria-hidden="true" />;
               const dayNum = dayIndex - firstDayOffset + 1;
               const dayActivities = filtered.filter(
-                (act) => { const date = new Date(`${act.activity_date}T12:00:00`); return date.getFullYear() === currentMonth.getFullYear() && date.getMonth() === currentMonth.getMonth() && date.getDate() === dayNum; }
+                (act) => {
+                  if (!act.activity_date) return false;
+                  const date = new Date(`${act.activity_date}T12:00:00`);
+                  return !isNaN(date.getTime()) && date.getFullYear() === currentMonth.getFullYear() && date.getMonth() === currentMonth.getMonth() && date.getDate() === dayNum;
+                }
               );
 
               return (
