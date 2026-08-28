@@ -4,8 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
 export default defineConfig({
-  // Relative assets work both at GitHub Pages (/animalitos/) and Vercel (/).
-  base: './',
+  base: '/animalitos/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

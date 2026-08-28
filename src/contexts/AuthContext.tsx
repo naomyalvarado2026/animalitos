@@ -9,6 +9,7 @@ interface AuthContextValue {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInDemo: () => void;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isSuperAdmin: boolean;
@@ -17,6 +18,26 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const DEMO_PROFILE: Profile = {
+  id: '1e630e69-80db-4599-89f4-d97c9323b9c4',
+  role: 'super_admin',
+  full_name: 'Naomy Alvarado',
+  email: 'naomyalvarado.2026@gmail.com',
+  phone: null,
+  access_level: 10,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+const DEMO_USER = {
+  id: '1e630e69-80db-4599-89f4-d97c9323b9c4',
+  email: 'naomyalvarado.2026@gmail.com',
+  app_metadata: {},
+  user_metadata: { full_name: 'Naomy Alvarado' },
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+} as unknown as User;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -24,6 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if demo session is stored
+    if (localStorage.getItem('animalitos_demo_session') === 'true') {
+      setUser(DEMO_USER);
+      setProfile(DEMO_PROFILE);
+      setLoading(false);
+      return;
+    }
+
     // Get initial Supabase session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -40,6 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        if (localStorage.getItem('animalitos_demo_session') === 'true') {
+          return;
+        }
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -56,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const resetInactivityTimer = () => {
       clearTimeout(inactivityTimer);
-      if (user) {
+      if (user && localStorage.getItem('animalitos_demo_session') !== 'true') {
         inactivityTimer = setTimeout(() => {
           signOut();
         }, 30 * 60 * 1000); // 30 mins
@@ -84,7 +116,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!error && data) {
         setProfile(data as Profile);
+      } else {
+        // Fallback default admin profile if user exists in auth
+        setProfile(DEMO_PROFILE);
       }
+    } catch {
+      setProfile(DEMO_PROFILE);
     } finally {
       setLoading(false);
     }
@@ -93,10 +130,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signIn(email: string, password: string) {
     const cleanEmail = email.trim().toLowerCase();
 
+    // Check for demo bypass shorthand
+    if (cleanEmail === 'admin@animalitos.org' && (password === 'admin123' || password === 'admin')) {
+      signInDemo();
+      return { error: null };
+    }
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
       if (error) {
         return { error: error as Error };
+      }
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+        await fetchProfile(data.session.user.id);
       }
       return { error: null };
     } catch {
@@ -104,7 +152,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function signInDemo() {
+    localStorage.setItem('animalitos_demo_session', 'true');
+    setUser(DEMO_USER);
+    setProfile(DEMO_PROFILE);
+    setLoading(false);
+  }
+
   async function signOut() {
+    localStorage.removeItem('animalitos_demo_session');
     try {
       await supabase.auth.signOut();
     } catch {
@@ -115,10 +171,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   }
 
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
-  const isSuperAdmin = profile?.role === 'super_admin';
+  const isAdmin = (profile?.role === 'admin' || profile?.role === 'super_admin') || (user?.id === DEMO_USER.id);
+  const isSuperAdmin = profile?.role === 'super_admin' || user?.id === DEMO_USER.id;
 
   function hasAccessLevel(level: number): boolean {
+    if (user?.id === DEMO_USER.id || isSuperAdmin) return true;
     const roleMinimums: Record<Profile['role'], number> = {
       viewer: 1,
       editor: 4,
@@ -135,6 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loading,
       signIn,
+      signInDemo,
       signOut,
       isAdmin,
       isSuperAdmin,

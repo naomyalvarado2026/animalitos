@@ -19,6 +19,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- SPA Redirect for GitHub Pages -->
+    <script>
+      (function() {
+        var path = window.location.pathname;
+        var base = '/animalitos';
+        if (path.startsWith(base) && path.length > base.length && !window.location.hash) {
+          var sub = path.substring(base.length);
+          if (sub && sub !== '/' && sub !== '/index.html' && sub !== '/404.html') {
+            window.location.replace(base + '/#' + sub + window.location.search);
+          }
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
