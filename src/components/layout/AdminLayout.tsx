@@ -78,7 +78,7 @@ export function AdminLayout() {
     navigate('/admin/login');
   }
 
-  const roleMeta = ROLE_LABELS[profile?.role ?? 'viewer'];
+  const roleMeta = ROLE_LABELS[profile?.role ?? 'viewer'] ?? { label: 'Admin', color: 'warm' };
   const visibleItems = NAV_ITEMS.filter(item => hasAccessLevel(item.minLevel));
 
   const SidebarContent = () => (

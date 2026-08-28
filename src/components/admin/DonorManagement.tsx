@@ -144,18 +144,18 @@ export function DonorManagement() {
                 <div key={d.id} className="flex items-center justify-between py-3 gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/30 flex items-center justify-center font-bold text-rose-500 shrink-0">
-                      {d.name[0]}
+                      {(d.name || 'D')[0] || 'D'}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-heading font-bold text-sm">{d.name}</h3>
+                        <h3 className="font-heading font-bold text-sm">{d.name || 'Donador Solidario'}</h3>
                         {d.is_featured && <Badge variant="warm" className="text-xs">Destacado</Badge>}
                       </div>
                       <p className="text-xs text-[var(--color-muted-foreground)]">{d.type}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatAmount(d.total_donated_usd)}</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatAmount(d.total_donated_usd || 0)}</span>
                     <Button size="icon" variant="ghost" className="text-[var(--color-destructive)]" onClick={() => { if (confirm('¿Eliminar donador?')) deleteDonor.mutate(d.id); }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>

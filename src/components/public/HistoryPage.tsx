@@ -41,7 +41,7 @@ export function HistoryPage() {
             <div className="space-y-10">
               {timeline.length === 0 ? <div className="rounded-2xl border border-dashed border-[var(--color-border)] p-8 text-center text-[var(--color-muted-foreground)]">Pronto compartiremos los principales hitos de AdoptaME.</div> : timeline.map((item, i) => (
                 <motion.div
-                  key={item.year}
+                  key={`${item.year || 'year'}-${i}`}
                   initial={{ opacity: 0, x: -30 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}

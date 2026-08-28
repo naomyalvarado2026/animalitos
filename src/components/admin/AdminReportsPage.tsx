@@ -33,15 +33,15 @@ function queryError(resource: string, error: { message?: string } | null) {
 
 function rowsForReport(key: ReportKey, data: ReportsData, formatAmount: (amount: number) => string): { headers: string[]; rows: CsvValue[][] } {
   if (key === 'dogs') {
-    return { headers: ['ID', 'Nombre', 'Raza', 'Estado', 'Tamaño', 'Edad (meses)', 'Ubicación', 'Actualizado'], rows: data.dogs.map((row) => [row.id, row.name, row.breed, row.status, row.size, row.age_months, row.location, row.updated_at]) };
+    return { headers: ['ID', 'Nombre', 'Raza', 'Estado', 'Tamaño', 'Edad (meses)', 'Ubicación', 'Actualizado'], rows: (data.dogs || []).map((row) => [row.id, row.name || 'Perrito', row.breed ?? 'Mestizo', row.status, row.size, row.age_months ?? 12, row.location ?? 'Refugio', row.updated_at]) };
   }
   if (key === 'adoptions') {
-    return { headers: ['ID', 'ID del perrito', 'Solicitante', 'Correo', 'Estado', 'Creada', 'Actualizada'], rows: data.adoptions.map((row) => [row.id, row.animal_id, row.applicant_name, row.applicant_email, row.status, row.created_at, row.updated_at]) };
+    return { headers: ['ID', 'ID del perrito', 'Solicitante', 'Correo', 'Estado', 'Creada', 'Actualizada'], rows: (data.adoptions || []).map((row) => [row.id, row.animal_id, row.applicant_name ?? '', row.applicant_email ?? '', row.status, row.created_at, row.updated_at]) };
   }
   if (key === 'finance') {
-    return { headers: ['ID', 'Tipo', 'Descripción', 'Categoría', 'Monto USD', 'Fecha'], rows: data.finance.map((row) => [row.id, row.record_type, row.description, row.category, formatAmount(row.amount_usd), row.date]) };
+    return { headers: ['ID', 'Tipo', 'Descripción', 'Categoría', 'Monto USD', 'Fecha'], rows: (data.finance || []).map((row) => [row.id, row.record_type, row.description, row.category, formatAmount(row.amount_usd || 0), row.date]) };
   }
-  return { headers: ['ID', 'Nombre', 'Correo', 'Área de interés', 'Estado', 'Registrado'], rows: data.volunteers.map((row) => [row.id, row.full_name, row.email, row.area_of_interest, row.status, row.created_at]) };
+  return { headers: ['ID', 'Nombre', 'Correo', 'Área de interés', 'Estado', 'Registrado'], rows: (data.volunteers || []).map((row) => [row.id, row.full_name ?? '', row.email ?? '', row.area_of_interest ?? '', row.status, row.created_at]) };
 }
 
 export function AdminReportsPage() {

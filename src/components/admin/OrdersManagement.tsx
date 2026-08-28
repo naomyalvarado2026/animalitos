@@ -56,12 +56,24 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   cancelled: 'Cancelado',
 };
 
-function formatUsd(cents: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
+function formatUsd(cents?: number | null) {
+  const val = typeof cents === 'number' && !isNaN(cents) ? cents : 0;
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val / 100);
+  } catch {
+    return `$${(val / 100).toFixed(2)} USD`;
+  }
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+function formatDate(value?: string | null) {
+  if (!value) return '';
+  try {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short' }).format(d);
+  } catch {
+    return String(value);
+  }
 }
 
 function statusVariant(status: OrderStatus) {

@@ -96,7 +96,7 @@ export function AdminDashboard() {
       const items = [
         ...(incomeRes.data ?? []).map((row) => ({ ...row, type: 'income' as const })),
         ...(expenseRes.data ?? []).map((row) => ({ ...row, type: 'expense' as const })),
-      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8);
+      ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()).slice(0, 8);
       return { items, error: errors.length > 0 ? errors.join(' · ') : null };
     },
   });

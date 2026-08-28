@@ -162,8 +162,8 @@ export function FinanceManagement() {
     onError: (error) => toast.error(`No se eliminó el egreso: ${error.message}`),
   });
 
-  const totalIncome = incomeRecords.reduce((s, r) => s + r.amount_usd, 0);
-  const totalExpense = expenseRecords.reduce((s, r) => s + r.amount_usd, 0);
+  const totalIncome = incomeRecords.reduce((s, r) => s + (r.amount_usd ?? 0), 0);
+  const totalExpense = expenseRecords.reduce((s, r) => s + (r.amount_usd ?? 0), 0);
 
   return (
     <div className="space-y-6">

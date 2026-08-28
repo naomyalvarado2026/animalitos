@@ -164,7 +164,7 @@ export function AdminLoginPage() {
         <p className="text-center text-xs text-[var(--color-muted-foreground)] mt-6">
           Esta página no está enlazada públicamente.
           <br />Si llegaste aquí por error, regresa al{' '}
-          <a href="#/" className="text-[var(--color-primary)] hover:underline">sitio principal</a>.
+          <Link to="/" className="text-[var(--color-primary)] hover:underline">sitio principal</Link>.
         </p>
       </div>
     </div>
