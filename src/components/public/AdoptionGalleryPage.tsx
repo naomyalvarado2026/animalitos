@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { Helmet } from 'react-helmet-async';
 import { PetMatchmaker } from './PetMatchmaker';
+import { isLocalRefugeDog, mergeRefugeDogs } from '@/lib/refugeDogs';
 import type { Animal } from '@/types';
 
 const adoptionSchema = z.object({
@@ -131,7 +132,7 @@ export function AdoptionGalleryPage() {
     }
   };
 
-  const { data: animals = [], isLoading, isError } = useQuery({
+  const { data: remoteAnimals = [], isLoading, isError } = useQuery({
     queryKey: ['animals-public'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -143,6 +144,17 @@ export function AdoptionGalleryPage() {
       return (data ?? []) as Animal[];
     },
   });
+  const animals = useMemo(() => mergeRefugeDogs(remoteAnimals), [remoteAnimals]);
+
+  const beginAdoption = (animal: Animal) => {
+    if (isLocalRefugeDog(animal)) {
+      toast.info(`Te llevamos a contacto para conversar sobre ${animal.name}.`);
+      navigate(`/contacto?perrito=${encodeURIComponent(animal.name)}`);
+      return;
+    }
+    setSelectedAnimal(animal);
+    setIsModalOpen(true);
+  };
 
   useEffect(() => {
     if (!slug) {
@@ -157,7 +169,7 @@ export function AdoptionGalleryPage() {
     }
   }, [slug, animals, isLoading, detailAnimal]);
 
-  const adoptableAnimals = useMemo(() => animals.filter((animal) => animal.species === 'dog' && animal.is_published !== false && ['available', 'medical_care'].includes(animal.status)).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)), [animals]);
+  const adoptableAnimals = useMemo(() => animals.filter((animal) => animal.species === 'dog' && animal.is_published !== false && ['available', 'medical_care'].includes(animal.status)).sort((a, b) => (a.sort_order ?? Number.MAX_SAFE_INTEGER) - (b.sort_order ?? Number.MAX_SAFE_INTEGER)), [animals]);
   const filtered = useMemo(() => adoptableAnimals.filter((animal) => {
     if (galleryMode === 'favorites' && !favorites.includes(animal.id)) return false;
     if (galleryMode === 'medical' && animal.status !== 'medical_care' && !animal.is_special_needs) return false;
@@ -193,7 +205,7 @@ export function AdoptionGalleryPage() {
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/68">Conoce su personalidad, entiende sus necesidades y encuentra ese vínculo que no se puede explicar, solo sentir.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Button size="xl" className="bg-[#f0644a] text-white hover:bg-[#ff8069]" onClick={() => document.getElementById('perritos')?.scrollIntoView({ behavior: 'smooth' })}>Conocer a la manada <ArrowRight /></Button><Button size="xl" variant="ghost" className="border border-white/20 text-white hover:bg-white/10" onClick={() => document.getElementById('matchmaker')?.scrollIntoView({ behavior: 'smooth' })}><Sparkles /> Encontrar mi match</Button></div>
             <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/60"><span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-[#ffcf5a]" /> Perfiles verificados</span><span className="inline-flex items-center gap-1.5"><Heart className="h-4 w-4 text-[#ffcf5a]" /> Acompañamiento real</span><span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4 text-[#ffcf5a]" /> Adopción responsable</span></div>
-            {isError && <p role="alert" className="mt-5 rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">No pudimos cargar los perfiles en este momento. Intenta nuevamente en unos minutos.</p>}
+            {isError && <p role="status" className="mt-5 rounded-xl border border-white/15 bg-white/5 p-3 text-sm text-white/65">Estás viendo las historias verificadas del refugio. La sincronización con el panel está temporalmente fuera de línea.</p>}
           </motion.div>
 
           <motion.div initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .65, delay: .1 }} className="relative mx-auto w-full max-w-2xl lg:translate-x-8">
@@ -271,7 +283,7 @@ export function AdoptionGalleryPage() {
                     <div className="flex flex-1 flex-col p-5 sm:p-6"><div className="grid grid-cols-3 gap-2 text-xs"><span className="flex items-center gap-1.5 rounded-xl bg-[var(--color-background)] px-2.5 py-2 font-semibold"><Baby className="h-3.5 w-3.5 text-[#f0644a]" />{formatAge(ageMonths, animal.age_is_estimated)}</span><span className="flex items-center gap-1.5 rounded-xl bg-[var(--color-background)] px-2.5 py-2 font-semibold"><Ruler className="h-3.5 w-3.5 text-[#f0644a]" />{sizeLabels[animal.size]}</span><span className="flex min-w-0 items-center gap-1.5 rounded-xl bg-[var(--color-background)] px-2.5 py-2 font-semibold"><MapPin className="h-3.5 w-3.5 shrink-0 text-[#f0644a]" /><span className="truncate">{animal.location || 'Refugio'}</span></span></div>
                       <p className="mt-5 line-clamp-3 text-sm leading-relaxed text-[var(--color-muted-foreground)]"><span className="font-extrabold text-[#f0644a]">ME llamo {animal.name}.</span>{' '}{animal.description || 'Estoy esperando una familia responsable que quiera conocerme de verdad.'}</p>
                       <div className="mt-5 flex flex-wrap gap-3 border-t border-[var(--color-border)] pt-4 text-[11px] font-semibold text-[var(--color-muted-foreground)]">{(animal.vaccination_status === 'up_to_date' || (!animal.vaccination_status && animal.is_vaccinated)) && <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><CheckCircle2 className="h-3.5 w-3.5" /> Vacunas al día</span>}{animal.is_neutered && <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><CheckCircle2 className="h-3.5 w-3.5" /> Esterilizado/a</span>}</div>
-                      <div className="mt-auto grid grid-cols-[1fr_auto_auto] gap-2 pt-5"><Button variant="outline" onClick={() => navigate(`/adopta/${animal.adoption_slug || slugify(animal.name)}`)}>Conocer su historia</Button><Button variant="outline" size="icon" aria-label={`Compartir información de ${animal.name}`} onClick={() => handleShare(animal)}><Share2 className="h-4 w-4" /></Button><label aria-label={`${isFav ? 'Quitar a' : 'Guardar a'} ${animal.name} ${isFav ? 'de' : 'en'} favoritos`} className={`flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 transition ${isFav ? 'border-[#f0644a] bg-[#f0644a] text-white' : 'border-[var(--color-input)] bg-[var(--color-background)] hover:bg-[var(--color-accent)]'}`}><input type="checkbox" className="sr-only" checked={isFav} onChange={() => toggleFavorite(animal.id, animal.name)} /><Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} /><span className="text-xs font-bold">{isFav ? 'Guardado' : 'Guardar'}</span></label><Button variant="warm" className="col-span-3" onClick={() => { setSelectedAnimal(animal); setIsModalOpen(true); }}><Heart className="h-4 w-4" /> Quiero conocer a {animal.name}</Button></div>
+                      <div className="mt-auto grid grid-cols-[1fr_auto_auto] gap-2 pt-5"><Button variant="outline" onClick={() => navigate(`/adopta/${animal.adoption_slug || slugify(animal.name)}`)}>Conocer su historia</Button><Button variant="outline" size="icon" aria-label={`Compartir información de ${animal.name}`} onClick={() => handleShare(animal)}><Share2 className="h-4 w-4" /></Button><label aria-label={`${isFav ? 'Quitar a' : 'Guardar a'} ${animal.name} ${isFav ? 'de' : 'en'} favoritos`} className={`flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 transition ${isFav ? 'border-[#f0644a] bg-[#f0644a] text-white' : 'border-[var(--color-input)] bg-[var(--color-background)] hover:bg-[var(--color-accent)]'}`}><input type="checkbox" className="sr-only" checked={isFav} onChange={() => toggleFavorite(animal.id, animal.name)} /><Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} /><span className="text-xs font-bold">{isFav ? 'Guardado' : 'Guardar'}</span></label><Button variant="warm" className="col-span-3" onClick={() => beginAdoption(animal)}><Heart className="h-4 w-4" /> Quiero conocer a {animal.name}</Button></div>
                     </div>
                   </div>
                 </motion.article>
@@ -297,8 +309,7 @@ export function AdoptionGalleryPage() {
               setDetailAnimal(null);
             }}
             onAdopt={() => {
-              setSelectedAnimal(detailAnimal);
-              setIsModalOpen(true);
+              beginAdoption(detailAnimal);
             }}
           />
         )}

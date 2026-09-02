@@ -6,6 +6,7 @@ import { usePublicSettings } from '@/lib/publicSettings';
 import { ResilientImage } from '@/components/ui/ResilientImage';
 import { assetUrl } from '@/lib/assets';
 import { ContextualFaq } from './ContextualFaq';
+import { RefugeDogRibbon } from './RefugeDogRibbon';
 
 type ProcessStep = { number: string; title: string; text: string; emoji?: string };
 
@@ -108,6 +109,8 @@ export function AdoptionProcessPage() {
           <article className="rounded-[1.75rem] border border-[#171717]/10 bg-white p-7"><HeartHandshake className="h-7 w-7 text-[#f0644a]" /><h3 className="mt-8 font-heading text-2xl font-extrabold">No te soltamos la mano</h3><p className="mt-3 leading-relaxed text-[#6e6a64]">La llegada a casa abre una nueva etapa. Te acompañamos con orientación para una adaptación gradual.</p></article>
         </div>
       </section>
+
+      <RefugeDogRibbon start={3} tone="dark" eyebrow="El proceso protege historias reales" title="Cada paso está pensado para alguien que ya conocemos." description="Lobo, Manchas, Max, Minnie, Moana y Noah nos recuerdan que el hogar correcto importa más que la prisa." />
 
       <ContextualFaq category="adoption" title="Antes de dar el sí, despeja tus dudas." />
 

@@ -20,6 +20,7 @@ import { ResilientImage } from '@/components/ui/ResilientImage';
 import { supabase } from '@/lib/supabase';
 import { assetUrl } from '@/lib/assets';
 import { ContextualFaq } from './ContextualFaq';
+import { RefugeDogRibbon } from './RefugeDogRibbon';
 
 const PRODUCTS = [
   {
@@ -236,6 +237,8 @@ export function StorePage() {
           ))}
         </div>
       </section>
+
+      <RefugeDogRibbon start={9} tone="dark" eyebrow="La causa detrás de cada objeto" title="Llevas el mensaje. Ellos reciben más oportunidades." description="Scooby, Tigresa, Yeri y sus compañeros son el rostro real de una tienda creada para sostener el cuidado." />
 
       <section className="bg-[#ede5da] px-5 py-16 sm:px-8 lg:py-20">
         <div className="max-w-7xl mx-auto">

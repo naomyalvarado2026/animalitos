@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { REFUGE_DOG_PROFILES } from '../src/data/refugeDogProfiles.ts';
+import { isLocalRefugeDog, mergeRefugeDogs } from '../src/lib/refugeDogs.ts';
 
 test('incluye exactamente los 12 perfiles recibidos con identificadores estables', () => {
   assert.equal(REFUGE_DOG_PROFILES.length, 12);
@@ -47,3 +48,36 @@ test('la migración mantiene publicación, orden y narrativa en la vista públic
   assert.match(sql, /is_published = true AND status IN \('available', 'medical_care'\)/);
 });
 
+test('mantiene visibles las historias reales cuando Supabase está vacío o usa registros heredados', () => {
+  const baseline = mergeRefugeDogs();
+  assert.equal(baseline.length, 12);
+  assert.ok(baseline.every(isLocalRefugeDog));
+
+  const withLegacyRows = mergeRefugeDogs([
+    {
+      id: 'remote-max',
+      name: 'Max',
+      adoption_slug: null,
+      age_months: 24,
+      description: 'Texto genérico anterior.',
+      personality_summary: null,
+      created_at: '2025-01-01T00:00:00.000Z',
+      updated_at: '2025-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'remote-bella',
+      name: 'Bella',
+      adoption_slug: null,
+      personality_summary: null,
+      created_at: '2025-01-01T00:00:00.000Z',
+      updated_at: '2025-01-01T00:00:00.000Z',
+    },
+  ]);
+
+  assert.equal(withLegacyRows.length, 12);
+  const max = withLegacyRows.find((dog) => dog.name === 'Max');
+  assert.equal(max?.id, 'remote-max');
+  assert.equal(max?.age_months, 108);
+  assert.match(max?.description ?? '', /senior profundamente afectuoso/i);
+  assert.equal(max ? isLocalRefugeDog(max) : true, false);
+});

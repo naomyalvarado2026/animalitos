@@ -34,5 +34,7 @@ dist-ssr
 *.csv
 supabase/.temp/
 .temp/
+.playwright-cli/
+output/playwright/
 
 .vercel

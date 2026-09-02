@@ -9,6 +9,7 @@ import { ResilientImage } from '@/components/ui/ResilientImage';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { assetUrl } from '@/lib/assets';
 import { formatDateShort } from '@/lib/utils';
+import { mergeRefugeDogs } from '@/lib/refugeDogs';
 import type { Animal, SuccessStory, VolunteerActivity } from '@/types';
 
 function animalImage(animal: Animal | undefined) { return assetUrl(animal?.main_image_url || animal?.gallery_urls?.[0] || '/images/dog_max.jpg'); }
@@ -77,7 +78,7 @@ export function HomePage() {
   const impactQuery = useQuery({ queryKey: ['public-impact-metrics'], queryFn: async () => { const { data, error } = await supabase.from('public_impact_metrics').select('adopted_dogs, dogs_in_care, published_stories, active_volunteers').maybeSingle(); if (error) throw error; return data; }, staleTime: 60_000 });
   const storyQuery = useQuery({ queryKey: ['public-home-story'], queryFn: async () => { const { data, error } = await supabase.from('success_stories').select('id, animal_name, adopter_name, title, story, after_image_url, adoption_date, is_featured').eq('is_featured', true).order('adoption_date', { ascending: false }).limit(1).maybeSingle(); if (error) throw error; return data as SuccessStory | null; }, staleTime: 60_000 });
   const activityQuery = useQuery({ queryKey: ['public-home-activity'], queryFn: async () => { const { data, error } = await supabase.from('volunteer_activities').select('id, title, description, activity_date, start_time, location, current_volunteers, max_volunteers').gte('activity_date', new Date().toISOString().slice(0, 10)).neq('status', 'cancelled').order('activity_date', { ascending: true }).limit(1).maybeSingle(); if (error) throw error; return data as VolunteerActivity | null; }, staleTime: 60_000 });
-  const dogs = dogsQuery.data ?? [], impact = impactQuery.data, story = storyQuery.data, activity = activityQuery.data;
+  const dogs = mergeRefugeDogs(dogsQuery.data ?? []).slice(0, 3), impact = impactQuery.data, story = storyQuery.data, activity = activityQuery.data;
   const heroTitle = settings?.home_hero_title?.trim() || 'Una familia puede cambiarlo todo.';
   const heroSubtitle = settings?.home_hero_subtitle?.trim() || 'Rescatamos perros, les devolvemos la confianza y encontramos el hogar donde puedan ser ellos mismos.';
   const heroDog = dogs[0];

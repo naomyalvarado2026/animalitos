@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { MapPin, Mail, Clock, ChevronRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -25,9 +25,15 @@ type FormData = z.infer<typeof schema>;
 
 export function ContactPage() {
   const [sending, setSending] = useState(false);
+  const [searchParams] = useSearchParams();
+  const dogName = searchParams.get('perrito')?.trim() || '';
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { type: 'general' },
+    defaultValues: {
+      type: 'general',
+      subject: dogName ? `Quiero conocer a ${dogName}` : '',
+      message: dogName ? `Hola, me gustaría recibir información y coordinar un primer encuentro con ${dogName}.` : '',
+    },
   });
 
   async function onSubmit(data: FormData) {
@@ -107,7 +113,8 @@ export function ContactPage() {
           <div className="lg:col-span-2">
             <Card>
               <CardContent className="pt-6 pb-6">
-                <h2 className="font-heading text-xl font-semibold mb-6">Envíanos un mensaje</h2>
+                <h2 className="font-heading text-xl font-semibold mb-2">{dogName ? `Conversemos sobre ${dogName}` : 'Envíanos un mensaje'}</h2>
+                {dogName && <p className="mb-6 rounded-xl bg-[#fff2e9] p-3 text-sm text-[#9e3b2b]">Ya preparamos el asunto y el mensaje. Completa tus datos para que el equipo pueda orientarte.</p>}
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
