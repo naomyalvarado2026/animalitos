@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { ResilientImage } from '@/components/ui/ResilientImage';
 import { supabase } from '@/lib/supabase';
 import { assetUrl } from '@/lib/assets';
+import { ContextualFaq } from './ContextualFaq';
 
 const PRODUCTS = [
   {
@@ -249,6 +250,8 @@ export function StorePage() {
           </div>
         </div>
       </section>
+
+      <ContextualFaq category="store" title="Tu pedido, con las cosas claras." />
 
       <section className="max-w-5xl mx-auto px-5 py-16 text-center sm:px-8 lg:py-20">
         <ShieldCheck className="mx-auto h-8 w-8 text-[#f0644a]" />

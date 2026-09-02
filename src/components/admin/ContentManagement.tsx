@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { FileText, Save, Share2, AlertTriangle } from 'lucide-react';
+import { FileText, Save, Share2, AlertTriangle, ArrowDown, ArrowUp, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,11 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { ResilientImage } from '@/components/ui/ResilientImage';
-
-type EditableFaq = { question: string; answer: string; category: 'adoption' | 'donation' | 'visit' | 'volunteer' };
-const defaultFaq: EditableFaq[] = [
-  { category: 'adoption', question: '¿Cuáles son los requisitos para adoptar?', answer: 'Completa la solicitud, cuéntanos sobre tu hogar y participa en la conversación de adopción.' },
-];
+import { DEFAULT_FAQS, FAQ_CATEGORIES, resolveFaqItems, validateFaqItems, type FaqItem, type FaqCategory } from '@/lib/faq';
 
 export function ContentManagement() {
   const queryClient = useQueryClient();
@@ -38,7 +35,16 @@ export function ContentManagement() {
     about_mission: '',
     about_vision: '',
   });
-  const [faqItems, setFaqItems] = useState<EditableFaq[]>(defaultFaq);
+  const [faqItems, setFaqItems] = useState<FaqItem[]>(DEFAULT_FAQS);
+
+  const updateFaq = (index: number, patch: Partial<FaqItem>) => setFaqItems((items) => items.map((item, current) => current === index ? { ...item, ...patch } : item));
+  const moveFaq = (index: number, direction: -1 | 1) => setFaqItems((items) => {
+    const target = index + direction;
+    if (target < 0 || target >= items.length) return items;
+    const next = [...items];
+    [next[index], next[target]] = [next[target], next[index]];
+    return next;
+  });
 
   const settingsQuery = useQuery({
     queryKey: ['admin-site-content-settings'],
@@ -72,16 +78,12 @@ export function ContentManagement() {
       about_mission: settings.about_mission ?? '',
       about_vision: settings.about_vision ?? '',
     });
-    if (settings.faq_items) {
-      try {
-        const parsed = JSON.parse(settings.faq_items) as EditableFaq[];
-        if (Array.isArray(parsed)) setFaqItems(parsed);
-      } catch { /* conservar el contenido actual si hay una configuración antigua inválida */ }
-    }
+    setFaqItems(resolveFaqItems(settings.faq_items));
   }, [settingsQuery.data]);
 
   const saveSettings = useMutation({
     mutationFn: async () => {
+      const cleanFaqItems = validateFaqItems(faqItems);
       // Upsert settings in Supabase site_settings
       const settingsToSave = [
         { key: 'social_facebook', value: socialLinks.facebook },
@@ -100,7 +102,7 @@ export function ContentManagement() {
         { key: 'about_intro', value: pageCopy.about_intro },
         { key: 'about_mission', value: pageCopy.about_mission },
         { key: 'about_vision', value: pageCopy.about_vision },
-        { key: 'faq_items', value: JSON.stringify(faqItems) },
+        { key: 'faq_items', value: JSON.stringify(cleanFaqItems) },
       ];
 
       const { error } = await supabase.from('site_settings').upsert(settingsToSave, { onConflict: 'key' });
@@ -111,7 +113,7 @@ export function ContentManagement() {
       toast.success('Contenido y redes actualizados correctamente.');
       void settingsQuery.refetch();
     },
-    onError: () => toast.error('No pudimos guardar los cambios. Verifica la conexión con Supabase.'),
+    onError: (error: Error) => toast.error(error.message || 'No pudimos guardar los cambios. Verifica la conexión con Supabase.'),
   });
 
   return (
@@ -126,7 +128,7 @@ export function ContentManagement() {
             Edita los textos públicos, redes sociales y alertas de emergencia del sitio.
           </p>
         </div>
-        <Button variant="warm" className="w-full sm:w-auto" onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
+        <Button variant="warm" className="w-full sm:w-auto" onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending || settingsQuery.isPending || settingsQuery.isError}>
           <Save className="h-4 w-4 mr-2" />
           Guardar Cambios
         </Button>
@@ -184,8 +186,18 @@ export function ContentManagement() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between"><CardTitle className="text-base">Preguntas frecuentes</CardTitle><Button type="button" variant="outline" size="sm" onClick={() => setFaqItems([...faqItems, { category: 'adoption', question: '', answer: '' }])}>Añadir pregunta</Button></CardHeader>
         <CardContent className="space-y-4">
-          {faqItems.map((faq, index) => <div key={index} className="grid gap-3 rounded-xl border border-[var(--color-border)] p-4 md:grid-cols-[1fr_1fr_auto]"><div className="space-y-2"><Label htmlFor={`faq-question-${index}`}>Pregunta</Label><Input id={`faq-question-${index}`} value={faq.question} onChange={(event) => setFaqItems(faqItems.map((item, itemIndex) => itemIndex === index ? { ...item, question: event.target.value } : item))} /></div><div className="space-y-2"><Label htmlFor={`faq-answer-${index}`}>Respuesta</Label><Textarea id={`faq-answer-${index}`} rows={2} value={faq.answer} onChange={(event) => setFaqItems(faqItems.map((item, itemIndex) => itemIndex === index ? { ...item, answer: event.target.value } : item))} /></div><div className="flex items-end"><Button type="button" variant="ghost" size="sm" onClick={() => setFaqItems(faqItems.filter((_, itemIndex) => itemIndex !== index))} disabled={faqItems.length === 1}>Quitar</Button></div></div>)}
-          <p className="text-xs text-[var(--color-muted-foreground)]">Las preguntas se publican al guardar. Evita incluir datos personales o promesas que no estén confirmadas.</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[var(--color-muted)] p-4"><p className="max-w-xl text-sm text-[var(--color-muted-foreground)]">Una respuesta, varios lugares: el centro de ayuda, el buscador y las páginas de su categoría. Las tres primeras de cada categoría aparecen en el bloque contextual.</p><Link to="/faq" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)]">Ver ayuda pública <ExternalLink className="h-4 w-4" /></Link></div>
+          {faqItems.map((faq, index) => (
+            <div key={index} className="space-y-4 rounded-2xl border border-[var(--color-border)] p-4">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div className="min-w-48 flex-1 space-y-1.5"><Label htmlFor={`faq-category-${index}`}>Dónde aparece la pregunta {index + 1}</Label><select id={`faq-category-${index}`} value={faq.category} onChange={(event) => updateFaq(index, { category: event.target.value as FaqCategory })} className="h-11 w-full rounded-lg border border-[var(--color-input)] bg-[var(--color-background)] px-3 text-sm">{Object.entries(FAQ_CATEGORIES).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></div>
+                <div className="flex gap-1"><Button type="button" variant="outline" size="icon" aria-label={`Subir pregunta ${index + 1}`} disabled={index === 0} onClick={() => moveFaq(index, -1)}><ArrowUp className="h-4 w-4" /></Button><Button type="button" variant="outline" size="icon" aria-label={`Bajar pregunta ${index + 1}`} disabled={index === faqItems.length - 1} onClick={() => moveFaq(index, 1)}><ArrowDown className="h-4 w-4" /></Button><Button type="button" variant="ghost" onClick={() => setFaqItems((items) => items.filter((_, current) => current !== index))} aria-label={`Quitar pregunta ${index + 1}`}>Quitar</Button></div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2"><div className="space-y-2"><Label htmlFor={`faq-question-${index}`}>Pregunta</Label><Input id={`faq-question-${index}`} value={faq.question} onChange={(event) => updateFaq(index, { question: event.target.value })} /></div><div className="space-y-2"><Label htmlFor={`faq-answer-${index}`}>Respuesta</Label><Textarea id={`faq-answer-${index}`} rows={3} value={faq.answer} onChange={(event) => updateFaq(index, { answer: event.target.value })} /></div></div>
+            </div>
+          ))}
+          {!faqItems.length && <p className="rounded-xl border border-dashed border-[var(--color-border)] p-5 text-sm">No hay preguntas. Al guardar, los bloques contextuales se ocultarán hasta que publiques nuevas respuestas.</p>}
+          <p className="text-xs text-[var(--color-muted-foreground)]">Las preguntas se publican al guardar. No se aceptan filas vacías ni duplicadas. Evita datos personales o promesas que no estén confirmadas.</p>
         </CardContent>
       </Card>
 

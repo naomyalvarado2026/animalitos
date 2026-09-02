@@ -7,6 +7,7 @@ import { PublicFooter } from './PublicFooter';
 import { EmergencyBanner } from './EmergencyBanner';
 import { PublicMobileNav } from './PublicMobileNav';
 import { assetUrl } from '@/lib/assets';
+import { SiteSearchProvider } from './SiteSearch';
 
 export function PublicLayout() {
   const { pathname } = useLocation();
@@ -29,6 +30,7 @@ export function PublicLayout() {
           : { title: 'AdoptaME | Cada perro merece una historia feliz', description: 'Rescatamos perros, les devolvemos la confianza y encontramos hogares responsables.' };
   return (
     <MotionConfig reducedMotion="user">
+      <SiteSearchProvider>
       <div className="public-shell flex flex-col min-h-screen bg-[var(--color-background)]">
         <Helmet>
           <title>{seo.title}</title>
@@ -38,15 +40,16 @@ export function PublicLayout() {
           <meta property="og:description" content={seo.description} />
           <meta property="og:image" content={`${window.location.origin}${assetUrl('/images/dog_max.jpg')}`} />
         </Helmet>
-        <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
+        <a className="skip-link" href="#main-content" onClick={(event) => { event.preventDefault(); const main = document.getElementById('main-content'); main?.focus(); main?.scrollIntoView(); }}>Saltar al contenido principal</a>
         <EmergencyBanner />
         <PublicHeader />
-        <main className="flex-1 pb-20 md:pb-0" id="main-content" tabIndex={-1}>
+        <main className="flex-1 pb-20 lg:pb-0" id="main-content" tabIndex={-1}>
           <Outlet />
         </main>
         <PublicFooter />
         <PublicMobileNav />
       </div>
+      </SiteSearchProvider>
     </MotionConfig>
   );
 }

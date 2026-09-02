@@ -16,6 +16,7 @@ const CATEGORY_META: Record<ExpenseCategory, { label: string; icon: typeof Trend
   infrastructure: { label: 'Infraestructura', icon: Building2, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/20' },
   salary: { label: 'Personal', icon: Users, color: 'text-violet-500', bg: 'bg-violet-50 dark:bg-violet-950/20' },
   utilities: { label: 'Servicios', icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-950/20' },
+  services: { label: 'Servicios', icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-950/20' },
   supplies: { label: 'Insumos', icon: Package, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-950/20' },
   other: { label: 'Otros', icon: TrendingDown, color: 'text-gray-500', bg: 'bg-gray-50 dark:bg-gray-950/20' },
 };

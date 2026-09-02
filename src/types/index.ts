@@ -47,7 +47,7 @@ export interface IncomeRecord {
   donor?: Donor;
 }
 
-export type ExpenseCategory = 'food' | 'medical' | 'infrastructure' | 'services' | 'other';
+export type ExpenseCategory = 'food' | 'medical' | 'infrastructure' | 'services' | 'salary' | 'utilities' | 'supplies' | 'other';
 
 export interface ExpenseRecord {
   id: string;
@@ -62,7 +62,7 @@ export interface ExpenseRecord {
   updated_at: string;
 }
 
-export type DonorType = 'individual' | 'corporate';
+export type DonorType = 'individual' | 'corporate' | 'company' | 'organization';
 
 export interface Donor {
   id: string;
@@ -84,21 +84,24 @@ export interface Donor {
 export type AnimalStatus = 'available' | 'pending' | 'adopted' | 'medical_care';
 export type AnimalSpecies = 'dog';
 export type AnimalGender = 'male' | 'female';
-export type AnimalSize = 'small' | 'medium' | 'large' | 'extra_large';
+export type AnimalSize = 'unknown' | 'small' | 'medium' | 'large' | 'extra_large';
+export type VaccinationStatus = 'unknown' | 'up_to_date' | 'pending';
 
 export interface Animal {
   id: string;
   name: string;
   species: AnimalSpecies;
   breed: string | null;
-  age_months: number;
+  age_months: number | null;
+  age_is_estimated?: boolean;
   gender: AnimalGender;
   size: AnimalSize;
   status: AnimalStatus;
   description: string;
   story: string | null;
   health_status: string;
-  is_vaccinated: boolean;
+  is_vaccinated: boolean | null;
+  vaccination_status?: VaccinationStatus;
   is_neutered: boolean;
   is_special_needs: boolean;
   special_needs_desc: string | null;
@@ -106,6 +109,14 @@ export interface Animal {
   gallery_urls: string[];
   rescue_date: string;
   location: string;
+  personality_summary?: string | null;
+  ideal_home?: string | null;
+  compatibility_notes?: string | null;
+  adoption_slug?: string | null;
+  is_published?: boolean;
+  show_brand_moment?: boolean;
+  brand_message?: string | null;
+  sort_order?: number;
   created_at: string;
   updated_at: string;
 }
@@ -205,6 +216,15 @@ export interface SuccessStory {
 
 export type ActivityCategory = 'dog_walking' | 'medical' | 'events' | 'maintenance' | 'cleaning' | 'foster';
 export type ActivityStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+export type EventType = 'single_day' | 'multi_day' | 'recurring';
+export type RecurrencePattern = 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly';
+
+export interface SiteSettings {
+  key: string;
+  value: string;
+  description?: string | null;
+  updated_at?: string;
+}
 
 export interface VolunteerActivity {
   id: string;
@@ -212,6 +232,10 @@ export interface VolunteerActivity {
   description: string;
   category: ActivityCategory;
   activity_date: string;
+  end_date?: string | null;
+  event_type?: EventType;
+  recurrence_pattern?: RecurrencePattern;
+  parent_event_id?: string | null;
   start_time: string;
   end_time: string;
   location: string;
@@ -232,6 +256,7 @@ export interface ActivityRegistration {
   volunteer_email: string;
   volunteer_phone: string;
   notes: string | null;
+  assigned_by_admin?: boolean;
   created_at: string;
   activity?: VolunteerActivity;
 }

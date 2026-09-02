@@ -252,6 +252,32 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   }
 }
 
+/* Native modal foundation: top layer, bounded scrolling and keyboard focus. */
+.accessible-dialog {
+  margin: auto;
+  width: min(42rem, calc(100vw - 1.5rem));
+  max-width: none;
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--color-border);
+  border-radius: 1.75rem;
+  background: var(--color-card);
+  color: var(--color-foreground);
+  box-shadow: 0 32px 100px rgb(0 0 0 / .35);
+}
+
+.accessible-dialog::backdrop {
+  background: rgb(0 0 0 / .65);
+  backdrop-filter: blur(6px);
+}
+
+.accessible-dialog :focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 3px;
+}
+
 /* ── Keyframes ── */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }

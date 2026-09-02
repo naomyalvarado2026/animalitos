@@ -23,6 +23,8 @@ const DEMO_PROFILE: Profile = {
   role: 'super_admin',
   full_name: 'Naomy Alvarado',
   email: 'naomyalvarado.2026@gmail.com',
+  avatar_url: null,
+  is_active: true,
   phone: null,
   access_level: 10,
   created_at: new Date().toISOString(),

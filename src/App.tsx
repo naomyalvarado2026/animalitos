@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'sonner';
@@ -35,6 +35,7 @@ const AdoptionProcessPage = lazy(() => import('@/components/public/AdoptionProce
 const SanctuaryPage = lazy(() => import('@/components/public/SanctuaryPage').then(m => ({ default: m.SanctuaryPage })));
 const MemoryPage = lazy(() => import('@/components/public/MemoryPage').then(m => ({ default: m.MemoryPage })));
 const ResourcesPage = lazy(() => import('@/components/public/ResourcesPage').then(m => ({ default: m.ResourcesPage })));
+const NotFoundPage = lazy(() => import('@/components/public/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 // Lazy-loaded Admin pages
 const AdminLoginPage = lazy(() => import('@/components/auth/AdminLoginPage').then(m => ({ default: m.AdminLoginPage })));
@@ -110,6 +111,7 @@ export default function App() {
                       <Route path="/donaciones/donadores-principales" element={<TopDonorsPage />} />
                       <Route path="/contacto" element={<ContactPage />} />
                       <Route path="/contacto/quiero-apoyar" element={<SupportPage />} />
+                      <Route path="*" element={<NotFoundPage />} />
                     </Route>
 
                     {/* ── Admin login (no layout) ── */}
@@ -139,8 +141,6 @@ export default function App() {
                       </Route>
                     </Route>
 
-                    {/* Fallback */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Suspense>
               </HashRouter>

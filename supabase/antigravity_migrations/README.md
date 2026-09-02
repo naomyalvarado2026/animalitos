@@ -18,6 +18,7 @@ Estas migraciones son una capa posterior a `supabase/migrations/001`–`008`. No
 12. `0012_memory_memorial.sql` — crea el memorial público “En memoria de” y sus políticas RLS.
 13. `0013_merchandising_catalog_drafts.sql` — carga productos iniciales como borradores, sin publicarlos ni asignar inventario.
 14. `0014_animal_operations.sql` — crea fichas médicas, tareas y movimientos internos por animal.
+15. `0015_adoption_story_profiles.sql` — añade narrativa, publicación, orden y datos verificables para los perfiles de adopción.
 
 ## Antes de ejecutar
 

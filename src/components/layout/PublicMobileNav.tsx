@@ -11,6 +11,7 @@ const PRIMARY_ITEMS = [
 ];
 
 const MORE_ITEMS = [
+  { label: 'Centro de ayuda', href: '/faq' },
   { label: 'Cómo funciona', href: '/como-funciona' },
   { label: 'Santuario', href: '/santuario' },
   { label: 'Tienda solidaria', href: '/tienda' },
@@ -57,9 +58,9 @@ export function PublicMobileNav() {
   return (
     <>
       {isMoreOpen && (
-        <div className="fixed inset-0 z-[65] md:hidden" role="presentation" onClick={() => closeMore()}>
+        <div className="fixed inset-0 z-[65] lg:hidden" role="presentation" onClick={() => closeMore()}>
           <div className="absolute inset-0 bg-black/35" />
-          <div ref={moreDialogRef} id="more-menu" className="absolute left-3 right-3 bottom-[calc(4.9rem+env(safe-area-inset-bottom))] rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-3 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="more-menu-title" onClick={(event) => event.stopPropagation()}>
+          <div ref={moreDialogRef} id="more-menu" className="absolute left-3 right-3 bottom-[calc(4.9rem+env(safe-area-inset-bottom))] max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-3 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="more-menu-title" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between px-3 py-2"><p id="more-menu-title" className="font-heading font-bold">Más de AdoptaME</p><button type="button" onClick={() => closeMore()} className="mobile-touch-target rounded-xl" aria-label="Cerrar más opciones"><X className="h-5 w-5 mx-auto" /></button></div>
             <div className="grid grid-cols-2 gap-2 mt-2">
               {MORE_ITEMS.map((item) => <Link key={item.href} to={item.href} onClick={() => closeMore(false)} className="rounded-2xl bg-[var(--color-background)] px-3 py-3 text-sm font-semibold hover:bg-[var(--color-accent)]">{item.label}</Link>)}
@@ -67,7 +68,7 @@ export function PublicMobileNav() {
           </div>
         </div>
       )}
-      <nav className="fixed bottom-0 left-0 right-0 z-[60] md:hidden border-t border-[var(--color-border)] bg-[var(--color-card)]/95 shadow-[0_-8px_24px_rgba(23,23,23,.12)] backdrop-blur-md pb-[env(safe-area-inset-bottom)]" aria-label="Navegación móvil principal">
+      <nav className="fixed bottom-0 left-0 right-0 z-[60] lg:hidden border-t border-[var(--color-border)] bg-[var(--color-card)]/95 shadow-[0_-8px_24px_rgba(23,23,23,.12)] backdrop-blur-md pb-[env(safe-area-inset-bottom)]" aria-label="Navegación móvil principal">
         <div className="grid grid-cols-5 h-[4.35rem] max-w-lg mx-auto">
           {PRIMARY_ITEMS.map(({ label, href, icon: Icon }) => { const active = label === 'Ayudar' ? isHelping : isActive(href); return <Link key={href} to={href} aria-current={active ? 'page' : undefined} aria-label={`Ir a ${label}`} className={cn('flex flex-col items-center justify-center gap-1 text-[.68rem] font-semibold mobile-touch-target', active ? 'text-[var(--color-primary)]' : 'text-[var(--color-muted-foreground)]')}><Icon className="h-5 w-5" strokeWidth={2.2} /><span>{label}</span></Link>; })}
           <button ref={moreButtonRef} type="button" onClick={() => isMoreOpen ? closeMore(false) : setIsMoreOpen(true)} aria-expanded={isMoreOpen} aria-controls="more-menu" className={cn('flex flex-col items-center justify-center gap-1 text-[.68rem] font-semibold mobile-touch-target', isMoreOpen ? 'text-[var(--color-primary)]' : 'text-[var(--color-muted-foreground)]')}><Menu className="h-5 w-5" strokeWidth={2.2} /><span>Más</span></button>

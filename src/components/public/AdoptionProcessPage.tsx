@@ -5,6 +5,7 @@ import { ArrowRight, Check, HeartHandshake, MessageCircleHeart, PawPrint, Shield
 import { usePublicSettings } from '@/lib/publicSettings';
 import { ResilientImage } from '@/components/ui/ResilientImage';
 import { assetUrl } from '@/lib/assets';
+import { ContextualFaq } from './ContextualFaq';
 
 type ProcessStep = { number: string; title: string; text: string; emoji?: string };
 
@@ -107,6 +108,8 @@ export function AdoptionProcessPage() {
           <article className="rounded-[1.75rem] border border-[#171717]/10 bg-white p-7"><HeartHandshake className="h-7 w-7 text-[#f0644a]" /><h3 className="mt-8 font-heading text-2xl font-extrabold">No te soltamos la mano</h3><p className="mt-3 leading-relaxed text-[#6e6a64]">La llegada a casa abre una nueva etapa. Te acompañamos con orientación para una adaptación gradual.</p></article>
         </div>
       </section>
+
+      <ContextualFaq category="adoption" title="Antes de dar el sí, despeja tus dudas." />
 
       <section className="bg-[#171717] px-5 py-20 text-white sm:px-8">
         <div className="mx-auto max-w-4xl text-center">

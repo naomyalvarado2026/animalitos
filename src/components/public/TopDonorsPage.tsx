@@ -12,6 +12,7 @@ import { ResilientImage } from '@/components/ui/ResilientImage';
 
 const TYPE_LABEL: Record<DonorType, string> = {
   individual: 'Persona',
+  corporate: 'Empresa',
   company: 'Empresa',
   organization: 'Organización',
 };

@@ -175,7 +175,7 @@ export function PetMatchmaker() {
                       <p className="text-xs font-semibold text-[#f0644a]">{animal.breed || 'Perrito rescatado'}</p>
                       <p className="text-xs leading-relaxed text-[#6e6a64]">{animal.description || 'Conoce su historia y descubre si son un buen match.'}</p>
                       <Button variant="warm" size="sm" className="w-full mt-2" asChild>
-                        <Link to={`/adopta/${(animal.name || 'amigo').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>Conocer a {animal.name} <ArrowRight className="h-3.5 w-3.5 ml-1" /></Link>
+                        <Link to={`/adopta/${animal.adoption_slug || (animal.name || 'amigo').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')}`}>Conocer a {animal.name} <ArrowRight className="h-3.5 w-3.5 ml-1" /></Link>
                       </Button>
                     </CardContent>
                   </Card>

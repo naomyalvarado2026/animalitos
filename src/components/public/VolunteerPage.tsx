@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { SmartSchedulePicker } from '@/components/ui/SmartSchedulePicker';
 import { VolunteerCalendar } from './VolunteerCalendar';
+import { ContextualFaq } from './ContextualFaq';
 import type { VolunteerArea } from '@/types';
 
 const volunteerSchema = z.object({
@@ -109,6 +110,8 @@ export function VolunteerPage() {
           <div className="rounded-[2rem] bg-[#fffdf9] p-4 shadow-[0_20px_60px_rgba(23,23,23,.08)] sm:p-7"><VolunteerCalendar /></div>
         </div>
       </section>
+
+      <ContextualFaq category="volunteer" title="Una mano empieza con una buena respuesta." />
 
       <section id="volunteer-form" className="scroll-mt-24 bg-[#171717] px-5 py-20 text-white sm:px-8 lg:py-28">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.78fr_1.22fr] lg:gap-20">

@@ -15,6 +15,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { Helmet } from 'react-helmet-async';
 import { PetMatchmaker } from './PetMatchmaker';
 import type { Animal } from '@/types';
 
@@ -34,22 +35,25 @@ type AdoptionFormData = z.infer<typeof adoptionSchema>;
 type GalleryMode = 'all' | 'medical' | 'favorites';
 
 const sizeLabels: Record<Animal['size'], string> = {
+  unknown: 'Por confirmar',
   small: 'Pequeño',
   medium: 'Mediano',
   large: 'Grande',
   extra_large: 'Muy grande',
 };
 
-function getAgeMonths(animal: Animal) {
+function getAgeMonths(animal: Animal): number | null {
   const raw = animal as unknown as Record<string, unknown>;
-  return animal.age_months ?? (typeof raw.age_years === 'number' ? raw.age_years * 12 : 12);
+  return animal.age_months ?? (typeof raw.age_years === 'number' ? raw.age_years * 12 : null);
 }
 
-function formatAge(months: number) {
-  if (months < 12) return `${months} ${months === 1 ? 'mes' : 'meses'}`;
+function formatAge(months: number | null, estimated = false) {
+  if (months == null) return 'Por confirmar';
+  const prefix = estimated ? 'Aprox. ' : '';
+  if (months < 12) return `${prefix}${months} ${months === 1 ? 'mes' : 'meses'}`;
   const years = Math.floor(months / 12);
   const rest = months % 12;
-  return `${years} ${years === 1 ? 'año' : 'años'}${rest ? ` · ${rest}m` : ''}`;
+  return `${prefix}${years} ${years === 1 ? 'año' : 'años'}${rest ? ` · ${rest}m` : ''}`;
 }
 
 export function getAnimalImageUrl(animal: Animal): string {
@@ -146,24 +150,25 @@ export function AdoptionGalleryPage() {
       return;
     }
     if (isLoading || detailAnimal || dismissedSlugRef.current === slug) return;
-    const match = animals.find((animal) => slugify(animal.name) === slug);
+    const match = animals.find((animal) => (animal.adoption_slug || slugify(animal.name)) === slug);
     if (match) {
       setDetailAnimal(match);
       setIsDetailModalOpen(true);
     }
   }, [slug, animals, isLoading, detailAnimal]);
 
-  const adoptableAnimals = useMemo(() => animals.filter((animal) => animal.species === 'dog' && ['available', 'medical_care'].includes(animal.status)), [animals]);
+  const adoptableAnimals = useMemo(() => animals.filter((animal) => animal.species === 'dog' && animal.is_published !== false && ['available', 'medical_care'].includes(animal.status)).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)), [animals]);
   const filtered = useMemo(() => adoptableAnimals.filter((animal) => {
     if (galleryMode === 'favorites' && !favorites.includes(animal.id)) return false;
     if (galleryMode === 'medical' && animal.status !== 'medical_care' && !animal.is_special_needs) return false;
     if (sizeFilter !== 'all' && animal.size !== sizeFilter) return false;
     const ageMonths = getAgeMonths(animal);
-    if (ageFilter === 'puppy' && ageMonths > 12) return false;
-    if (ageFilter === 'adult' && (ageMonths <= 12 || ageMonths > 84)) return false;
-    if (ageFilter === 'senior' && ageMonths <= 84) return false;
+    if (ageFilter !== 'all' && ageMonths == null) return false;
+    if (ageFilter === 'puppy' && ageMonths != null && ageMonths > 12) return false;
+    if (ageFilter === 'adult' && ageMonths != null && (ageMonths <= 12 || ageMonths > 84)) return false;
+    if (ageFilter === 'senior' && ageMonths != null && ageMonths <= 84) return false;
     const needle = search.trim().toLowerCase();
-    return !needle || [animal.name, animal.breed, animal.description, animal.location].some((value) => (value ?? '').toLowerCase().includes(needle));
+    return !needle || [animal.name, animal.breed, animal.description, animal.story, animal.personality_summary, animal.ideal_home, animal.compatibility_notes, animal.location].some((value) => (value ?? '').toLowerCase().includes(needle));
   }), [adoptableAnimals, ageFilter, favorites, galleryMode, search, sizeFilter]);
 
   const heroAnimals = adoptableAnimals.slice(0, 2);
@@ -177,6 +182,7 @@ export function AdoptionGalleryPage() {
 
   return (
     <div className="overflow-hidden pt-16">
+      {detailAnimal && <Helmet><title>{detailAnimal.name} busca familia | AdoptaME</title><meta name="description" content={detailAnimal.description || `Conoce la historia de ${detailAnimal.name} y el proceso de adopción responsable de AdoptaME.`} /></Helmet>}
       <section className="relative bg-[#171717] py-16 text-[#fffdf9] sm:py-20 lg:py-24">
         <div className="pointer-events-none absolute -left-28 top-10 h-72 w-72 rounded-full border-[62px] border-[#f0644a]/10" />
         <div className="pointer-events-none absolute right-[8%] top-0 h-28 w-28 rounded-full bg-[#ffcf5a]/10 blur-3xl" />
@@ -258,13 +264,14 @@ export function AdoptionGalleryPage() {
                       <ResilientImage src={imgUrl} alt={`${animal.name}, perrito en adopción`} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]" />
                       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#171717]/95 via-[#171717]/35 to-transparent" />
                       <div className="absolute left-4 top-4 z-10 flex max-w-[68%] flex-wrap gap-2">{animal.status === 'medical_care' || animal.is_special_needs ? <span className="rounded-full bg-[#ffcf5a] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.1em] text-[#171717]">Necesita cuidados</span> : <span className="rounded-full bg-[#fffdf9]/92 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.1em] text-[#171717] backdrop-blur">Listo para conocerte</span>}</div>
+                      {animal.show_brand_moment && <span className="absolute right-4 top-4 z-10 rounded-full border border-white/30 bg-[#171717]/72 px-3 py-1.5 font-heading text-xs font-extrabold text-white backdrop-blur">Adopta<span className="text-[#f0644a]">ME</span></span>}
                       <div className="absolute inset-x-5 bottom-5 z-10 text-white"><p className="text-xs font-bold uppercase tracking-[.13em] text-[#ffcf5a]">{animal.breed || 'Perrito rescatado'}</p><div className="mt-1 flex items-end justify-between gap-3"><h3 className="font-heading text-4xl font-extrabold tracking-[-.04em]">{animal.name}</h3><span className="mb-1 text-xs text-white/75">{animal.gender === 'male' ? 'Macho' : 'Hembra'}</span></div></div>
                     </div>
 
-                    <div className="flex flex-1 flex-col p-5 sm:p-6"><div className="grid grid-cols-3 gap-2 text-xs"><span className="flex items-center gap-1.5 rounded-xl bg-[var(--color-background)] px-2.5 py-2 font-semibold"><Baby className="h-3.5 w-3.5 text-[#f0644a]" />{formatAge(ageMonths)}</span><span className="flex items-center gap-1.5 rounded-xl bg-[var(--color-background)] px-2.5 py-2 font-semibold"><Ruler className="h-3.5 w-3.5 text-[#f0644a]" />{sizeLabels[animal.size]}</span><span className="flex min-w-0 items-center gap-1.5 rounded-xl bg-[var(--color-background)] px-2.5 py-2 font-semibold"><MapPin className="h-3.5 w-3.5 shrink-0 text-[#f0644a]" /><span className="truncate">{animal.location || 'Refugio'}</span></span></div>
+                    <div className="flex flex-1 flex-col p-5 sm:p-6"><div className="grid grid-cols-3 gap-2 text-xs"><span className="flex items-center gap-1.5 rounded-xl bg-[var(--color-background)] px-2.5 py-2 font-semibold"><Baby className="h-3.5 w-3.5 text-[#f0644a]" />{formatAge(ageMonths, animal.age_is_estimated)}</span><span className="flex items-center gap-1.5 rounded-xl bg-[var(--color-background)] px-2.5 py-2 font-semibold"><Ruler className="h-3.5 w-3.5 text-[#f0644a]" />{sizeLabels[animal.size]}</span><span className="flex min-w-0 items-center gap-1.5 rounded-xl bg-[var(--color-background)] px-2.5 py-2 font-semibold"><MapPin className="h-3.5 w-3.5 shrink-0 text-[#f0644a]" /><span className="truncate">{animal.location || 'Refugio'}</span></span></div>
                       <p className="mt-5 line-clamp-3 text-sm leading-relaxed text-[var(--color-muted-foreground)]"><span className="font-extrabold text-[#f0644a]">ME llamo {animal.name}.</span>{' '}{animal.description || 'Estoy esperando una familia responsable que quiera conocerme de verdad.'}</p>
-                      <div className="mt-5 flex flex-wrap gap-3 border-t border-[var(--color-border)] pt-4 text-[11px] font-semibold text-[var(--color-muted-foreground)]">{animal.is_vaccinated && <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><CheckCircle2 className="h-3.5 w-3.5" /> Vacunado/a</span>}{animal.is_neutered && <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><CheckCircle2 className="h-3.5 w-3.5" /> Esterilizado/a</span>}</div>
-                      <div className="mt-auto grid grid-cols-[1fr_auto_auto] gap-2 pt-5"><Button variant="outline" onClick={() => { setDetailAnimal(animal); setIsDetailModalOpen(true); }}>Conocer su historia</Button><Button variant="outline" size="icon" aria-label={`Compartir información de ${animal.name}`} onClick={() => handleShare(animal)}><Share2 className="h-4 w-4" /></Button><label aria-label={`${isFav ? 'Quitar a' : 'Guardar a'} ${animal.name} ${isFav ? 'de' : 'en'} favoritos`} className={`flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 transition ${isFav ? 'border-[#f0644a] bg-[#f0644a] text-white' : 'border-[var(--color-input)] bg-[var(--color-background)] hover:bg-[var(--color-accent)]'}`}><input type="checkbox" className="sr-only" checked={isFav} onChange={() => toggleFavorite(animal.id, animal.name)} /><Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} /><span className="text-xs font-bold">{isFav ? 'Guardado' : 'Guardar'}</span></label><Button variant="warm" className="col-span-3" onClick={() => { setSelectedAnimal(animal); setIsModalOpen(true); }}><Heart className="h-4 w-4" /> Quiero conocer a {animal.name}</Button></div>
+                      <div className="mt-5 flex flex-wrap gap-3 border-t border-[var(--color-border)] pt-4 text-[11px] font-semibold text-[var(--color-muted-foreground)]">{(animal.vaccination_status === 'up_to_date' || (!animal.vaccination_status && animal.is_vaccinated)) && <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><CheckCircle2 className="h-3.5 w-3.5" /> Vacunas al día</span>}{animal.is_neutered && <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><CheckCircle2 className="h-3.5 w-3.5" /> Esterilizado/a</span>}</div>
+                      <div className="mt-auto grid grid-cols-[1fr_auto_auto] gap-2 pt-5"><Button variant="outline" onClick={() => navigate(`/adopta/${animal.adoption_slug || slugify(animal.name)}`)}>Conocer su historia</Button><Button variant="outline" size="icon" aria-label={`Compartir información de ${animal.name}`} onClick={() => handleShare(animal)}><Share2 className="h-4 w-4" /></Button><label aria-label={`${isFav ? 'Quitar a' : 'Guardar a'} ${animal.name} ${isFav ? 'de' : 'en'} favoritos`} className={`flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 transition ${isFav ? 'border-[#f0644a] bg-[#f0644a] text-white' : 'border-[var(--color-input)] bg-[var(--color-background)] hover:bg-[var(--color-accent)]'}`}><input type="checkbox" className="sr-only" checked={isFav} onChange={() => toggleFavorite(animal.id, animal.name)} /><Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} /><span className="text-xs font-bold">{isFav ? 'Guardado' : 'Guardar'}</span></label><Button variant="warm" className="col-span-3" onClick={() => { setSelectedAnimal(animal); setIsModalOpen(true); }}><Heart className="h-4 w-4" /> Quiero conocer a {animal.name}</Button></div>
                     </div>
                   </div>
                 </motion.article>
@@ -469,10 +476,11 @@ function PetDetailModal({ animal, onClose, onAdopt }: { animal: Animal; onClose:
         <div className="grid min-h-[38rem] lg:grid-cols-[.95fr_1.05fr]">
           <div className="relative min-h-80 overflow-hidden bg-[var(--color-muted)] lg:min-h-full"><ResilientImage src={getAnimalImageUrl(animal)} alt={`${animal.name}, perrito en adopción`} className="absolute inset-0 h-full w-full object-cover" /><div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#171717]/85 to-transparent" /><div className="absolute bottom-6 left-6 right-6 text-white"><p className="text-xs font-bold uppercase tracking-[.14em] text-[#ffcf5a]">Una historia que puede continuar contigo</p><p className="mt-2 font-heading text-5xl font-extrabold">{animal.name}</p></div>{(animal.status === 'medical_care' || animal.is_special_needs) && <span className="absolute left-5 top-5 rounded-full bg-[#ffcf5a] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.1em] text-[#171717]">Cuidados especiales</span>}</div>
 
-          <div className="flex flex-col p-6 sm:p-8 lg:p-10"><div><p className="text-xs font-bold uppercase tracking-[.15em] text-[#f0644a]">{animal.breed || 'Perrito rescatado'}</p><h2 id="pet-detail-title" className="mt-2 font-heading text-4xl font-extrabold tracking-[-.04em]">Conoce de verdad a {animal.name}.</h2></div>
-            <div className="mt-6 grid grid-cols-3 gap-2 text-xs"><div className="rounded-xl bg-[var(--color-background)] p-3"><Baby className="mb-2 h-4 w-4 text-[#f0644a]" /><span className="block font-bold">{formatAge(getAgeMonths(animal))}</span><span className="text-[var(--color-muted-foreground)]">Edad</span></div><div className="rounded-xl bg-[var(--color-background)] p-3"><Ruler className="mb-2 h-4 w-4 text-[#f0644a]" /><span className="block font-bold">{sizeLabels[animal.size]}</span><span className="text-[var(--color-muted-foreground)]">Tamaño</span></div><div className="rounded-xl bg-[var(--color-background)] p-3"><House className="mb-2 h-4 w-4 text-[#f0644a]" /><span className="block font-bold">{animal.gender === 'male' ? 'Macho' : 'Hembra'}</span><span className="text-[var(--color-muted-foreground)]">Sexo</span></div></div>
-            <div className="mt-6"><p className="font-heading text-lg font-extrabold">Su historia</p><p className="mt-2 max-h-40 overflow-y-auto pr-2 text-sm leading-relaxed text-[var(--color-muted-foreground)]">{animal.story || animal.description || 'Cada día conocemos un poco más de su personalidad. Nuestro equipo te contará todo lo necesario antes de avanzar.'}</p></div>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-[var(--color-border)] p-4"><div className="flex items-center gap-2 font-bold"><Stethoscope className="h-4 w-4 text-[#f0644a]" /> Salud</div><p className="mt-2 text-xs leading-relaxed text-[var(--color-muted-foreground)]">{animal.health_status || 'Valoración veterinaria al día'}</p><div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{animal.is_vaccinated && <span>✓ Vacunado/a</span>}{animal.is_neutered && <span>✓ Esterilizado/a</span>}</div></div><div className="rounded-2xl border border-[var(--color-border)] p-4"><div className="flex items-center gap-2 font-bold"><MapPin className="h-4 w-4 text-[#f0644a]" /> Dónde está</div><p className="mt-2 text-xs leading-relaxed text-[var(--color-muted-foreground)]">{animal.location || 'Refugio principal · visitas coordinadas'}</p></div></div>
+          <div className="flex flex-col p-6 sm:p-8 lg:p-10"><div><p className="text-xs font-bold uppercase tracking-[.15em] text-[#f0644a]">{animal.breed || 'Perrito rescatado'}</p><h2 id="pet-detail-title" className="mt-2 font-heading text-4xl font-extrabold tracking-[-.04em]">Conoce de verdad a {animal.name}.</h2><p className="mt-3 text-base leading-relaxed text-[var(--color-muted-foreground)]">{animal.personality_summary || animal.description}</p></div>
+            <div className="mt-6 grid grid-cols-3 gap-2 text-xs"><div className="rounded-xl bg-[var(--color-background)] p-3"><Baby className="mb-2 h-4 w-4 text-[#f0644a]" /><span className="block font-bold">{formatAge(getAgeMonths(animal), animal.age_is_estimated)}</span><span className="text-[var(--color-muted-foreground)]">Edad</span></div><div className="rounded-xl bg-[var(--color-background)] p-3"><Ruler className="mb-2 h-4 w-4 text-[#f0644a]" /><span className="block font-bold">{sizeLabels[animal.size]}</span><span className="text-[var(--color-muted-foreground)]">Tamaño</span></div><div className="rounded-xl bg-[var(--color-background)] p-3"><House className="mb-2 h-4 w-4 text-[#f0644a]" /><span className="block font-bold">{animal.gender === 'male' ? 'Macho' : 'Hembra'}</span><span className="text-[var(--color-muted-foreground)]">Sexo</span></div></div>
+            <div className="mt-6"><p className="font-heading text-lg font-extrabold">Su historia</p><p className="mt-2 whitespace-pre-line text-sm leading-7 text-[var(--color-muted-foreground)]">{animal.story || animal.description || 'Cada día conocemos un poco más de su personalidad. Nuestro equipo te contará todo lo necesario antes de avanzar.'}</p></div>
+            {animal.show_brand_moment && <blockquote className="my-6 rounded-2xl bg-[#171717] p-5 text-white"><span className="font-heading text-lg font-extrabold">Adopta<span className="text-[#f0644a]">ME</span></span><p className="mt-2 text-sm leading-relaxed text-white/75">{animal.brand_message || 'AdoptaME: cada historia merece otra oportunidad.'}</p></blockquote>}
+            <div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-[var(--color-border)] p-4"><div className="flex items-center gap-2 font-bold"><Stethoscope className="h-4 w-4 text-[#f0644a]" /> Salud</div><p className="mt-2 text-xs leading-relaxed text-[var(--color-muted-foreground)]">{animal.health_status || 'Información pendiente de confirmar con el equipo veterinario.'}</p><div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{(animal.vaccination_status === 'up_to_date' || (!animal.vaccination_status && animal.is_vaccinated)) && <span>✓ Vacunas al día</span>}{animal.vaccination_status === 'unknown' && <span className="text-[var(--color-muted-foreground)]">Vacunación por confirmar</span>}{animal.is_neutered && <span>✓ Esterilizado/a</span>}</div></div><div className="rounded-2xl border border-[var(--color-border)] p-4"><div className="flex items-center gap-2 font-bold"><House className="h-4 w-4 text-[#f0644a]" /> Hogar ideal</div><p className="mt-2 text-xs leading-relaxed text-[var(--color-muted-foreground)]">{animal.ideal_home || 'El equipo está completando esta recomendación. Pregunta antes de iniciar el proceso.'}</p></div>{animal.compatibility_notes && <div className="rounded-2xl border border-[var(--color-border)] p-4"><div className="flex items-center gap-2 font-bold"><PawPrint className="h-4 w-4 text-[#f0644a]" /> Convivencia</div><p className="mt-2 text-xs leading-relaxed text-[var(--color-muted-foreground)]">{animal.compatibility_notes}</p></div>}<div className="rounded-2xl border border-[var(--color-border)] p-4"><div className="flex items-center gap-2 font-bold"><MapPin className="h-4 w-4 text-[#f0644a]" /> Dónde está</div><p className="mt-2 text-xs leading-relaxed text-[var(--color-muted-foreground)]">{animal.location || 'Refugio principal · visitas coordinadas'}</p></div></div>
             <div className="mt-auto flex flex-col gap-2 pt-8 sm:flex-row"><Button variant="outline" onClick={onClose} className="sm:w-auto">Seguir explorando</Button><Button variant="warm" className="flex-1" onClick={() => { onClose(); onAdopt(); }}><Heart className="h-4 w-4" /> Quiero conocer a {animal.name}</Button></div>
           </div>
         </div>

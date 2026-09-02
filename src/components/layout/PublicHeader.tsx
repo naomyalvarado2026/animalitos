@@ -5,6 +5,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useMobile } from '@/hooks/useMobile';
 import { cn } from '@/lib/utils';
+import { SiteSearchTrigger } from './SiteSearch';
 
 interface SubItem {
   label: string;
@@ -53,6 +54,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: BookOpen,
     children: [
       { label: 'Recursos', href: '/recursos' },
+      { label: 'Centro de ayuda', href: '/faq' },
       { label: 'Transparencia', href: '/transparencia' },
       { label: 'Ingresos y egresos', href: '/transparencia/ingresos' },
       { label: 'Donadores principales', href: '/donaciones/donadores-principales' },
@@ -65,9 +67,9 @@ const NAV_ITEMS: NavItem[] = [
 export function PublicHeader() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
-  const isMobile = useMobile();
+  const isMobile = useMobile(1024);
   const location = useLocation();
-  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseEnter = (href: string) => {
     if (closeTimeoutRef.current) {
@@ -240,6 +242,7 @@ export function PublicHeader() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            <SiteSearchTrigger />
             <ThemeToggle />
             {!isMobile && (
               <Button
