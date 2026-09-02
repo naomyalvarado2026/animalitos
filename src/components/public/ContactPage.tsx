@@ -27,12 +27,24 @@ export function ContactPage() {
   const [sending, setSending] = useState(false);
   const [searchParams] = useSearchParams();
   const dogName = searchParams.get('perrito')?.trim() || '';
+  const sponsorName = searchParams.get('apadrina')?.trim() || '';
+  const initialName = searchParams.get('nombre')?.trim() || '';
+  const initialEmail = searchParams.get('email')?.trim() || '';
+  const sponsorPhone = searchParams.get('telefono')?.trim() || '';
+  const sponsorFrequency = searchParams.get('frecuencia') === 'once' ? 'una sola vez' : 'mensualmente';
+  const sponsorAmount = searchParams.get('aporte')?.trim() || '';
+  const sponsorNote = searchParams.get('mensaje')?.trim() || '';
+  const sponsorMessage = sponsorName
+    ? `Hola, quiero conversar sobre el apadrinamiento de ${sponsorName}.\n\nFrecuencia: ${sponsorFrequency}.${sponsorAmount ? `\nAporte considerado: $${sponsorAmount} USD.` : ''}${sponsorPhone ? `\nWhatsApp: ${sponsorPhone}.` : ''}${sponsorNote ? `\n\nMensaje: ${sponsorNote}` : ''}`
+    : '';
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      type: 'general',
-      subject: dogName ? `Quiero conocer a ${dogName}` : '',
-      message: dogName ? `Hola, me gustaría recibir información y coordinar un primer encuentro con ${dogName}.` : '',
+      name: initialName,
+      email: initialEmail,
+      type: sponsorName ? 'support' : 'general',
+      subject: sponsorName ? `Quiero apadrinar a ${sponsorName}` : dogName ? `Quiero conocer a ${dogName}` : '',
+      message: sponsorMessage || (dogName ? `Hola, me gustaría recibir información y coordinar un primer encuentro con ${dogName}.` : ''),
     },
   });
 
@@ -113,8 +125,8 @@ export function ContactPage() {
           <div className="lg:col-span-2">
             <Card>
               <CardContent className="pt-6 pb-6">
-                <h2 className="font-heading text-xl font-semibold mb-2">{dogName ? `Conversemos sobre ${dogName}` : 'Envíanos un mensaje'}</h2>
-                {dogName && <p className="mb-6 rounded-xl bg-[#fff2e9] p-3 text-sm text-[#9e3b2b]">Ya preparamos el asunto y el mensaje. Completa tus datos para que el equipo pueda orientarte.</p>}
+                <h2 className="font-heading text-xl font-semibold mb-2">{sponsorName ? `Conversemos sobre el apadrinamiento de ${sponsorName}` : dogName ? `Conversemos sobre ${dogName}` : 'Envíanos un mensaje'}</h2>
+                {(dogName || sponsorName) && <p className="mb-6 rounded-xl bg-[#fff2e9] p-3 text-sm text-[#9e3b2b]">Ya preparamos el asunto y el mensaje. Revísalos y envíalos para que el equipo pueda orientarte.</p>}
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">

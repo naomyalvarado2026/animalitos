@@ -27,6 +27,8 @@ const TopDonorsPage = lazy(() => import('@/components/public/TopDonorsPage').the
 const ContactPage = lazy(() => import('@/components/public/ContactPage').then(m => ({ default: m.ContactPage })));
 const SupportPage = lazy(() => import('@/components/public/SupportPage').then(m => ({ default: m.SupportPage })));
 const AdoptionGalleryPage = lazy(() => import('@/components/public/AdoptionGalleryPage').then(m => ({ default: m.AdoptionGalleryPage })));
+const DogProfilePage = lazy(() => import('@/components/public/DogProfilePage').then(m => ({ default: m.DogProfilePage })));
+const SponsorshipPage = lazy(() => import('@/components/public/SponsorshipPage').then(m => ({ default: m.SponsorshipPage })));
 const SuccessStoriesPage = lazy(() => import('@/components/public/SuccessStoriesPage').then(m => ({ default: m.SuccessStoriesPage })));
 const VolunteerPage = lazy(() => import('@/components/public/VolunteerPage').then(m => ({ default: m.VolunteerPage })));
 const FaqPage = lazy(() => import('@/components/public/FaqPage').then(m => ({ default: m.FaqPage })));
@@ -57,6 +59,7 @@ const StructureManagement = lazy(() => import('@/components/admin/StructureManag
 const MemoryManagement = lazy(() => import('@/components/admin/MemoryManagement').then(m => ({ default: m.MemoryManagement })));
 const TeamManagement = lazy(() => import('@/components/admin/TeamManagement').then(m => ({ default: m.TeamManagement })));
 const DonationImpactManagement = lazy(() => import('@/components/admin/DonationImpactManagement').then(m => ({ default: m.DonationImpactManagement })));
+const DogStoryStudio = lazy(() => import('@/components/admin/DogStoryStudio').then(m => ({ default: m.DogStoryStudio })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -91,7 +94,9 @@ export default function App() {
                     <Route element={<PublicLayout />}>
                       <Route path="/" element={<HomePage />} />
                       <Route path="/adopta" element={<AdoptionGalleryPage />} />
-                      <Route path="/adopta/:slug" element={<AdoptionGalleryPage />} />
+                      <Route path="/adopta/:slug" element={<DogProfilePage />} />
+                      <Route path="/apadrina" element={<SponsorshipPage />} />
+                      <Route path="/apadrina/:slug" element={<SponsorshipPage />} />
                       <Route path="/como-funciona" element={<AdoptionProcessPage />} />
                       <Route path="/santuario" element={<SanctuaryPage />} />
                       <Route path="/en-memoria" element={<MemoryPage />} />
@@ -138,6 +143,7 @@ export default function App() {
                         <Route path="/admin/memoria" element={<MemoryManagement />} />
                         <Route path="/admin/equipo" element={<TeamManagement />} />
                         <Route path="/admin/impacto-donaciones" element={<DonationImpactManagement />} />
+                        <Route path="/admin/historias-perros" element={<DogStoryStudio />} />
                       </Route>
                     </Route>
 

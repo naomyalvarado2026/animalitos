@@ -17,6 +17,8 @@ export function PublicLayout() {
       ? { title: 'Tienda solidaria | AdoptaME', description: 'Compra productos con propósito y ayuda a financiar el rescate de perros.' }
       : pathname === '/donaciones'
         ? { title: 'Dona y salva una vida | AdoptaME', description: 'Tu apoyo cubre alimento, salud y recuperación para perros rescatados.' }
+      : pathname.startsWith('/apadrina')
+        ? { title: 'Apadrina un perro rescatado | AdoptaME', description: 'Acompaña el cuidado de un integrante de la manada mientras llega su familia.' }
       : pathname === '/voluntariado'
           ? { title: 'Súmate como voluntario | AdoptaME', description: 'Comparte tu tiempo y ayuda a transformar la vida de un perro.' }
           : pathname === '/como-funciona'

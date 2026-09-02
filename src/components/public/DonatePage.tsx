@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { usePublicSettings } from '@/lib/publicSettings';
+import { DogStoryMoment } from './DogStoryMoment';
 
 const PRESET_AMOUNTS_USD = [10, 25, 50, 100, 250];
 
@@ -170,6 +171,8 @@ export function DonatePage() {
           </div>
         </div>
       </section>
+
+      <DogStoryMoment slug="tigresa" eyebrow="Una ayuda con nombre propio" title="El cuidado diario sostiene historias como la de Tigresa." />
 
       {/* Donation methods */}
       <section className="py-16">

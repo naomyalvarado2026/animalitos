@@ -10,6 +10,7 @@ import { assetUrl } from '@/lib/assets';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import type { Animal } from '@/types';
+import { mergeRefugeDogs } from '@/lib/refugeDogs';
 
 interface Question {
   id: number;
@@ -70,17 +71,29 @@ export function PetMatchmaker() {
     },
     staleTime: 60_000,
   });
-  const recommendations = useMemo(() => animalsQuery.data?.map((animal) => {
+  const animals = useMemo(() => mergeRefugeDogs(animalsQuery.data ?? []), [animalsQuery.data]);
+  const recommendations = useMemo(() => animals.map((animal) => {
     const activity = answers[2];
     const home = answers[1];
-    let score = 70;
-    if (activity === 'active' && ['large', 'extra_large'].includes(animal.size)) score += 15;
-    if (activity === 'calm' && animal.size === 'small') score += 12;
-    if (home === 'apartment' && animal.size === 'small') score += 10;
-    if (home === 'farm' && ['large', 'extra_large'].includes(animal.size)) score += 8;
-    if (animal.is_special_needs && activity === 'calm') score += 5;
-    return { animal, score: Math.min(99, score) };
-  }).sort((a, b) => b.score - a.score).slice(0, 2) ?? [], [animalsQuery.data, answers]);
+    const household = answers[3];
+    const profile = `${animal.description} ${animal.personality_summary || ''} ${animal.ideal_home || ''} ${animal.compatibility_notes || ''}`.toLowerCase();
+    let score = 62;
+    const reasons: string[] = [];
+    if (activity === 'active' && /(activ|correr|jugar|aventur|energ)/.test(profile)) { score += 18; reasons.push('Disfruta una rutina activa'); }
+    if (activity === 'calm' && /(tranquil|senior|pacien|seren|independ|tímid|timid)/.test(profile)) { score += 16; reasons.push('Valora una rutina tranquila'); }
+    if (activity === 'moderate') { score += 8; reasons.push('Puede conocerte a un ritmo gradual'); }
+    if (home === 'apartment' && animal.size === 'small') { score += 12; reasons.push('Tamaño favorable para espacios pequeños'); }
+    if (home === 'apartment' && ['large', 'extra_large'].includes(animal.size)) score -= 12;
+    if ((home === 'farm' || home === 'large_house') && ['large', 'extra_large'].includes(animal.size)) { score += 10; reasons.push('Aprovecharía el espacio disponible'); }
+    const needsOnlyPet = /(única mascota|unica mascota|sin otros|sin perros|sin gatos|atención exclusiva|atencion exclusiva)/.test(profile);
+    if (household === 'other_pets' && needsOnlyPet) score -= 40;
+    if (household === 'other_pets' && !needsOnlyPet) reasons.push('Convivencia por evaluar con el equipo');
+    if (household === 'kids' && /(niños|familia numerosa|casa llena de vida)/.test(profile)) { score += 12; reasons.push('Su perfil menciona vida familiar'); }
+    if (household === 'kids' && /(sin niños|sin ninos|tranquilo y paciente|respete su espacio)/.test(profile)) score -= 24;
+    if (household === 'adults_only' && /(senior|tranquil|pacien|seren|única mascota|unica mascota)/.test(profile)) { score += 9; reasons.push('Un hogar adulto puede respetar sus tiempos'); }
+    if (animal.is_special_needs && activity === 'calm') { score += 5; reasons.push('Tu ritmo puede acompañar sus cuidados'); }
+    return { animal, score: Math.max(35, Math.min(98, score)), reasons: reasons.slice(0, 2) };
+  }).sort((a, b) => b.score - a.score).slice(0, 2), [animals, answers]);
 
   function handleSelectOption(value: string) {
     const updated = { ...answers, [QUESTIONS[currentStep].id]: value };
@@ -155,12 +168,12 @@ export function PetMatchmaker() {
                 <Badge variant="warm" className="mb-2">Compatibilidad encontrada</Badge>
                 <h3 className="font-heading text-3xl font-extrabold">Tus conexiones más prometedoras</h3>
                 <p className="mt-2 text-xs text-white/60">
-                  Basado en tu estilo de vida, estos peluditos encajarían perfectamente en tu hogar:
+                  Es un punto de partida responsable. El equipo confirmará convivencia, cuidados y expectativas antes de avanzar.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-                {recommendations.map(({ animal, score }) => (
+                {recommendations.map(({ animal, score, reasons }) => (
                   <Card key={animal.id} className="overflow-hidden rounded-2xl border-white/10 bg-[#fffdf9] text-[#171717]">
                     <div className="h-36 relative">
                       <ResilientImage src={getMatchmakerImageUrl(animal)} alt={animal.name || 'Perrito'} className="w-full h-full object-cover" />
@@ -174,6 +187,7 @@ export function PetMatchmaker() {
                       <h4 className="font-heading text-xl font-extrabold">{animal.name}</h4>
                       <p className="text-xs font-semibold text-[#f0644a]">{animal.breed || 'Perrito rescatado'}</p>
                       <p className="text-xs leading-relaxed text-[#6e6a64]">{animal.description || 'Conoce su historia y descubre si son un buen match.'}</p>
+                      <div className="flex flex-wrap gap-1.5">{reasons.map((reason) => <span key={reason} className="rounded-full bg-[#ede5da] px-2 py-1 text-[10px] font-semibold text-[#4f4a45]">{reason}</span>)}</div>
                       <Button variant="warm" size="sm" className="w-full mt-2" asChild>
                         <Link to={`/adopta/${animal.adoption_slug || (animal.name || 'amigo').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')}`}>Conocer a {animal.name} <ArrowRight className="h-3.5 w-3.5 ml-1" /></Link>
                       </Button>

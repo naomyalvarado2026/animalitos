@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { SmartSchedulePicker } from '@/components/ui/SmartSchedulePicker';
 import { VolunteerCalendar } from './VolunteerCalendar';
 import { ContextualFaq } from './ContextualFaq';
+import { DogStoryMoment } from './DogStoryMoment';
 import type { VolunteerArea } from '@/types';
 
 const volunteerSchema = z.object({
@@ -110,6 +111,8 @@ export function VolunteerPage() {
           <div className="rounded-[2rem] bg-[#fffdf9] p-4 shadow-[0_20px_60px_rgba(23,23,23,.08)] sm:p-7"><VolunteerCalendar /></div>
         </div>
       </section>
+
+      <DogStoryMoment slug="scooby" eyebrow="El tiempo también repara" title="La confianza de Scooby se construye encuentro a encuentro." />
 
       <ContextualFaq category="volunteer" title="Una mano empieza con una buena respuesta." />
 

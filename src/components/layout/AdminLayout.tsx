@@ -21,6 +21,7 @@ import {
   Archive,
   UserRound,
   HandHeart,
+  Images,
   X,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,6 +43,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, minLevel: 0 },
   { label: 'Rescatados', href: '/admin/animales', icon: Heart, minLevel: 4 },
+  { label: 'Historias de la manada', href: '/admin/historias-perros', icon: Images, minLevel: 4 },
   { label: 'Solicitudes', href: '/admin/solicitudes', icon: FileText, minLevel: 4 },
   { label: 'Actividades', href: '/admin/actividades', icon: Calendar, minLevel: 4 },
   { label: 'Finanzas', href: '/admin/finanzas', icon: DollarSign, minLevel: 4 },

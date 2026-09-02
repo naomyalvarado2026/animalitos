@@ -14,6 +14,7 @@ const QUICK_LINKS = [
   { label: 'Preguntas Frecuentes', href: '/faq' },
   { label: 'Transparencia', href: '/transparencia' },
   { label: 'Donaciones', href: '/donaciones' },
+  { label: 'Apadrinar', href: '/apadrina' },
   { label: 'En memoria de', href: '/en-memoria' },
   { label: 'Contacto', href: '/contacto' },
 ];

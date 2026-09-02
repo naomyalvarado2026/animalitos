@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ResilientImage } from '@/components/ui/ResilientImage';
 import { REFUGE_DOG_PROFILES } from '@/data/refugeDogProfiles';
 import { assetUrl } from '@/lib/assets';
+import { useAllDogEditorial } from '@/hooks/useDogEditorial';
 
 type RefugeDogRibbonProps = {
   eyebrow?: string;
@@ -26,7 +27,11 @@ export function RefugeDogRibbon({
   start = 0,
   tone = 'cream',
 }: RefugeDogRibbonProps) {
-  const dogs = Array.from({ length: 6 }, (_, index) => REFUGE_DOG_PROFILES[(start + index) % REFUGE_DOG_PROFILES.length]);
+  const editorial = useAllDogEditorial();
+  const dogs = Array.from({ length: 6 }, (_, index) => {
+    const dog = REFUGE_DOG_PROFILES[(start + index) % REFUGE_DOG_PROFILES.length];
+    return { dog, story: editorial.find((item) => item.slug === dog.adoption_slug) };
+  });
   const isDark = tone !== 'cream';
 
   return (
@@ -42,11 +47,11 @@ export function RefugeDogRibbon({
         </div>
 
         <div className="-mx-5 mt-10 flex snap-x gap-3 overflow-x-auto px-5 pb-4 sm:-mx-8 sm:px-8 lg:mx-0 lg:grid lg:grid-cols-6 lg:overflow-visible lg:px-0 lg:pb-0">
-          {dogs.map((dog, index) => (
+          {dogs.map(({ dog, story }, index) => (
             <motion.article key={dog.adoption_slug} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .3 }} transition={{ delay: index * .05 }} className={`group relative min-w-[10.5rem] snap-start overflow-hidden rounded-[1.35rem] border shadow-xl lg:min-w-0 ${index % 2 ? 'lg:translate-y-5' : ''} ${isDark ? 'border-white/15 bg-white/10' : 'border-[#171717]/10 bg-white'}`}>
               <Link to={`/adopta/${dog.adoption_slug}`} className="block">
                 <div className="relative aspect-[4/5] overflow-hidden bg-[#ded6cb]">
-                  <ResilientImage src={assetUrl(dog.main_image_url)} alt={`${dog.name}, perrito rescatado de AdoptaME`} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                  <ResilientImage src={assetUrl(story?.cover_image_url || dog.main_image_url)} alt={`${dog.name}, perrito rescatado de AdoptaME`} loading="lazy" decoding="async" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" style={{ objectPosition: `${story?.focal_x ?? 50}% ${story?.focal_y ?? 50}%` }} />
                   <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent" />
                   <div className="absolute inset-x-3 bottom-3 text-white"><p className="font-heading text-xl font-extrabold">{dog.name}</p><p className="mt-0.5 line-clamp-1 text-[10px] text-white/75">{dog.personality_summary}</p></div>
                 </div>

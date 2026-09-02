@@ -17,6 +17,7 @@ const MORE_ITEMS = [
   { label: 'Tienda solidaria', href: '/tienda' },
   { label: 'Voluntariado', href: '/voluntariado' },
   { label: 'Donaciones', href: '/donaciones' },
+  { label: 'Apadrinar un perrito', href: '/apadrina' },
   { label: 'Historias de éxito', href: '/historias-de-exito' },
   { label: 'En memoria de', href: '/en-memoria' },
   { label: 'Transparencia', href: '/transparencia' },
@@ -32,7 +33,7 @@ export function PublicMobileNav() {
   const isActive = (href: string) => href === '/'
     ? location.pathname === '/'
     : location.pathname.startsWith(href);
-  const isHelping = ['/donaciones', '/voluntariado', '/santuario', '/contacto/quiero-apoyar'].some((path) => location.pathname.startsWith(path));
+  const isHelping = ['/donaciones', '/voluntariado', '/santuario', '/apadrina', '/contacto/quiero-apoyar'].some((path) => location.pathname.startsWith(path));
 
   const closeMore = (restoreFocus = true) => {
     setIsMoreOpen(false);
