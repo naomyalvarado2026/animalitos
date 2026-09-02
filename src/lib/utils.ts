@@ -7,42 +7,25 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Formats a number as currency using Intl.NumberFormat safely.
- * The base is USD; the locale adapts if a specific currency code is provided.
+ * AdoptaME opera exclusivamente en USD.
  */
 export function formatCurrency(
   amountUSD?: number | null,
-  currency: string = 'USD',
-  locale?: string,
+  _currency: string = 'USD',
+  _locale?: string,
 ): string {
   const safeAmount = typeof amountUSD === 'number' && !isNaN(amountUSD) ? amountUSD : 0;
-  const resolvedLocale = locale ?? getCurrencyLocale(currency);
   try {
-    return new Intl.NumberFormat(resolvedLocale, {
+    const formatted = new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency,
+      currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(safeAmount);
+    return `${formatted} USD`;
   } catch {
-    return `$${safeAmount.toFixed(2)} ${currency}`;
+    return `$${safeAmount.toFixed(2)} USD`;
   }
-}
-
-/** Returns a sensible locale string for a given currency code. */
-function getCurrencyLocale(currency: string): string {
-  const map: Record<string, string> = {
-    USD: 'en-US',
-    EUR: 'es-ES',
-    MXN: 'es-MX',
-    COP: 'es-CO',
-    ARS: 'es-AR',
-    CLP: 'es-CL',
-    PEN: 'es-PE',
-    BRL: 'pt-BR',
-    GBP: 'en-GB',
-    CAD: 'en-CA',
-  };
-  return map[currency] ?? 'en-US';
 }
 
 export function formatDate(dateString?: string | null, locale: string = 'es'): string {

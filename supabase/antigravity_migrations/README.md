@@ -19,6 +19,8 @@ Estas migraciones son una capa posterior a `supabase/migrations/001`–`008`. No
 13. `0013_merchandising_catalog_drafts.sql` — carga productos iniciales como borradores, sin publicarlos ni asignar inventario.
 14. `0014_animal_operations.sql` — crea fichas médicas, tareas y movimientos internos por animal.
 15. `0015_adoption_story_profiles.sql` — añade narrativa, publicación, orden y datos verificables para los perfiles de adopción.
+16. `0016_usd_only.sql` — normaliza productos y pedidos a USD y bloquea nuevas monedas distintas.
+17. `0017_dog_storytelling_and_sponsorship.sql` — crea perfiles editoriales, cronologías, biblioteca multimedia y solicitudes seguras de apadrinamiento.
 
 ## Antes de ejecutar
 

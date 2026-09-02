@@ -1,9 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import {
-  detectUserCurrency,
-  fetchExchangeRates,
   convertFromUSD,
   formatLocalCurrency,
+  APP_CURRENCY,
 } from '@/lib/currency';
 
 interface CurrencyContextValue {
@@ -17,28 +16,16 @@ interface CurrencyContextValue {
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [currencyCode, setCurrencyCode] = useState<string>('USD');
-  const [rates, setRates] = useState<Record<string, number>>({ USD: 1 });
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const detected = detectUserCurrency();
-    setCurrencyCode(detected);
-
-    fetchExchangeRates().then((r) => {
-      setRates(r);
-      setIsLoading(false);
-    });
-  }, []);
+  const currencyCode = APP_CURRENCY;
+  const setCurrencyCode = (_code: string) => undefined;
+  const isLoading = false;
 
   function convertAmount(amountUSD: number): number {
-    const rate = rates[currencyCode] ?? 1;
-    return convertFromUSD(amountUSD, rate);
+    return convertFromUSD(amountUSD, 1);
   }
 
   function formatAmount(amountUSD: number): string {
-    const converted = convertAmount(amountUSD);
-    return formatLocalCurrency(converted, currencyCode);
+    return formatLocalCurrency(convertAmount(amountUSD), APP_CURRENCY);
   }
 
   return (
