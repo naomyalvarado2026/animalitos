@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Lock, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { PawIcon } from '@/components/layout/PawBackground';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
@@ -18,7 +18,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export function AdminLoginPage() {
-  const { user, loading, signIn, signInDemo } = useAuth();
+  const { user, profile, loading, signIn, hasAccessLevel } = useAuth();
   const navigate = useNavigate();
   const [showPwd, setShowPwd] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export function AdminLoginPage() {
   });
 
   // If already logged in, redirect
-  if (!loading && user) {
+  if (!loading && user && profile?.is_active && hasAccessLevel(1)) {
     return <Navigate to="/admin" replace />;
   }
 
@@ -49,10 +49,6 @@ export function AdminLoginPage() {
     setIsSigningIn(false);
   }
 
-  function handleDemoLogin() {
-    signInDemo();
-    navigate('/admin', { replace: true });
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)] p-4 relative">
@@ -140,25 +136,7 @@ export function AdminLoginPage() {
             </Button>
           </form>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[var(--color-border)]" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[var(--color-card)] px-2 text-[var(--color-muted-foreground)]">O también</span>
-            </div>
-          </div>
 
-          <Button
-            variant="outline"
-            size="lg"
-            type="button"
-            onClick={handleDemoLogin}
-            className="w-full border-dashed border-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-medium gap-2"
-          >
-            <Sparkles className="h-4 w-4 text-[var(--color-primary)]" />
-            Ingreso Rápido Directo (Super Admin)
-          </Button>
         </div>
 
         <p className="text-center text-xs text-[var(--color-muted-foreground)] mt-6">

@@ -16,8 +16,8 @@ export function DonationsIncomePage() {
     queryKey: ['income_records', 'donations'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('income_records')
-        .select('*, donor:donors(name, is_anonymous, type)')
+        .from('public_income_records')
+        .select('*')
         .eq('is_public', true)
         .eq('category', 'donation')
         .order('date', { ascending: false });

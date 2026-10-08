@@ -16,7 +16,7 @@ export function EventsIncomePage() {
     queryKey: ['income_records', 'events'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('income_records')
+        .from('public_income_records')
         .select('*')
         .eq('is_public', true)
         .eq('category', 'event')

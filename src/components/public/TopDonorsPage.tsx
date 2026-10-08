@@ -24,7 +24,7 @@ export function TopDonorsPage() {
     queryKey: ['top-donors-public'],
     queryFn: async () => {
       const { data, error } = await supabase
-          .from('donors')
+          .from('public_donors')
           .select('*')
           .eq('is_featured', true)
           .eq('is_anonymous', false)

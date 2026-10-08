@@ -31,8 +31,8 @@ export function IncomePage() {
     queryKey: ['transparency-income'],
     queryFn: async () => {
       const { data, error } = await supabase
-          .from('income_records')
-          .select('*, donor:donors(name, is_anonymous)')
+          .from('public_income_records')
+          .select('*')
           .eq('is_public', true)
           .order('date', { ascending: false })
           .limit(50);

@@ -28,7 +28,7 @@ export function ExpensesPage() {
     queryKey: ['transparency-expense'],
     queryFn: async () => {
       const { data, error } = await supabase
-          .from('expense_records')
+          .from('public_expense_records')
           .select('*')
           .eq('is_public', true)
           .order('date', { ascending: false })

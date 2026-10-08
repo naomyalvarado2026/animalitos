@@ -1,0 +1,13 @@
+BEGIN;
+DROP POLICY IF EXISTS "Permitir inserción pública de solicitudes" ON public.adoption_applications;
+DROP POLICY IF EXISTS adoption_public_pending ON public.adoption_applications;
+CREATE POLICY adoption_public_pending ON public.adoption_applications FOR INSERT TO anon,authenticated WITH CHECK(status='pending' AND reviewed_by IS NULL AND admin_notes IS NULL AND length(trim(applicant_name)) BETWEEN 2 AND 120 AND applicant_email ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' AND length(trim(applicant_phone)) BETWEEN 7 AND 40);
+DROP POLICY IF EXISTS volunteer_public_insert ON public.volunteer_applications;
+DROP POLICY IF EXISTS volunteer_public_pending ON public.volunteer_applications;
+CREATE POLICY volunteer_public_pending ON public.volunteer_applications FOR INSERT TO anon,authenticated WITH CHECK(status='pending' AND length(trim(full_name)) BETWEEN 2 AND 120 AND email ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' AND length(trim(phone)) BETWEEN 7 AND 40);
+DROP POLICY IF EXISTS registrations_public_insert ON public.activity_registrations;
+DROP POLICY IF EXISTS registration_public_self ON public.activity_registrations;
+CREATE POLICY registration_public_self ON public.activity_registrations FOR INSERT TO anon,authenticated WITH CHECK(NOT assigned_by_admin AND length(trim(volunteer_name)) BETWEEN 2 AND 120 AND volunteer_email ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' AND length(trim(volunteer_phone)) BETWEEN 7 AND 40);
+INSERT INTO supabase_migrations.schema_migrations(version,name,statements) VALUES('20261008025000','public_submission_guards',ARRAY['Public submissions cannot approve themselves or impersonate admin assignments']) ON CONFLICT(version) DO NOTHING;
+DO $trigger$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='auth.users'::regclass AND NOT tgisinternal AND tgfoid='public.handle_new_user()'::regprocedure) THEN CREATE TRIGGER adoptame_new_user_profile AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user(); END IF; END $trigger$;
+COMMIT;

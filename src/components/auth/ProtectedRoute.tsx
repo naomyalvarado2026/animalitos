@@ -2,7 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function ProtectedRoute() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading, hasAccessLevel } = useAuth();
 
   if (loading) {
     return (
@@ -15,7 +15,7 @@ export function ProtectedRoute() {
     );
   }
 
-  if (!user) {
+  if (!user || !profile?.is_active || !hasAccessLevel(1)) {
     return <Navigate to="/admin/login" replace />;
   }
 
