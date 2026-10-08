@@ -26,6 +26,7 @@ type FormData = z.infer<typeof schema>;
 export function ContactPage() {
   const [sending, setSending] = useState(false);
   const [searchParams] = useSearchParams();
+  const campaignName = searchParams.get('campana')?.trim().slice(0,100) || '';
   const dogName = searchParams.get('perrito')?.trim() || '';
   const sponsorName = searchParams.get('apadrina')?.trim() || '';
   const initialName = searchParams.get('nombre')?.trim() || '';
@@ -42,9 +43,9 @@ export function ContactPage() {
     defaultValues: {
       name: initialName,
       email: initialEmail,
-      type: sponsorName ? 'support' : 'general',
-      subject: sponsorName ? `Quiero apadrinar a ${sponsorName}` : dogName ? `Quiero conocer a ${dogName}` : '',
-      message: sponsorMessage || (dogName ? `Hola, me gustaría recibir información y coordinar un primer encuentro con ${dogName}.` : ''),
+      type: sponsorName || campaignName ? 'support' : 'general',
+      subject: campaignName ? `Quiero participar en ${campaignName}` : sponsorName ? `Quiero apadrinar a ${sponsorName}` : dogName ? `Quiero conocer a ${dogName}` : '',
+      message: (campaignName ? `Hola, quisiera conocer las opciones para participar en la campaña ${campaignName}. ¿Podemos coordinar los insumos y la logística?` : '') || sponsorMessage || (dogName ? `Hola, me gustaría recibir información y coordinar un primer encuentro con ${dogName}.` : ''),
     },
   });
 

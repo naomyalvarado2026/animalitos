@@ -13,6 +13,8 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
+const CampaignsPage = lazy(() => import('@/components/public/CampaignsPage').then(m => ({ default: m.CampaignsPage })));
+const CampaignManagement = lazy(() => import('@/components/admin/CampaignManagement').then(m => ({ default: m.CampaignManagement })));
 // Lazy-loaded Public pages
 const HomePage = lazy(() => import('@/components/public/HomePage').then(m => ({ default: m.HomePage })));
 const AboutPage = lazy(() => import('@/components/public/AboutPage').then(m => ({ default: m.AboutPage })));
@@ -101,6 +103,7 @@ export default function App() {
                       <Route path="/santuario" element={<SanctuaryPage />} />
                       <Route path="/en-memoria" element={<MemoryPage />} />
                       <Route path="/recursos" element={<ResourcesPage />} />
+                      <Route path="/campanas" element={<CampaignsPage />} />
                       <Route path="/tienda" element={<StorePage />} />
                       <Route path="/nosotros" element={<AboutPage />} />
                       <Route path="/nosotros/historia" element={<HistoryPage />} />
@@ -136,6 +139,7 @@ export default function App() {
                         <Route path="/admin/configuracion" element={<SettingsManagement />} />
                         <Route path="/admin/pedidos" element={<OrdersManagement />} />
                         <Route path="/admin/reportes" element={<AdminReportsPage />} />
+                        <Route path="/admin/campanas" element={<CampaignManagement />} />
                         <Route path="/admin/productos" element={<ProductManagement />} />
                         <Route path="/admin/historias" element={<SuccessStoryManagement />} />
                         <Route path="/admin/editorial" element={<EditorialManagement />} />

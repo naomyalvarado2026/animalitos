@@ -53,8 +53,8 @@ export function AdminReportsPage() {
       const [dogsRes, adoptionsRes, incomeRes, expensesRes, volunteersRes] = await Promise.all([
         supabase.from('animals').select('id, name, breed, status, size, age_months, location, updated_at').eq('species', 'dog').order('updated_at', { ascending: false }),
         supabase.from('adoption_applications').select('id, animal_id, applicant_name, applicant_email, status, created_at, updated_at').order('created_at', { ascending: false }),
-        supabase.from('income_records').select('id, description, category, amount_usd, date').order('date', { ascending: false }),
-        supabase.from('expense_records').select('id, description, category, amount_usd, date').order('date', { ascending: false }),
+        supabase.from('income_records').select('id, description, category, amount_usd, date').eq('is_demo', false).order('date', { ascending: false }),
+        supabase.from('expense_records').select('id, description, category, amount_usd, date').eq('is_demo', false).order('date', { ascending: false }),
         supabase.from('volunteer_applications').select('id, full_name, email, area_of_interest, status, created_at').order('created_at', { ascending: false }),
       ]);
 

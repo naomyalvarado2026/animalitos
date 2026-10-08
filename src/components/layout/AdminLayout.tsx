@@ -56,6 +56,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Reportes', href: '/admin/reportes', icon: BarChart3, minLevel: 4 },
   { label: 'Productos', href: '/admin/productos', icon: Package, minLevel: 4 },
   { label: 'Historias', href: '/admin/historias', icon: BookHeart, minLevel: 4 },
+  { label: 'Campañas', href: '/admin/campanas', icon: Calendar, minLevel: 4 },
   { label: 'Editorial', href: '/admin/editorial', icon: BookOpen, minLevel: 4 },
   { label: 'Estructura', href: '/admin/estructura', icon: Workflow, minLevel: 4 },
   { label: 'En memoria', href: '/admin/memoria', icon: Archive, minLevel: 4 },
@@ -92,7 +93,7 @@ export function AdminLayout() {
     { title: 'Resumen', paths: ['/admin', '/admin/reportes'] },
     { title: 'Rescate y comunidad', paths: ['/admin/animales', '/admin/solicitudes', '/admin/actividades', '/admin/equipo', '/admin/memoria'] },
     { title: 'Tienda y aportes', paths: ['/admin/productos', '/admin/pedidos', '/admin/finanzas', '/admin/donadores', '/admin/impacto-donaciones'] },
-    { title: 'Comunicación', paths: ['/admin/historias-perros', '/admin/historias', '/admin/contenido', '/admin/editorial', '/admin/estructura'] },
+    { title: 'Comunicación', paths: ['/admin/historias-perros', '/admin/historias', '/admin/contenido', '/admin/editorial', '/admin/estructura', '/admin/campanas'] },
     { title: 'Administración', paths: ['/admin/usuarios', '/admin/configuracion'] },
   ];
 

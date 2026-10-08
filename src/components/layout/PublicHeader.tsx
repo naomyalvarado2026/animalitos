@@ -34,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: 'Voluntariado', href: '/voluntariado' },
       { label: 'Santuario', href: '/santuario' },
       { label: 'Tienda solidaria', href: '/tienda' },
+      { label: 'Campañas de temporada', href: '/campanas' },
       { label: 'Donaciones', href: '/donaciones' },
       { label: 'Apadrinar un perrito', href: '/apadrina' },
     ],

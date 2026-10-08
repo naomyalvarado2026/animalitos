@@ -8,6 +8,7 @@ const QUICK_LINKS = [
   { label: 'Inicio', href: '/' },
   { label: 'Adoptar', href: '/adopta' },
   { label: 'Cómo funciona', href: '/como-funciona' },
+  { label: 'Campañas de temporada', href: '/campanas' },
   { label: 'Tienda solidaria', href: '/tienda' },
   { label: 'Santuario', href: '/santuario' },
   { label: 'Recursos educativos', href: '/recursos' },

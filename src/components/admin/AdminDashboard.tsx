@@ -63,8 +63,8 @@ export function AdminDashboard() {
     queryKey: ['admin-dashboard-stats'], staleTime: 60_000,
     queryFn: async () => {
       const [incomeRes, expenseRes, donorRes, applicationRes, animalRes, profileRes] = await Promise.all([
-        supabase.from('income_records').select('amount_usd'),
-        supabase.from('expense_records').select('amount_usd'),
+        supabase.from('income_records').select('amount_usd').eq('is_demo', false),
+        supabase.from('expense_records').select('amount_usd').eq('is_demo', false),
         supabase.from('donors').select('id', { count: 'exact', head: true }),
         supabase.from('adoption_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('animals').select('id, status, species'),
@@ -101,8 +101,8 @@ export function AdminDashboard() {
     queryKey: ['admin-recent-activity'], staleTime: 60_000,
     queryFn: async () => {
       const [incomeRes, expenseRes] = await Promise.all([
-        supabase.from('income_records').select('id, description, amount_usd, date').order('created_at', { ascending: false }).limit(5),
-        supabase.from('expense_records').select('id, description, amount_usd, date').order('created_at', { ascending: false }).limit(5),
+        supabase.from('income_records').select('id, description, amount_usd, date').eq('is_demo', false).order('created_at', { ascending: false }).limit(5),
+        supabase.from('expense_records').select('id, description, amount_usd, date').eq('is_demo', false).order('created_at', { ascending: false }).limit(5),
       ]);
       const errors = [responseError('Ingresos recientes', incomeRes.error), responseError('Egresos recientes', expenseRes.error)].filter((error): error is string => Boolean(error));
       const items = [
@@ -137,7 +137,7 @@ export function AdminDashboard() {
     queryFn: async () => {
       const [products, pendingOrders, variants] = await Promise.all([
         supabase.from('products').select('id, is_proposal, is_active, inventory, product_variants(inventory, is_active)'),
-        supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('orders').select('id', { count: 'exact', head: true }).eq('is_demo', false).eq('status', 'pending'),
         supabase.from('product_variants').select('id', { count: 'exact', head: true }).eq('is_active', true),
       ]);
       if (products.error || pendingOrders.error || variants.error) throw new Error('No se pudo consultar el resumen de tienda');
@@ -187,6 +187,7 @@ export function AdminDashboard() {
 
       {hasErrors && <div role="alert" className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" /><div><p className="font-semibold">Algunas métricas no están disponibles</p><p className="mt-1">No se muestran datos locales ni de demostración. Revisa la conexión, las tablas y las políticas RLS de Supabase.</p><p className="mt-2 break-words text-xs opacity-80">{[...(stats?.errors ?? []), activityQuery.data?.error].filter(Boolean).join(' · ')}</p></div></div>}
 
+      <div className="rounded-2xl border border-[var(--color-border)] p-4 text-sm"><p className="font-semibold">Aprende el flujo sin alterar tus cifras reales</p><p className="mt-1 text-[var(--color-muted-foreground)]">Finanzas y Pedidos incluyen una vista «Ejemplos de práctica». Sus importes y clientes ficticios no se cuentan en este resumen.</p><Link to="/admin/campanas" className="mt-3 inline-block font-semibold text-[var(--color-primary)]">Gestionar campañas de temporada →</Link></div>
       <section aria-labelledby="action-center-title" className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>

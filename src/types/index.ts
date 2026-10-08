@@ -33,6 +33,7 @@ export interface SiteContent {
 export type IncomeCategory = 'donation' | 'event' | 'other';
 
 export interface IncomeRecord {
+  is_demo?: boolean;
   id: string;
   category: IncomeCategory;
   description: string;
@@ -50,6 +51,7 @@ export interface IncomeRecord {
 export type ExpenseCategory = 'food' | 'medical' | 'infrastructure' | 'services' | 'salary' | 'utilities' | 'supplies' | 'other';
 
 export interface ExpenseRecord {
+  is_demo?: boolean;
   id: string;
   category: ExpenseCategory;
   description: string;

@@ -1,3 +1,4 @@
+import { RecordMode } from './RecordMode';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -70,23 +71,24 @@ const EXPENSE_CATS: { value: ExpenseCategory; label: string }[] = [
 export function FinanceManagement() {
   const { formatAmount } = useCurrency();
   const qc = useQueryClient();
+  const [demo, setDemo] = useState(false);
   const [tab, setTab] = useState<'income' | 'expense'>('income');
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
 
   const incomeQuery = useQuery({
-    queryKey: ['admin-income'],
+    queryKey: ['admin-income', demo],
     queryFn: async () => {
-      const { data, error } = await supabase.from('income_records').select('*').order('date', { ascending: false }).limit(50);
+      const { data, error } = await supabase.from('income_records').select('*').eq('is_demo', demo).order('date', { ascending: false });
       if (error) throw error;
       return (data ?? []) as IncomeRecord[];
     },
   });
 
   const expenseQuery = useQuery({
-    queryKey: ['admin-expense'],
+    queryKey: ['admin-expense', demo],
     queryFn: async () => {
-      const { data, error } = await supabase.from('expense_records').select('*').order('date', { ascending: false }).limit(50);
+      const { data, error } = await supabase.from('expense_records').select('*').eq('is_demo', demo).order('date', { ascending: false });
       if (error) throw error;
       return (data ?? []) as ExpenseRecord[];
     },
@@ -107,7 +109,7 @@ export function FinanceManagement() {
 
   const addIncome = useMutation({
     mutationFn: async (data: IncomeForm) => {
-      const { error } = await supabase.from('income_records').insert([data]);
+      const { error } = await supabase.from('income_records').insert([{ ...data, is_demo: demo, is_public: demo ? false : data.is_public }]);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -123,7 +125,7 @@ export function FinanceManagement() {
 
   const addExpense = useMutation({
     mutationFn: async (data: ExpenseForm) => {
-      const { error } = await supabase.from('expense_records').insert([data]);
+      const { error } = await supabase.from('expense_records').insert([{ ...data, is_demo: demo, is_public: demo ? false : data.is_public }]);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -198,6 +200,7 @@ export function FinanceManagement() {
         </div>
       </div>
 
+      <RecordMode demo={demo} onChange={value => { setDemo(value); setShowIncomeForm(false); setShowExpenseForm(false); }} />
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
@@ -331,10 +334,10 @@ export function FinanceManagement() {
               incomeRecords.length === 0 ? (
                 <p className="text-center py-8 text-[var(--color-muted-foreground)] text-sm">Sin ingresos.</p>
               ) : incomeRecords.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-3 gap-4">
+                <div key={r.id} className="flex flex-wrap items-center justify-between py-3 gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <Badge variant={r.is_public ? 'success' : 'secondary'} className="shrink-0 text-xs">
-                      {r.is_public ? 'Público' : 'Privado'}
+                      {r.is_demo ? 'Ejemplo' : r.is_public ? 'Público' : 'Privado'}
                     </Badge>
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{r.description}</p>
@@ -356,10 +359,10 @@ export function FinanceManagement() {
               expenseRecords.length === 0 ? (
                 <p className="text-center py-8 text-[var(--color-muted-foreground)] text-sm">Sin egresos.</p>
               ) : expenseRecords.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-3 gap-4">
+                <div key={r.id} className="flex flex-wrap items-center justify-between py-3 gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <Badge variant={r.is_public ? 'success' : 'secondary'} className="shrink-0 text-xs">
-                      {r.is_public ? 'Público' : 'Privado'}
+                      {r.is_demo ? 'Ejemplo' : r.is_public ? 'Público' : 'Privado'}
                     </Badge>
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{r.description}</p>

@@ -1,3 +1,4 @@
+import { RecordMode } from './RecordMode';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, ChevronDown, ChevronUp, ClipboardList, Loader2, RefreshCw, Save } from 'lucide-react';
@@ -10,6 +11,7 @@ import { toast } from 'sonner';
 type OrderStatus = 'pending' | 'confirmed' | 'paid' | 'shipped' | 'completed' | 'cancelled';
 
 interface Order {
+  is_demo: boolean;
   id: string;
   order_number: string;
   customer_name: string;
@@ -90,16 +92,17 @@ function readableAddress(address: Record<string, unknown> | null) {
 
 export function OrdersManagement() {
   const queryClient = useQueryClient();
+  const [demo, setDemo] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | OrderStatus>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const ordersQuery = useQuery({
-    queryKey: ['admin-orders'],
+    queryKey: ['admin-orders', demo],
     queryFn: async (): Promise<OrderWithItems[]> => {
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
-        .select('id, order_number, customer_name, customer_email, customer_phone, shipping_address, status, currency, total_cents, payment_reference, created_at, updated_at')
-        .order('created_at', { ascending: false });
+        .select('is_demo, id, order_number, customer_name, customer_email, customer_phone, shipping_address, status, currency, total_cents, payment_reference, created_at, updated_at')
+        .eq('is_demo', demo).order('created_at', { ascending: false });
       if (ordersError) throw new Error(`No se pudieron cargar los pedidos: ${ordersError.message}`);
 
       const orderRows = (orders ?? []) as Order[];
@@ -127,7 +130,7 @@ export function OrdersManagement() {
       if (error) throw new Error(`No se pudo actualizar el pedido: ${error.message}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-orders', demo] });
       toast.success('Estado del pedido actualizado.');
     },
     onError: error => toast.error(error instanceof Error ? error.message : 'No se pudo actualizar el pedido.'),
@@ -154,6 +157,7 @@ export function OrdersManagement() {
         </Button>
       </div>
 
+      <RecordMode demo={demo} onChange={value => { setDemo(value); setExpandedId(null); }} />
       {ordersQuery.error && (
         <div role="alert" className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
