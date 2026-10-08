@@ -30,7 +30,7 @@ const PRODUCTS = [
     category: 'Ropa solidaria',
     description: 'Una prenda para llevar la conversación sobre adopción a todas partes.',
     details: ['Tallas por confirmar', 'Edición solidaria'],
-    image: assetUrl('/brand/merch/camiseta.svg'),
+    image: assetUrl('/brand/merch/camiseta-render-960.webp'),
     color: 'coral',
     featured: true,
     isLive: false,
@@ -41,7 +41,7 @@ const PRODUCTS = [
     category: 'Para tu mejor amigo',
     description: 'Un detalle especial para celebrar la conexión que cambia dos vidas.',
     details: ['Medidas por confirmar', 'Para compartir el mensaje'],
-    image: assetUrl('/brand/merch/panuelo.svg'),
+    image: assetUrl('/brand/merch/panuelo-render-960.webp'),
     color: 'yellow',
     featured: false,
     isLive: false,
@@ -52,7 +52,7 @@ const PRODUCTS = [
     category: 'Uso diario',
     description: 'Tu aliado cotidiano para que la causa viaje contigo cada día.',
     details: ['Disponibilidad por confirmar', 'Compra con propósito'],
-    image: assetUrl('/brand/merch/bolso.svg'),
+    image: assetUrl('/brand/merch/bolso-render-960.webp'),
     color: 'cream',
     featured: false,
     isLive: false,
@@ -181,7 +181,7 @@ export function StorePage() {
           <div className="max-w-2xl">
             <p className="text-sm font-bold uppercase tracking-[.15em] text-[#3c096c]">Colección AdoptaME</p>
             <h2 className="mt-3 font-heading text-4xl font-extrabold tracking-[-.055em] sm:text-5xl">Diseños que llevan la causa contigo.</h2>
-            <p className="mt-4 leading-relaxed text-[#65566f]">Conoce nuestra propuesta de colección. Las ilustraciones muestran el diseño; materiales, medidas, precios y lanzamiento están por confirmar.</p>
+            <p className="mt-4 leading-relaxed text-[#65566f]">Conoce nuestra propuesta de colección. Los renders muestran la propuesta de diseño; materiales, medidas, precios y lanzamiento están por confirmar.</p>
           </div>
           <p className="rounded-2xl bg-[#f1e2ff] px-5 py-4 text-sm leading-relaxed text-[#3c096c] lg:max-w-xs">
             <span className="block font-bold">{databaseProducts.length ? "Catálogo disponible" : "Propuestas de diseño"}</span>
@@ -209,8 +209,8 @@ export function StorePage() {
           {products.map((product) => (
             <article key={product.slug} className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#17022b]/10 bg-white shadow-[0_12px_35px_rgba(23,23,23,.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(23,23,23,.12)]">
               <div className={`relative aspect-[4/3] overflow-hidden ${productBackground[product.color]}`}>
-                <ResilientImage src={product.image} alt={product.name} loading="lazy" decoding="async" className="h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+                <ResilientImage src={product.image} srcSet={!product.isLive ? `${product.image.replace('-960.webp', '-480.webp')} 480w, ${product.image} 960w` : undefined} sizes="(min-width: 1280px) 390px, (min-width: 768px) 50vw, 100vw" alt={product.isLive ? product.name : `Render de propuesta: ${product.name}`} width={1448} height={1086} loading="lazy" decoding="async" className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]" />
+                
                 <div className="absolute left-4 top-4 flex gap-2">
                   <span className="rounded-full bg-[#fffdf9] px-3 py-1 text-xs font-bold text-[#17022b]">{product.category}</span>
                   {!product.isLive && <span className="rounded-full bg-[#17022b] px-3 py-1 text-xs font-bold text-white">Propuesta</span>}
