@@ -23,41 +23,15 @@ import { assetUrl } from '@/lib/assets';
 import { ContextualFaq } from './ContextualFaq';
 import { RefugeDogRibbon } from './RefugeDogRibbon';
 
-const PRODUCTS = [
-  {
-    slug: 'camiseta-adoptame',
-    name: 'Camiseta AdoptaME',
-    category: 'Ropa solidaria',
-    description: 'Una prenda para llevar la conversación sobre adopción a todas partes.',
-    details: ['Tallas por confirmar', 'Edición solidaria'],
-    image: assetUrl('/brand/merch/camiseta-render-960.webp'),
-    color: 'coral',
-    featured: true,
-    isLive: false,
-  },
-  {
-    slug: 'panuelo-me-eligieron',
-    name: 'Pañuelo “ME eligieron”',
-    category: 'Para tu mejor amigo',
-    description: 'Un detalle especial para celebrar la conexión que cambia dos vidas.',
-    details: ['Medidas por confirmar', 'Para compartir el mensaje'],
-    image: assetUrl('/brand/merch/panuelo-render-960.webp'),
-    color: 'yellow',
-    featured: false,
-    isLive: false,
-  },
-  {
-    slug: 'tote-bag-adoptame',
-    name: 'Tote bag AdoptaME',
-    category: 'Uso diario',
-    description: 'Tu aliado cotidiano para que la causa viaje contigo cada día.',
-    details: ['Disponibilidad por confirmar', 'Compra con propósito'],
-    image: assetUrl('/brand/merch/bolso-render-960.webp'),
-    color: 'cream',
-    featured: false,
-    isLive: false,
-  },
-] as const;
+const merchImage = (name: string) => assetUrl(`/brand/merch/${name}-render-960.webp`);
+const variant = (name: string, hex: string, image: string) => ({ name, hex, image: merchImage(image) });
+const PRODUCTS: Product[] = [
+  { slug: 'camiseta-adoptame', name: 'Camiseta AdoptaME', category: 'Ropa solidaria', description: 'Lleva el mensaje de adopción contigo.', details: ['Algodón · corte unisex', 'Tallas propuestas: S, M, L y XL', 'Lavado suave en frío, del revés'], image: merchImage('camiseta'), color: 'coral', featured: true, isLive: false, price: '$18.00 USD', variants: [variant('Morado', '#3c096c', 'camiseta'), variant('Coral', '#ff8069', 'camiseta-coral'), variant('Crema', '#fff3de', 'camiseta-crema')] },
+  { slug: 'panuelo-me-eligieron', name: 'Pañuelo AdoptaME', category: 'Para tu mejor amigo', description: 'Un detalle para celebrar la conexión que cambia dos vidas.', details: ['Tela de algodón · cierre con nudo', 'Medidas propuestas: S y M', 'Usar con supervisión; no sustituye al collar'], image: merchImage('panuelo'), color: 'yellow', featured: false, isLive: false, price: '$8.00 USD', variants: [variant('Morado', '#3c096c', 'panuelo'), variant('Coral', '#ff8069', 'panuelo-coral'), variant('Lavanda', '#e0beff', 'panuelo-lavanda')] },
+  { slug: 'tote-bag-adoptame', name: 'Tote bag AdoptaME', category: 'Uso diario', description: 'Tu aliado cotidiano para que la causa viaje contigo.', details: ['Lona de algodón · asas dobles', 'Medida propuesta: 38 × 42 cm', 'Lavado a mano, secado a la sombra'], image: merchImage('bolso'), color: 'cream', featured: false, isLive: false, price: '$14.00 USD', variants: [variant('Morado', '#3c096c', 'bolso'), variant('Crema', '#fff3de', 'bolso-crema'), variant('Coral', '#ff8069', 'bolso-coral')] },
+  { slug: 'taza-adoptame', name: 'Taza AdoptaME', category: 'Uso diario', description: 'Una pausa con un mensaje que acompaña cada día.', details: ['Cerámica · acabado brillante', 'Capacidad propuesta: 330 ml', 'Lavado a mano para cuidar el estampado'], image: merchImage('taza'), color: 'cream', featured: false, isLive: false, price: '$10.00 USD', variants: [variant('Blanco', '#ffffff', 'taza'), variant('Morado', '#3c096c', 'taza-morada')] },
+  { slug: 'gorra-adoptame', name: 'Gorra AdoptaME', category: 'Ropa solidaria', description: 'La causa te acompaña al aire libre.', details: ['Sarga de algodón · visera curva', 'Talla propuesta: adulto, ajuste posterior', 'Limpieza localizada, sin retorcer'], image: merchImage('gorra'), color: 'yellow', featured: false, isLive: false, price: '$12.00 USD', variants: [variant('Morado', '#3c096c', 'gorra'), variant('Coral', '#ff8069', 'gorra-coral')] },
+];
 
 type Product = {
   slug: string;
@@ -72,6 +46,7 @@ type Product = {
   price?: string;
   priceCents?: number;
   inventory?: number;
+  variants?: Array<{ name: string; hex: string; image: string }>;
 };
 
 type DatabaseProduct = Product;
@@ -85,6 +60,7 @@ const productBackground = {
 export function StorePage() {
   const orderKey = useRef('');
   const orderSignature = useRef('');
+  const [chosenColors, setChosenColors] = useState<Record<string, string>>({});
   const [added, setAdded] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeCategory, setActiveCategory] = useState('Todo');
@@ -101,7 +77,7 @@ export function StorePage() {
     },
   });
   const databaseProducts = productsQuery.data ?? [];
-  const catalog: Product[] = databaseProducts.length > 0 ? databaseProducts : PRODUCTS.map((product) => product);
+  const catalog: Product[] = [...databaseProducts, ...PRODUCTS.filter(product => !databaseProducts.some(live => live.slug === product.slug))];
   const categories = Array.from(new Set(['Todo', ...catalog.map((product) => product.category)]));
   const products = activeCategory === 'Todo' ? catalog : catalog.filter((product) => product.category === activeCategory);
 
@@ -181,11 +157,11 @@ export function StorePage() {
           <div className="max-w-2xl">
             <p className="text-sm font-bold uppercase tracking-[.15em] text-[#3c096c]">Colección AdoptaME</p>
             <h2 className="mt-3 font-heading text-4xl font-extrabold tracking-[-.055em] sm:text-5xl">Diseños que llevan la causa contigo.</h2>
-            <p className="mt-4 leading-relaxed text-[#65566f]">Conoce nuestra propuesta de colección. Los renders muestran la propuesta de diseño; materiales, medidas, precios y lanzamiento están por confirmar.</p>
+            <p className="mt-4 leading-relaxed text-[#65566f]">Conoce nuestra propuesta de colección. Los renders muestran la propuesta de diseño; precios de referencia, materiales, medidas y colores están sujetos a validación antes de producir.</p>
           </div>
           <p className="rounded-2xl bg-[#f1e2ff] px-5 py-4 text-sm leading-relaxed text-[#3c096c] lg:max-w-xs">
             <span className="block font-bold">{databaseProducts.length ? "Catálogo disponible" : "Propuestas de diseño"}</span>
-            {databaseProducts.length ? 'Precios publicados en USD' : 'Catálogo inicial en preparación'}
+            {databaseProducts.length ? 'Precios publicados en USD' : 'Colección propuesta · precios de referencia'}
           </p>
         </div>
 
@@ -206,10 +182,13 @@ export function StorePage() {
         </div>
 
         <div className="mt-10 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
-          {products.map((product) => (
+          {products.map((product) => {
+            const chosen = product.variants?.find(item => item.name === chosenColors[product.slug]) ?? product.variants?.[0];
+            const image = chosen?.image ?? product.image;
+            return (
             <article key={product.slug} className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#17022b]/10 bg-white shadow-[0_12px_35px_rgba(23,23,23,.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(23,23,23,.12)]">
               <div className={`relative aspect-[4/3] overflow-hidden ${productBackground[product.color]}`}>
-                <ResilientImage src={product.image} srcSet={!product.isLive ? `${product.image.replace('-960.webp', '-480.webp')} 480w, ${product.image} 960w` : undefined} sizes="(min-width: 1280px) 390px, (min-width: 768px) 50vw, 100vw" alt={product.isLive ? product.name : `Render de propuesta: ${product.name}`} width={1448} height={1086} loading="lazy" decoding="async" className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]" />
+                <ResilientImage src={image} srcSet={!product.isLive ? `${image.replace('-960.webp', '-480.webp')} 480w, ${image} 960w` : undefined} sizes="(min-width: 1280px) 390px, (min-width: 768px) 50vw, 100vw" alt={product.isLive ? product.name : `Render de propuesta: ${product.name}`} width={1448} height={1086} loading="lazy" decoding="async" className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]" />
                 
                 <div className="absolute left-4 top-4 flex gap-2">
                   <span className="rounded-full bg-[#fffdf9] px-3 py-1 text-xs font-bold text-[#17022b]">{product.category}</span>
@@ -222,11 +201,13 @@ export function StorePage() {
                   <Heart className="mt-1 h-5 w-5 shrink-0 text-[#ff8069]" aria-hidden="true" />
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-[#65566f]">{product.description}</p>
-                <ul className="mt-5 space-y-2 text-sm text-[#4d4944]">
+                {product.variants && <fieldset className="mt-5"><legend className="text-sm font-semibold">Color: {chosen?.name}</legend><div className="mt-2 flex gap-3">{product.variants.map(option => <button key={option.name} type="button" aria-label={`${product.name}: color ${option.name}`} aria-pressed={chosen?.name === option.name} onClick={() => setChosenColors(current => ({ ...current, [product.slug]: option.name }))} className={`flex h-11 w-11 items-center justify-center rounded-full border-2 ${chosen?.name === option.name ? 'border-[#3c096c]' : 'border-transparent hover:border-[#e0beff]'}`}><span className="flex h-8 w-8 items-center justify-center rounded-full border border-black/15" style={{ background: option.hex }}>{chosen?.name === option.name && <Check className="h-4 w-4" style={{ color: option.name === 'Morado' ? 'white' : '#17022b' }} />}</span></button>)}</div></fieldset>}
+                {!product.isLive && <p className="mt-4 text-xs font-semibold text-[#65566f]">Características propuestas</p>}
+                <ul className="mt-3 space-y-2 text-sm text-[#4d4944]">
                   {(product.details || []).map((detail) => <li key={detail} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#ff8069]" /> {detail}</li>)}
                 </ul>
                 <div className="mt-6 border-t border-[#17022b]/10 pt-4">
-                  <p className="text-xs font-bold uppercase tracking-[.12em] text-[#65566f]">Valor</p>
+                  <p className="text-xs font-bold uppercase tracking-[.12em] text-[#65566f]">{product.isLive ? 'Valor' : 'Precio de referencia'}</p>
                   <p className="mt-1 font-heading text-lg font-extrabold text-[#3c096c]">{product.price || 'Precio en USD por confirmar'}</p>
                 </div>
                 {product.isLive ? (
@@ -238,7 +219,7 @@ export function StorePage() {
                 )}
               </div>
             </article>
-          ))}
+          ); })}
         </div>
       </section>
 
