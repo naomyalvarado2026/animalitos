@@ -26,19 +26,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.removeItem('animalitos_demo_session');
 
-    // Get initial Supabase session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setSession(session);
-        setUser(session.user);
-        fetchProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    }).catch(() => {
-      setLoading(false);
-    });
-
     // Listen to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
@@ -54,28 +41,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Auto-logout after 30 minutes of inactivity for logged in users
-    let inactivityTimer: ReturnType<typeof setTimeout>;
+    return () => subscription.unsubscribe();
+  }, []);
 
+  // Keep activity tracking separate: session objects can change on every auth event.
+  useEffect(() => {
+    if (!user?.id) return;
+    let inactivityTimer: ReturnType<typeof setTimeout>;
     const resetInactivityTimer = () => {
       clearTimeout(inactivityTimer);
-      if (user) {
-        inactivityTimer = setTimeout(() => {
-          signOut();
-        }, 30 * 60 * 1000); // 30 mins
-      }
+      inactivityTimer = setTimeout(() => { void signOut(); }, 30 * 60 * 1000);
     };
-
     const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
     events.forEach(event => window.addEventListener(event, resetInactivityTimer));
     resetInactivityTimer();
-
     return () => {
-      subscription.unsubscribe();
       clearTimeout(inactivityTimer);
       events.forEach(event => window.removeEventListener(event, resetInactivityTimer));
     };
-  }, [user]);
+  }, [user?.id]);
 
   async function fetchProfile(userId: string) {
     try {
