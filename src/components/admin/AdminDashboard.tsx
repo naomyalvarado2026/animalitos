@@ -136,12 +136,12 @@ export function AdminDashboard() {
     queryKey: ['admin-commerce-summary'], staleTime: 60_000,
     queryFn: async () => {
       const [products, pendingOrders, variants] = await Promise.all([
-        supabase.from('products').select('id, is_proposal, is_active, inventory'),
+        supabase.from('products').select('id, is_proposal, is_active, inventory, product_variants(inventory, is_active)'),
         supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('product_variants').select('id', { count: 'exact', head: true }).eq('is_active', true),
       ]);
       if (products.error || pendingOrders.error || variants.error) throw new Error('No se pudo consultar el resumen de tienda');
-      return { proposals: products.data.filter(p => p.is_proposal).length, published: products.data.filter(p => p.is_active && !p.is_proposal && p.inventory > 0).length, pending: pendingOrders.count ?? 0, variants: variants.count ?? 0 };
+      return { proposals: products.data.filter(p => p.is_proposal).length, published: products.data.filter(p => p.is_active && !p.is_proposal && (p.product_variants.length ? p.product_variants.some(v => v.is_active && v.inventory > 0) : p.inventory > 0)).length, pending: pendingOrders.count ?? 0, variants: variants.count ?? 0 };
     },
   });
   const refreshing = statsQuery.isFetching || activityQuery.isFetching || actionCenterQuery.isFetching || commerceQuery.isFetching;

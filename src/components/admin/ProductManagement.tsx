@@ -1,3 +1,4 @@
+import { VariantManager } from './VariantManager';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,7 +25,7 @@ type Product = {
   is_proposal: boolean;
   category: string;
   characteristics: string[];
-  product_variants: Array<{ id: string; label: string; color_hex: string; image_url: string; inventory: number }>;
+  product_variants: Array<{ id: string; label: string; color_hex: string; image_url: string; inventory: number; is_active: boolean }>;
 };
 
 type ProductForm = {
@@ -49,6 +50,7 @@ function toSlug(value?: string | null) {
 
 export function ProductManagement() {
   const queryClient = useQueryClient();
+  const [variantProduct, setVariantProduct] = useState<Product | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [editing, setEditing] = useState<Product | null>(null);
@@ -58,9 +60,9 @@ export function ProductManagement() {
   const productsQuery = useQuery({
     queryKey: ['admin-products'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('*, product_variants(id, label, color_hex, image_url, inventory)').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('products').select('*, product_variants(id, label, color_hex, image_url, inventory, is_active)').order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Product[];
+      return ((data ?? []) as Product[]).map(product => ({ ...product, inventory: product.product_variants.length ? product.product_variants.filter(v => v.is_active).reduce((total, v) => total + v.inventory, 0) : product.inventory })) as Product[];
     },
   });
 
@@ -77,6 +79,7 @@ export function ProductManagement() {
       const cleanSlug = toSlug(payload.slug || payload.name);
       if (!payload.name.trim()) throw new Error('El nombre es obligatorio');
       if (!cleanSlug) throw new Error('El slug es obligatorio');
+      if (!Number.isFinite(priceCents) || !Number.isInteger(inventory)) throw new Error('Precio y existencias deben ser números válidos');
       if (priceCents <= 0) throw new Error('El precio debe ser mayor a 0');
 
       const body = {
@@ -127,7 +130,7 @@ export function ProductManagement() {
   function startEdit(product: Product) {
     setEditing(product);
     setIsCreating(false);
-    setForm({ name: product.name ?? '', slug: product.slug ?? '', description: product.description ?? '', priceUsd: (((product.price_cents ?? 0) / 100)).toFixed(2), inventory: String(product.inventory ?? 0), imageUrl: product.image_url ?? '', isActive: product.is_active ?? false, isProposal: product.is_proposal, category: product.category || 'Catálogo', characteristics: (product.characteristics ?? []).join('\n') });
+    setForm({ name: product.name ?? '', slug: product.slug ?? '', description: product.description ?? '', priceUsd: (((product.price_cents ?? 0) / 100)).toFixed(2), inventory: String(product.product_variants.length ? 0 : product.inventory ?? 0), imageUrl: product.image_url ?? '', isActive: product.is_active ?? false, isProposal: product.is_proposal, category: product.category || 'Catálogo', characteristics: (product.characteristics ?? []).join('\n') });
   }
 
   function resetForm() {
@@ -137,7 +140,7 @@ export function ProductManagement() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6">{variantProduct && <VariantManager productId={variantProduct.id} name={variantProduct.name} onClose={() => setVariantProduct(null)} />}
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
@@ -159,6 +162,7 @@ export function ProductManagement() {
             <Button variant="ghost" size="sm" onClick={resetForm}><X className="h-4 w-4" /></Button>
           </CardHeader>
           <CardContent className="space-y-4 pt-2">
+            {editing?.product_variants.length ? <p className="text-sm text-[var(--color-muted-foreground)]">Las existencias de este producto se gestionan en Colores y tallas. El stock general no se usa cuando hay variantes.</p> : null}
             <div className="rounded-xl bg-[var(--color-muted)]/50 p-4"><label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={form.isProposal} onChange={event => setForm({ ...form, isProposal: event.target.checked })} />Propuesta de diseño (sin compra habilitada)</label><p className="text-xs text-[var(--color-muted-foreground)]">Desactiva esta opción solo cuando precio, producción y existencias estén confirmados.</p></div>
             <div className="grid gap-4 sm:grid-cols-2"><div><Label htmlFor="product-category">Categoría</Label><Input id="product-category" value={form.category} onChange={event => setForm({ ...form, category: event.target.value })} /></div><div><Label htmlFor="product-characteristics">Características · una por línea</Label><Textarea id="product-characteristics" value={form.characteristics} onChange={event => setForm({ ...form, characteristics: event.target.value })} /></div></div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -242,7 +246,7 @@ export function ProductManagement() {
                 <span className={`font-semibold ${(product.inventory ?? 0) === 0 ? 'text-rose-600' : (product.inventory ?? 0) <= 3 ? 'text-amber-600' : 'text-[var(--color-muted-foreground)]'}`}>{product.is_proposal ? 'En preparación' : (product.inventory ?? 0) === 0 ? 'Sin stock' : (product.inventory ?? 0) <= 3 ? `Stock bajo · ${product.inventory}` : `${product.inventory ?? 0} disponibles`}</span>
               </div>
               {!!product.product_variants?.length && <div><p className="text-xs font-semibold text-[var(--color-muted-foreground)]">Colores registrados</p><div className="mt-2 flex flex-wrap gap-2">{product.product_variants.map(variant => <span key={variant.id} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-2 py-1 text-xs"><span className="h-3 w-3 rounded-full border border-black/10" style={{background:variant.color_hex}} />{variant.label}</span>)}</div></div>}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => setVariantProduct(product)}>Colores y tallas</Button>
                 <Button variant="outline" size="sm" onClick={() => startEdit(product)} disabled={Boolean(editing)}>
                   <Edit3 className="mr-1 h-4 w-4" />
                   Editar

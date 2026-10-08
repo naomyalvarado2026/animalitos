@@ -23,16 +23,6 @@ import { assetUrl } from '@/lib/assets';
 import { ContextualFaq } from './ContextualFaq';
 import { RefugeDogRibbon } from './RefugeDogRibbon';
 
-const merchImage = (name: string) => assetUrl(`/brand/merch/${name}-render-960.webp`);
-const variant = (name: string, hex: string, image: string) => ({ name, hex, image: merchImage(image) });
-const PRODUCTS: Product[] = [
-  { slug: 'camiseta-adoptame', name: 'Camiseta AdoptaME', category: 'Ropa solidaria', description: 'Lleva el mensaje de adopción contigo.', details: ['Algodón · corte unisex', 'Tallas propuestas: S, M, L y XL', 'Lavado suave en frío, del revés'], image: merchImage('camiseta'), color: 'coral', featured: true, isLive: false, price: '$18.00 USD', variants: [variant('Morado', '#3c096c', 'camiseta'), variant('Coral', '#ff8069', 'camiseta-coral'), variant('Crema', '#fff3de', 'camiseta-crema')] },
-  { slug: 'panuelo-me-eligieron', name: 'Pañuelo AdoptaME', category: 'Para tu mejor amigo', description: 'Un detalle para celebrar la conexión que cambia dos vidas.', details: ['Tela de algodón · cierre con nudo', 'Medidas propuestas: S y M', 'Usar con supervisión; no sustituye al collar'], image: merchImage('panuelo'), color: 'yellow', featured: false, isLive: false, price: '$8.00 USD', variants: [variant('Morado', '#3c096c', 'panuelo'), variant('Coral', '#ff8069', 'panuelo-coral'), variant('Lavanda', '#e0beff', 'panuelo-lavanda')] },
-  { slug: 'tote-bag-adoptame', name: 'Tote bag AdoptaME', category: 'Uso diario', description: 'Tu aliado cotidiano para que la causa viaje contigo.', details: ['Lona de algodón · asas dobles', 'Medida propuesta: 38 × 42 cm', 'Lavado a mano, secado a la sombra'], image: merchImage('bolso'), color: 'cream', featured: false, isLive: false, price: '$14.00 USD', variants: [variant('Morado', '#3c096c', 'bolso'), variant('Crema', '#fff3de', 'bolso-crema'), variant('Coral', '#ff8069', 'bolso-coral')] },
-  { slug: 'taza-adoptame', name: 'Taza AdoptaME', category: 'Uso diario', description: 'Una pausa con un mensaje que acompaña cada día.', details: ['Cerámica · acabado brillante', 'Capacidad propuesta: 330 ml', 'Lavado a mano para cuidar el estampado'], image: merchImage('taza'), color: 'cream', featured: false, isLive: false, price: '$10.00 USD', variants: [variant('Blanco', '#ffffff', 'taza'), variant('Morado', '#3c096c', 'taza-morada')] },
-  { slug: 'gorra-adoptame', name: 'Gorra AdoptaME', category: 'Ropa solidaria', description: 'La causa te acompaña al aire libre.', details: ['Sarga de algodón · visera curva', 'Talla propuesta: adulto, ajuste posterior', 'Limpieza localizada, sin retorcer'], image: merchImage('gorra'), color: 'yellow', featured: false, isLive: false, price: '$12.00 USD', variants: [variant('Morado', '#3c096c', 'gorra'), variant('Coral', '#ff8069', 'gorra-coral')] },
-];
-
 type Product = {
   slug: string;
   name: string;
@@ -46,7 +36,9 @@ type Product = {
   price?: string;
   priceCents?: number;
   inventory?: number;
-  variants?: Array<{ name: string; hex: string; image: string }>;
+  selectedVariantId?: string;
+  selectedVariantLabel?: string;
+  variants?: Array<{ id: string; name: string; hex: string; image: string; inventory: number; priceDelta: number }>;
 };
 
 type DatabaseProduct = Product;
@@ -71,13 +63,13 @@ export function StorePage() {
     queryKey: ['public-store-products'],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('slug, name, description, price_cents, image_url, inventory, is_proposal, category, characteristics, product_variants(label, color_hex, image_url, is_active)').eq('is_active', true).eq('currency', 'USD').or('inventory.gt.0,is_proposal.eq.true').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('products').select('slug, name, description, price_cents, image_url, inventory, is_proposal, category, characteristics, product_variants(id, label, color_hex, image_url, is_active, inventory, price_delta_cents)').eq('is_active', true).eq('currency', 'USD').order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((product) => ({ ...product, category: product.category || 'Catálogo', details: product.characteristics?.length ? product.characteristics : [`${product.inventory ?? 0} disponibles`, 'Compra con propósito'], variants: product.is_proposal ? product.product_variants.filter(v => v.is_active && v.image_url && v.color_hex).map(v => ({ name: v.label, hex: v.color_hex!, image: assetUrl(v.image_url!) })) : undefined, image: product.image_url ? assetUrl(product.image_url) : '', color: 'cream' as const, featured: false, isLive: !product.is_proposal, priceCents: product.price_cents ?? 0, price: `$${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD` })) as DatabaseProduct[];
+      return (data ?? []).map((product) => ({ ...product, category: product.category || 'Catálogo', details: product.characteristics?.length ? product.characteristics : [`${product.inventory ?? 0} disponibles`, 'Compra con propósito'], variants: product.product_variants.filter(v => v.is_active).map(v => ({ id: v.id, name: v.label, hex: v.color_hex || '#e0beff', image: v.image_url ? assetUrl(v.image_url) : (product.image_url ? assetUrl(product.image_url) : ''), inventory: v.inventory, priceDelta: v.price_delta_cents })), image: product.image_url ? assetUrl(product.image_url) : '', color: 'cream' as const, featured: false, isLive: !product.is_proposal, priceCents: product.price_cents ?? 0, price: `$${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD` })) as DatabaseProduct[];
     },
   });
   const databaseProducts = productsQuery.data ?? [];
-  const catalog: Product[] = [...databaseProducts, ...PRODUCTS.filter(product => !databaseProducts.some(live => live.slug === product.slug))];
+  const catalog: Product[] = databaseProducts;
   const categories = Array.from(new Set(['Todo', ...catalog.map((product) => product.category)]));
   const products = activeCategory === 'Todo' ? catalog : catalog.filter((product) => product.category === activeCategory);
 
@@ -88,16 +80,17 @@ export function StorePage() {
     if (!selectedProduct || !form.name || !form.email || !form.phone) return;
 
     if (submitting) return;
-    const signature = JSON.stringify([selectedProduct.slug, quantity, form]);
+    const signature = JSON.stringify([selectedProduct.slug, selectedProduct.selectedVariantId, quantity, form]);
     if (orderSignature.current !== signature) { orderKey.current = crypto.randomUUID(); orderSignature.current = signature; }
     setSubmitting(true);
     try {
-    const { error } = await supabase.rpc('create_merchandise_order', {
+    const { data: receipt, error } = await supabase.rpc('create_merchandise_variant_order', {
       p_customer_name: form.name,
       p_customer_email: form.email,
       p_customer_phone: form.phone,
       p_product_slug: selectedProduct.slug,
       p_quantity: quantity,
+      p_variant_id: selectedProduct.selectedVariantId ?? null,
       p_idempotency_key: orderKey.current,
     });
     setSubmitting(false);
@@ -108,7 +101,7 @@ export function StorePage() {
     }
 
     setAdded((items) => items.includes(selectedProduct.name) ? items : [...items, selectedProduct.name]);
-    toast.success('¡Pedido recibido! Te contactaremos para coordinar los detalles. 🐾');
+    toast.success(`Pedido ${receipt?.order_number ?? ''} recibido. Te contactaremos para coordinar envío y pago.`, { duration: 10000 });
     void productsQuery.refetch();
     setSelectedProduct(null);
     setQuantity(1);
@@ -181,14 +174,17 @@ export function StorePage() {
           ))}
         </div>
 
+        {!productsQuery.isPending && !productsQuery.isError && !products.length && <p role="status" className="mt-8 rounded-2xl bg-[#f1e2ff] p-6">No hay productos publicados en esta categoría. Vuelve pronto para conocer la colección.</p>}
         <div className="mt-10 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
           {products.map((product) => {
             const chosen = product.variants?.find(item => item.name === chosenColors[product.slug]) ?? product.variants?.[0];
             const image = chosen?.image ?? product.image;
+            const stock = product.variants?.length ? chosen?.inventory ?? 0 : product.inventory ?? 0;
+            const cents = (product.priceCents ?? 0) + (chosen?.priceDelta ?? 0);
             return (
             <article key={product.slug} className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#17022b]/10 bg-white shadow-[0_12px_35px_rgba(23,23,23,.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(23,23,23,.12)]">
               <div className={`relative aspect-[4/3] overflow-hidden ${productBackground[product.color]}`}>
-                <ResilientImage src={image} srcSet={!product.isLive ? `${image.replace('-960.webp', '-480.webp')} 480w, ${image} 960w` : undefined} sizes="(min-width: 1280px) 390px, (min-width: 768px) 50vw, 100vw" alt={product.isLive ? product.name : `Render de propuesta: ${product.name}`} width={1448} height={1086} loading="lazy" decoding="async" className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]" />
+                <ResilientImage src={image} srcSet={!product.isLive && image.includes('-960.webp') ? `${image.replace('-960.webp', '-480.webp')} 480w, ${image} 960w` : undefined} sizes="(min-width: 1280px) 390px, (min-width: 768px) 50vw, 100vw" alt={product.isLive ? product.name : `Render de propuesta: ${product.name}`} width={1448} height={1086} loading="lazy" decoding="async" className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]" />
                 
                 <div className="absolute left-4 top-4 flex gap-2">
                   <span className="rounded-full bg-[#fffdf9] px-3 py-1 text-xs font-bold text-[#17022b]">{product.category}</span>
@@ -208,11 +204,11 @@ export function StorePage() {
                 </ul>
                 <div className="mt-6 border-t border-[#17022b]/10 pt-4">
                   <p className="text-xs font-bold uppercase tracking-[.12em] text-[#65566f]">{product.isLive ? 'Valor' : 'Precio de referencia'}</p>
-                  <p className="mt-1 font-heading text-lg font-extrabold text-[#3c096c]">{product.price || 'Precio en USD por confirmar'}</p>
+                  <p className="mt-1 font-heading text-lg font-extrabold text-[#3c096c]">{`$${(cents / 100).toFixed(2)} USD`}</p>
                 </div>
                 {product.isLive ? (
-                  <Button onClick={() => addProduct(product)} className="mt-5 w-full bg-[#17022b] text-white hover:bg-[#38332f]">
-                    {added.includes(product.name) ? <><Check /> Pedido recibido</> : <><ShoppingBag /> Lo quiero</>}
+                  <Button disabled={stock < 1} onClick={() => addProduct({ ...product, image, inventory: stock, selectedVariantId: chosen?.id, selectedVariantLabel: chosen?.name, priceCents: cents, price: `$${(cents / 100).toFixed(2)} USD` })} className="mt-5 w-full bg-[#17022b] text-white hover:bg-[#38332f]">
+                    {stock < 1 ? 'Sin existencias' : added.includes(product.name) ? <><Check /> Pedido recibido</> : <><ShoppingBag /> Lo quiero</>}
                   </Button>
                 ) : (
                   <Button asChild className="mt-5 w-full bg-[#17022b] text-white hover:bg-[#38332f]"><Link to="/contacto"><ShoppingBag /> Me interesa este diseño</Link></Button>
@@ -258,6 +254,7 @@ export function StorePage() {
               <ResilientImage src={selectedProduct.image} alt={selectedProduct.name} className="h-24 w-full rounded-xl object-cover" />
               <div className="self-center"><p className="text-sm font-semibold text-[#ff8069]">{selectedProduct.price || 'Precio por confirmar'}</p><p className="mt-1 text-xs leading-relaxed text-[#65566f]">{selectedProduct.inventory ?? 0} unidades disponibles</p></div>
             </div>
+            {selectedProduct.selectedVariantLabel && <p className="mb-3 text-sm font-semibold">Variante: {selectedProduct.selectedVariantLabel}</p>}
             <p className="mb-6 text-sm text-[#65566f]">El envío se cotiza aparte. Esta solicitud no realiza ningún cobro. Déjanos tus datos. El equipo recibirá el pedido en el panel para confirmar envío y forma de pago.</p>
             <div className="space-y-4">
               <div><Label htmlFor="order-quantity">Cantidad</Label><div className="mt-1 flex items-center justify-between rounded-xl border border-[#17022b]/15 bg-white p-2"><button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} disabled={quantity <= 1} className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#f1e2ff] text-xl font-bold disabled:opacity-40" aria-label="Reducir cantidad">−</button><div className="text-center"><output id="order-quantity" className="font-heading text-xl font-extrabold">{quantity}</output><p className="text-[10px] uppercase tracking-[.12em] text-[#65566f]">unidades</p></div><button type="button" onClick={() => setQuantity((value) => Math.min(Math.min(20, selectedProduct.inventory ?? 20), value + 1))} disabled={quantity >= Math.min(20, selectedProduct.inventory ?? 20)} className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#17022b] text-xl font-bold text-white disabled:opacity-40" aria-label="Aumentar cantidad">+</button></div></div>
