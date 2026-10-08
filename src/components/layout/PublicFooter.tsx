@@ -1,3 +1,4 @@
+import { BrandLogo } from './BrandLogo';
 import { Link } from 'react-router-dom';
 import { Heart, Mail, MapPin } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
@@ -67,7 +68,7 @@ export function PublicFooter() {
           {/* Brand */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2.5">
-              <span className="font-heading text-xl tracking-[-0.05em] font-extrabold">Adopta<span className="text-[var(--color-primary)]">ME</span></span>
+              <BrandLogo />
             </Link>
             <p className="text-sm text-[var(--color-muted-foreground)] leading-relaxed">
               Rescatamos, cuidamos y buscamos un hogar para perros que merecen una segunda oportunidad.

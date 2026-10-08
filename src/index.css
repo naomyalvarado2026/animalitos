@@ -223,12 +223,12 @@ body,
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6, .font-heading {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* ── Accesibilidad ── */
@@ -360,3 +360,55 @@ h1, h2, h3, h4, h5, h6, .font-heading {
     max-height: 92vh !important;
   }
 }
+
+/* Public identity: Canva AdoptaME manual, pages 4–8.
+   Coral is the brand surface; purple provides readable links and focus. */
+.public-shell {
+  --color-background: #faf7fd;
+  --color-foreground: #17022b;
+  --color-card: #ffffff;
+  --color-card-foreground: #17022b;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #17022b;
+  --color-primary: #3c096c;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f1e2ff;
+  --color-secondary-foreground: #3c096c;
+  --color-muted: #f1e2ff;
+  --color-muted-foreground: #65566f;
+  --color-accent: #f1e2ff;
+  --color-accent-foreground: #3c096c;
+  --color-border: #e4d6ed;
+  --color-input: #c6b0d8;
+  --color-ring: #3c096c;
+  --grad-start: #ff8069;
+  --grad-end: #ff8069;
+  --brand-gradient-text: linear-gradient(#3c096c, #3c096c);
+  --paw-color: #3c096c;
+  --surface-shadow: 0 4px 20px rgb(60 9 108 / 8%);
+}
+.dark .public-shell {
+  --color-background: #17022b;
+  --color-foreground: #ffffff;
+  --color-card: #250c3d;
+  --color-card-foreground: #ffffff;
+  --color-popover: #250c3d;
+  --color-popover-foreground: #ffffff;
+  --color-primary: #ff8069;
+  --color-primary-foreground: #17022b;
+  --color-secondary: #3c096c;
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #32164b;
+  --color-muted-foreground: #d4c3e0;
+  --color-accent: #3c096c;
+  --color-accent-foreground: #f1e2ff;
+  --color-border: #65477c;
+  --color-input: #65477c;
+  --color-ring: #ff8069;
+  --brand-gradient-text: linear-gradient(#ff8069, #ff8069);
+}
+.brand-logo { display: block; width: 156px; height: auto; padding: 6px; }
+.brand-logo-negative { display: none; }
+.dark .brand-logo-color { display: none; }
+.dark .brand-logo-negative { display: block; }
+.public-shell .brand-gradient-bg { color: #17022b; }

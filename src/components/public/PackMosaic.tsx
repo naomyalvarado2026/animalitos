@@ -11,11 +11,11 @@ export function PackMosaic() {
   const profiles = REFUGE_DOG_PROFILES.map((dog) => ({ dog, editorial: editorial.find((item) => item.slug === dog.adoption_slug) }));
 
   return (
-    <section className="overflow-hidden bg-[#171717] py-20 text-white lg:py-28">
+    <section className="overflow-hidden bg-[#17022b] py-20 text-white lg:py-28">
       <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <div className="grid gap-8 lg:grid-cols-[.75fr_1.25fr] lg:items-end">
-          <div><p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.18em] text-[#ffcf5a]"><Sparkles className="h-4 w-4" /> La manada real</p><h2 className="mt-4 font-heading text-5xl font-extrabold leading-[.92] tracking-[-.06em] sm:text-6xl">Doce miradas.<br /><span className="text-[#f0644a]">Doce mundos.</span></h2></div>
-          <div className="lg:pb-1"><p className="max-w-xl leading-relaxed text-white/65">No son fotografías de catálogo. Son quienes viven, juegan, sanan y esperan en el refugio. Entra en una imagen para escuchar su historia.</p><Link to="/adopta" className="mt-5 inline-flex items-center gap-2 font-bold text-[#ff9a62]">Explorar todos los perfiles <ArrowUpRight className="h-4 w-4" /></Link></div>
+          <div><p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.18em] text-[#e0beff]"><Sparkles className="h-4 w-4" /> La manada real</p><h2 className="mt-4 font-heading text-5xl font-extrabold leading-[.92] tracking-[-.06em] sm:text-6xl">Doce miradas.<br /><span className="text-[#ff8069]">Doce mundos.</span></h2></div>
+          <div className="lg:pb-1"><p className="max-w-xl leading-relaxed text-white/65">No son fotografías de catálogo. Son quienes viven, juegan, sanan y esperan en el refugio. Entra en una imagen para escuchar su historia.</p><Link to="/adopta" className="mt-5 inline-flex items-center gap-2 font-bold text-[#ff8069]">Explorar todos los perfiles <ArrowUpRight className="h-4 w-4" /></Link></div>
         </div>
 
         <div className="-mx-5 mt-12 flex snap-x gap-3 overflow-x-auto px-5 pb-3 sm:-mx-8 sm:px-8 lg:mx-0 lg:grid lg:auto-rows-[155px] lg:grid-cols-6 lg:px-0 lg:pb-0">

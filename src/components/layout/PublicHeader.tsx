@@ -1,3 +1,4 @@
+import { BrandLogo } from './BrandLogo';
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { BookOpen, ChevronDown, HeartHandshake, PawPrint, Sparkles } from 'lucide-react';
@@ -124,9 +125,7 @@ export function PublicHeader() {
             className="flex items-center gap-2.5 group"
             aria-label="AdoptaME — Inicio"
           >
-            <span className="font-heading text-xl tracking-[-0.05em] font-extrabold text-[var(--color-foreground)] group-hover:opacity-80 transition-colors">
-              Adopta<span className="text-[var(--color-primary)]">ME</span>
-            </span>
+            <BrandLogo />
           </Link>
 
           {/* Desktop Nav */}
