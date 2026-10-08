@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Edit3, ExternalLink, Image, Package, Plus, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { assetUrl } from '@/lib/assets';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +21,10 @@ type Product = {
   image_url: string | null;
   inventory: number;
   is_active: boolean;
+  is_proposal: boolean;
+  category: string;
+  characteristics: string[];
+  product_variants: Array<{ id: string; label: string; color_hex: string; image_url: string; inventory: number }>;
 };
 
 type ProductForm = {
@@ -30,9 +35,12 @@ type ProductForm = {
   inventory: string;
   imageUrl: string;
   isActive: boolean;
+  isProposal: boolean;
+  category: string;
+  characteristics: string;
 };
 
-const emptyForm: ProductForm = { name: '', slug: '', description: '', priceUsd: '', inventory: '0', imageUrl: '', isActive: false };
+const emptyForm: ProductForm = { name: '', slug: '', description: '', priceUsd: '', inventory: '0', imageUrl: '', isActive: false, isProposal: true, category: 'Catálogo', characteristics: '' };
 
 function toSlug(value?: string | null) {
   if (!value || typeof value !== 'string') return '';
@@ -41,6 +49,8 @@ function toSlug(value?: string | null) {
 
 export function ProductManagement() {
   const queryClient = useQueryClient();
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [isCreating, setIsCreating] = useState(false);
@@ -48,7 +58,7 @@ export function ProductManagement() {
   const productsQuery = useQuery({
     queryKey: ['admin-products'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('products').select('*, product_variants(id, label, color_hex, image_url, inventory)').order('created_at', { ascending: false });
       if (error) throw error;
       return (data ?? []) as Product[];
     },
@@ -78,6 +88,9 @@ export function ProductManagement() {
         inventory,
         image_url: payload.imageUrl.trim() || null,
         is_active: payload.isActive,
+        is_proposal: payload.isProposal,
+        category: payload.category.trim() || 'Catálogo',
+        characteristics: payload.characteristics.split('\n').map(line => line.trim()).filter(Boolean),
         updated_at: new Date().toISOString(),
       };
 
@@ -114,7 +127,7 @@ export function ProductManagement() {
   function startEdit(product: Product) {
     setEditing(product);
     setIsCreating(false);
-    setForm({ name: product.name ?? '', slug: product.slug ?? '', description: product.description ?? '', priceUsd: (((product.price_cents ?? 0) / 100)).toFixed(2), inventory: String(product.inventory ?? 0), imageUrl: product.image_url ?? '', isActive: product.is_active ?? false });
+    setForm({ name: product.name ?? '', slug: product.slug ?? '', description: product.description ?? '', priceUsd: (((product.price_cents ?? 0) / 100)).toFixed(2), inventory: String(product.inventory ?? 0), imageUrl: product.image_url ?? '', isActive: product.is_active ?? false, isProposal: product.is_proposal, category: product.category || 'Catálogo', characteristics: (product.characteristics ?? []).join('\n') });
   }
 
   function resetForm() {
@@ -146,6 +159,8 @@ export function ProductManagement() {
             <Button variant="ghost" size="sm" onClick={resetForm}><X className="h-4 w-4" /></Button>
           </CardHeader>
           <CardContent className="space-y-4 pt-2">
+            <div className="rounded-xl bg-[var(--color-muted)]/50 p-4"><label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={form.isProposal} onChange={event => setForm({ ...form, isProposal: event.target.checked })} />Propuesta de diseño (sin compra habilitada)</label><p className="text-xs text-[var(--color-muted-foreground)]">Desactiva esta opción solo cuando precio, producción y existencias estén confirmados.</p></div>
+            <div className="grid gap-4 sm:grid-cols-2"><div><Label htmlFor="product-category">Categoría</Label><Input id="product-category" value={form.category} onChange={event => setForm({ ...form, category: event.target.value })} /></div><div><Label htmlFor="product-characteristics">Características · una por línea</Label><Textarea id="product-characteristics" value={form.characteristics} onChange={event => setForm({ ...form, characteristics: event.target.value })} /></div></div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Nombre</Label>
@@ -195,12 +210,16 @@ export function ProductManagement() {
         </Card>
       )}
 
+      <div className="flex flex-col gap-3 sm:flex-row"><Input aria-label="Buscar productos" placeholder="Buscar por nombre o código…" value={search} onChange={event => setSearch(event.target.value)} /><select aria-label="Filtrar productos" value={filter} onChange={event => setFilter(event.target.value)} className="min-h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 text-sm"><option value="all">Todos los productos</option><option value="proposal">Propuestas</option><option value="live">Confirmados</option><option value="hidden">Ocultos</option></select></div>
+      {productsQuery.isPending && <p role="status">Cargando colección…</p>}
+      {productsQuery.isError && <div role="alert" className="rounded-xl border border-[var(--color-border)] p-4">No pudimos cargar el catálogo. <button className="font-semibold underline" onClick={() => void productsQuery.refetch()}>Reintentar</button></div>}
+      {!productsQuery.isPending && !productsQuery.isError && !productsQuery.data?.length && <p className="rounded-xl bg-[var(--color-muted)] p-6">Tu catálogo está vacío. Crea el primer producto para empezar.</p>}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {productsQuery.data?.map((product) => (
+        {productsQuery.data?.filter(product => `${product.name} ${product.slug}`.toLowerCase().includes(search.toLowerCase()) && (filter === 'all' || filter === 'proposal' && product.is_proposal || filter === 'live' && !product.is_proposal || filter === 'hidden' && !product.is_active)).map((product) => (
           <Card key={product.id} className="overflow-hidden">
             <div className="aspect-[4/3] bg-[var(--color-muted)]">
               {product.image_url ? (
-                <img src={product.image_url} alt={product.name ?? ''} className="h-full w-full object-cover" />
+                <img src={assetUrl(product.image_url)} loading="lazy" decoding="async" alt={product.name ?? ''} className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full items-center justify-center text-[var(--color-muted-foreground)]">
                   <Image className="h-8 w-8" />
@@ -214,14 +233,15 @@ export function ProductManagement() {
                   <p className="text-xs text-[var(--color-muted-foreground)]">{product.slug}</p>
                 </div>
                 <span className={`rounded-full px-2 py-1 text-xs font-bold ${product.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-[var(--color-muted)] text-[var(--color-muted-foreground)]'}`}>
-                  {product.is_active ? 'Publicado' : 'Borrador'}
+                  {!product.is_active ? 'Oculto' : product.is_proposal ? 'Propuesta' : 'Publicado'}
                 </span>
               </div>
               <p className="line-clamp-2 text-sm text-[var(--color-muted-foreground)]">{product.description || 'Sin descripción'}</p>
               <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-3 text-sm">
                 <span className="font-bold text-[var(--color-primary)]">${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD</span>
-                <span className={`font-semibold ${(product.inventory ?? 0) === 0 ? 'text-rose-600' : (product.inventory ?? 0) <= 3 ? 'text-amber-600' : 'text-[var(--color-muted-foreground)]'}`}>{(product.inventory ?? 0) === 0 ? 'Agotado' : (product.inventory ?? 0) <= 3 ? `Stock bajo · ${product.inventory}` : `${product.inventory ?? 0} disponibles`}</span>
+                <span className={`font-semibold ${(product.inventory ?? 0) === 0 ? 'text-rose-600' : (product.inventory ?? 0) <= 3 ? 'text-amber-600' : 'text-[var(--color-muted-foreground)]'}`}>{product.is_proposal ? 'En preparación' : (product.inventory ?? 0) === 0 ? 'Sin stock' : (product.inventory ?? 0) <= 3 ? `Stock bajo · ${product.inventory}` : `${product.inventory ?? 0} disponibles`}</span>
               </div>
+              {!!product.product_variants?.length && <div><p className="text-xs font-semibold text-[var(--color-muted-foreground)]">Colores registrados</p><div className="mt-2 flex flex-wrap gap-2">{product.product_variants.map(variant => <span key={variant.id} className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-2 py-1 text-xs"><span className="h-3 w-3 rounded-full border border-black/10" style={{background:variant.color_hex}} />{variant.label}</span>)}</div></div>}
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => startEdit(product)} disabled={Boolean(editing)}>
                   <Edit3 className="mr-1 h-4 w-4" />

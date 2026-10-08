@@ -412,3 +412,8 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .dark .brand-logo-color { display: none; }
 .dark .brand-logo-negative { display: block; }
 .public-shell .brand-gradient-bg { color: #17022b; }
+
+/* Administrative workspace uses the same brand with quieter surfaces. */
+.admin-shell { --color-background:#faf7fd; --color-foreground:#17022b; --color-card:#fff; --color-card-foreground:#17022b; --color-primary:#3c096c; --color-primary-foreground:#fff; --color-muted:#f1e2ff; --color-muted-foreground:#65566f; --color-accent:#f1e2ff; --color-border:#e4d6ed; --color-input:#c6b0d8; --color-ring:#3c096c; --grad-start:#ff8069; --grad-end:#ff8069; }
+.dark .admin-shell { --color-background:#170f22; --color-foreground:#f8f3ff; --color-card:#24192f; --color-card-foreground:#f8f3ff; --color-primary:#e0beff; --color-primary-foreground:#17022b; --color-muted:#342341; --color-muted-foreground:#c7b8d1; --color-accent:#342341; --color-border:#493456; --color-input:#65477c; --color-ring:#e0beff; }
+.admin-shell :focus-visible { outline:2px solid var(--color-ring); outline-offset:3px; }

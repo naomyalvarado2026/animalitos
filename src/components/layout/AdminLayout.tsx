@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -25,6 +25,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { AccessibleDialog } from '@/components/ui/AccessibleDialog';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { PawIcon } from '@/components/layout/PawBackground';
 import { Button } from '@/components/ui/button';
@@ -71,6 +72,8 @@ const ROLE_LABELS: Record<string, { label: string; color: string }> = {
 
 export function AdminLayout() {
   const { profile, signOut, hasAccessLevel } = useAuth();
+  const [navSearch, setNavSearch] = useState('');
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useMobile();
@@ -82,9 +85,18 @@ export function AdminLayout() {
   }
 
   const roleMeta = ROLE_LABELS[profile?.role ?? 'viewer'] ?? { label: 'Admin', color: 'warm' };
-  const visibleItems = NAV_ITEMS.filter(item => hasAccessLevel(item.minLevel));
+  const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const visibleItems = NAV_ITEMS.filter(item => hasAccessLevel(item.minLevel) && normalize(item.label).includes(normalize(navSearch)));
+  const sectionTitle = NAV_ITEMS.find(item => item.href === location.pathname)?.label ?? 'Administración';
+  const groups = [
+    { title: 'Resumen', paths: ['/admin', '/admin/reportes'] },
+    { title: 'Rescate y comunidad', paths: ['/admin/animales', '/admin/solicitudes', '/admin/actividades', '/admin/equipo', '/admin/memoria'] },
+    { title: 'Tienda y aportes', paths: ['/admin/productos', '/admin/pedidos', '/admin/finanzas', '/admin/donadores', '/admin/impacto-donaciones'] },
+    { title: 'Comunicación', paths: ['/admin/historias-perros', '/admin/historias', '/admin/contenido', '/admin/editorial', '/admin/estructura'] },
+    { title: 'Administración', paths: ['/admin/usuarios', '/admin/configuracion'] },
+  ];
 
-  const SidebarContent = () => (
+  const renderSidebar = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className={`flex items-center gap-2.5 px-4 py-5 border-b border-[var(--color-border)] ${collapsed ? 'justify-center' : ''}`}>
@@ -100,11 +112,17 @@ export function AdminLayout() {
         {isMobile && <button type="button" onClick={() => setMobileOpen(false)} className="ml-auto rounded-lg p-2 text-[var(--color-muted-foreground)] hover:bg-[var(--color-accent)] hover:text-[var(--color-foreground)]" aria-label="Cerrar menú"><X className="h-5 w-5" /></button>}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-2 py-4 space-y-0.5">
-        {visibleItems.map((item) => (
+      {!collapsed && <div className="px-3 pt-4"><input aria-label="Buscar sección" placeholder="Buscar herramienta…" value={navSearch} onChange={event => setNavSearch(event.target.value)} className="min-h-11 w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-background)] px-3 text-sm" /></div>}
+      <nav aria-label="Navegación administrativa" className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
+        {groups.map(group => {
+          const groupItems = visibleItems.filter(item => group.paths.includes(item.href));
+          if (!groupItems.length) return null;
+          return <div key={group.title} className="mb-4">{!collapsed && <p className="px-3 pb-2 pt-2 text-[10px] font-bold uppercase tracking-widest text-[var(--color-muted-foreground)]">{group.title}</p>}
+        {groupItems.map((item) => (
           <NavLink
             key={item.href}
+            aria-label={item.label}
+            title={collapsed ? item.label : undefined}
             to={item.href}
             end={item.href === '/admin'}
             onClick={() => setMobileOpen(false)}
@@ -113,19 +131,22 @@ export function AdminLayout() {
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                 collapsed ? 'justify-center' : '',
                 isActive
-                  ? 'brand-gradient-bg text-white shadow-sm'
+                  ? 'bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-sm'
                   : 'text-[var(--color-foreground)] hover:bg-[var(--color-accent)] hover:text-[var(--color-primary)]'
               )
             }
           >
             {({ isActive }) => (
               <>
-                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-white' : ''}`} />
+                <item.icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-[var(--color-primary-foreground)]' : ''}`} />
                 {!collapsed && <span>{item.label}</span>}
               </>
             )}
           </NavLink>
         ))}
+          </div>;
+        })}
+        {!visibleItems.length && <p role="status" className="p-3 text-sm text-[var(--color-muted-foreground)]">No hay secciones que coincidan.</p>}
       </nav>
 
       {/* User */}
@@ -154,16 +175,16 @@ export function AdminLayout() {
   );
 
   return (
-    <div className="flex h-screen bg-[var(--color-background)] overflow-hidden">
+    <div className="admin-shell flex h-dvh bg-[var(--color-background)] overflow-hidden">
       {/* Desktop Sidebar */}
       {!isMobile && (
         <aside
           className={cn(
             'relative flex flex-col border-r border-[var(--color-border)] bg-[var(--color-card)] transition-all duration-300',
-            collapsed ? 'w-[60px]' : 'w-56'
+            collapsed ? 'w-[60px]' : 'w-64'
           )}
         >
-          <SidebarContent />
+          {renderSidebar()}
           {/* Collapse toggle */}
           <button
             onClick={() => setCollapsed(!collapsed)}
@@ -175,26 +196,7 @@ export function AdminLayout() {
         </aside>
       )}
 
-      {/* Mobile drawer overlay */}
-      {isMobile && mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Mobile sidebar */}
-      {isMobile && (
-        <aside
-          className={cn(
-            'fixed left-0 top-0 bottom-0 w-64 z-50 flex flex-col border-r border-[var(--color-border)] bg-[var(--color-card)] transition-transform duration-300',
-            mobileOpen ? 'translate-x-0' : '-translate-x-full'
-          )}
-        >
-          <SidebarContent />
-        </aside>
-      )}
+      {isMobile && <AccessibleDialog open={mobileOpen} onClose={() => setMobileOpen(false)} title="Herramientas del panel"><div className="h-[70vh]">{renderSidebar()}</div></AccessibleDialog>}
 
       {/* Main area */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
@@ -210,7 +212,7 @@ export function AdminLayout() {
               ← Ver sitio público
             </Link>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             {!isMobile && profile && (
               <span className="text-xs text-[var(--color-muted-foreground)]">
                 {profile.full_name ?? profile.email}
@@ -221,9 +223,9 @@ export function AdminLayout() {
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main id="admin-content" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-[1440px]"><p className="mb-5 text-xs text-[var(--color-muted-foreground)]">Panel / <span className="font-semibold text-[var(--color-foreground)]">{sectionTitle}</span></p>
           <Outlet />
-        </main>
+        </div></main>
       </div>
     </div>
   );
