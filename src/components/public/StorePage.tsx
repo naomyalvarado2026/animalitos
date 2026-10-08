@@ -71,9 +71,9 @@ export function StorePage() {
     queryKey: ['public-store-products'],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('slug, name, description, price_cents, image_url, inventory').eq('is_active', true).eq('currency', 'USD').gt('inventory', 0).order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('products').select('slug, name, description, price_cents, image_url, inventory, is_proposal, category, characteristics, product_variants(label, color_hex, image_url, is_active)').eq('is_active', true).eq('currency', 'USD').or('inventory.gt.0,is_proposal.eq.true').order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((product) => ({ ...product, category: 'Catálogo', details: [`${product.inventory ?? 0} disponibles`, 'Compra con propósito'], image: product.image_url || '', color: 'cream' as const, featured: false, isLive: true, priceCents: product.price_cents ?? 0, price: `$${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD` })) as DatabaseProduct[];
+      return (data ?? []).map((product) => ({ ...product, category: product.category || 'Catálogo', details: product.characteristics?.length ? product.characteristics : [`${product.inventory ?? 0} disponibles`, 'Compra con propósito'], variants: product.is_proposal ? product.product_variants.filter(v => v.is_active && v.image_url && v.color_hex).map(v => ({ name: v.label, hex: v.color_hex!, image: assetUrl(v.image_url!) })) : undefined, image: product.image_url ? assetUrl(product.image_url) : '', color: 'cream' as const, featured: false, isLive: !product.is_proposal, priceCents: product.price_cents ?? 0, price: `$${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD` })) as DatabaseProduct[];
     },
   });
   const databaseProducts = productsQuery.data ?? [];
@@ -160,8 +160,8 @@ export function StorePage() {
             <p className="mt-4 leading-relaxed text-[#65566f]">Conoce nuestra propuesta de colección. Los renders muestran la propuesta de diseño; precios de referencia, materiales, medidas y colores están sujetos a validación antes de producir.</p>
           </div>
           <p className="rounded-2xl bg-[#f1e2ff] px-5 py-4 text-sm leading-relaxed text-[#3c096c] lg:max-w-xs">
-            <span className="block font-bold">{databaseProducts.length ? "Catálogo disponible" : "Propuestas de diseño"}</span>
-            {databaseProducts.length ? 'Precios publicados en USD' : 'Colección propuesta · precios de referencia'}
+            <span className="block font-bold">{databaseProducts.some(product => product.isLive) ? "Catálogo disponible" : "Propuestas de diseño"}</span>
+            {databaseProducts.some(product => product.isLive) ? 'Precios publicados en USD' : 'Colección propuesta · precios de referencia'}
           </p>
         </div>
 
