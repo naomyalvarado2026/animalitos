@@ -140,7 +140,7 @@ export function AdminLoginPage() {
         </div>
 
         <p className="text-center text-xs text-[var(--color-muted-foreground)] mt-6">
-          Esta página no está enlazada públicamente.
+          Acceso exclusivo para el equipo autorizado.
           <br />Si llegaste aquí por error, regresa al{' '}
           <Link to="/" className="text-[var(--color-primary)] hover:underline">sitio principal</Link>.
         </p>

@@ -1,6 +1,6 @@
 import { BrandLogo } from './BrandLogo';
 import { Link } from 'react-router-dom';
-import { Heart, Mail, MapPin } from 'lucide-react';
+import { Heart, LockKeyhole, Mail, MapPin } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { usePublicSettings } from '@/lib/publicSettings';
 
@@ -143,6 +143,14 @@ export function PublicFooter() {
           <span className="flex items-center gap-1">
             Hecho con <Heart className="h-3 w-3 text-red-500 fill-red-500" /> para cada patita
           </span>
+          <Link
+            to="/admin/login"
+            aria-label="Entrar al panel administrativo"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 text-xs hover:bg-[var(--color-accent)] hover:text-[var(--color-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] transition-colors"
+          >
+            <LockKeyhole className="h-3.5 w-3.5" aria-hidden="true" />
+            Admin
+          </Link>
         </div>
       </div>
     </footer>
