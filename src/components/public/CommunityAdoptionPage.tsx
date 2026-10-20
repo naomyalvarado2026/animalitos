@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Heart, MapPin, PawPrint, Search, Share2, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Heart, MapPin, PawPrint, Search, Share2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
@@ -33,25 +33,10 @@ interface PublicListing {
   special_notes: string | null;
   expires_at: string;
   created_at: string;
-  whatsapp_number?: string;
 }
 
 type SpeciesFilter = 'all' | Species;
 
-function normalizedPhone(value: string) {
-  const digits = value.replace(/[^0-9]/g, '');
-  if (digits.startsWith('593')) return digits;
-  if (digits.startsWith('0')) return '593' + digits.slice(1);
-  if (digits.length === 9 && digits.startsWith('9')) return '593' + digits;
-  return digits;
-}
-
-function WhatsAppLink({ item, className = '' }: { item: PublicListing; className?: string }) {
-  const phone = item.whatsapp_number ? normalizedPhone(item.whatsapp_number) : '';
-  if (!phone) return <Link className={'text-sm font-semibold text-[var(--color-primary)] underline ' + className} to={'/contacto?perrito=' + encodeURIComponent(item.name)}>Pedir información a AdoptaME</Link>;
-  const text = 'Hola, vi la publicación de ' + item.name + ' en AdoptaME. ¿Sigue buscando hogar?';
-  return <a className={className} href={'https://wa.me/' + phone + '?text=' + encodeURIComponent(text)} target="_blank" rel="noopener noreferrer"><MessageCircle className="mr-2 inline h-4 w-4" />Consultar por WhatsApp</a>;
-}
 
 export function CommunityAdoptionPage() {
   const { slug } = useParams();
@@ -68,15 +53,7 @@ export function CommunityAdoptionPage() {
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
       if (error) throw error;
-      const publicRows = (rows ?? []) as PublicListing[];
-      if (!publicRows.length) return publicRows;
-      const { data: contacts, error: contactError } = await supabase
-        .from('community_adoption_listing_contacts')
-        .select('listing_id,whatsapp_number')
-        .in('listing_id', publicRows.map((item) => item.id));
-      if (contactError) throw contactError;
-      const phoneById = new Map((contacts ?? []).map((contact: { listing_id: string; whatsapp_number: string }) => [contact.listing_id, contact.whatsapp_number]));
-      return publicRows.map((item) => ({ ...item, whatsapp_number: phoneById.get(item.id) }));
+      return (rows ?? []) as PublicListing[];
     },
     staleTime: 60_000,
   });
@@ -104,7 +81,7 @@ export function CommunityAdoptionPage() {
     <main className="overflow-hidden pt-16">
       <Helmet>
         <title>{selected ? selected.name + ' busca hogar | AdoptaME' : 'Adopciones de la comunidad | AdoptaME'}</title>
-        <meta name="description" content="Perros y gatos que buscan hogar en la comunidad. Conoce sus datos y contacta directamente a la persona responsable." />
+        <meta name="description" content="Perros y gatos que buscan hogar en la comunidad. Envía tu interés para que el equipo coordine el contacto." />
       </Helmet>
 
       <section className="bg-[#171717] py-14 text-[#fffdf9] sm:py-20">
@@ -136,9 +113,9 @@ export function CommunityAdoptionPage() {
                 <div><p className="text-xs text-[var(--color-muted-foreground)]">Esterilización</p><p className="mt-1 font-semibold">{selected.sterilized == null ? 'Por confirmar' : selected.sterilized ? 'Sí' : 'No'}</p></div>
                 {selected.is_special_needs && <div className="col-span-2"><p className="text-xs text-[var(--color-muted-foreground)]">Cuidados</p><p className="mt-1 font-semibold">{selected.special_notes || 'Consulta con la persona responsable.'}</p></div>}
               </div>
-              <Button asChild variant="warm" size="lg" className="w-full"><WhatsAppLink item={selected} className="inline-flex items-center justify-center text-sm font-bold text-white" /></Button>
+              <Button asChild variant="warm" size="lg" className="w-full"><Link to={'/comunidad/' + selected.slug + '/solicitud'}>Quiero adoptar</Link></Button>
               <div className="flex gap-2"><Button variant="outline" className="flex-1" onClick={() => void shareListing(selected)}><Share2 className="mr-2 h-4 w-4" />Compartir</Button><Button asChild variant="ghost" className="flex-1"><Link to="/adopta"><Heart className="mr-2 h-4 w-4" />Ver refugio</Link></Button></div>
-              <p className="text-xs leading-relaxed text-[var(--color-muted-foreground)]">Este anuncio fue compartido por la comunidad. AdoptaME facilita el contacto; confirma las condiciones directamente antes de coordinar.</p>
+              <p className="text-xs leading-relaxed text-[var(--color-muted-foreground)]">Este anuncio fue compartido por la comunidad. AdoptaME recibirá tu interés y ayudará a coordinar el proceso con la persona responsable.</p>
             </CardContent>
           </Card>
         </section>
