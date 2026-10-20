@@ -1,4 +1,4 @@
-const CACHE_NAME = 'adoptame-shell-v1';
+const CACHE_NAME = 'adoptame-shell-v2';
 const SCOPE_URL = new URL('./', self.registration.scope);
 const SHELL_URL = new URL('index.html', SCOPE_URL).toString();
 
@@ -20,7 +20,6 @@ self.addEventListener('install', (event) => {
         }
       }));
     }
-    await self.skipWaiting();
   })());
 });
 
