@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useMobile } from '@/hooks/useMobile';
 import { cn } from '@/lib/utils';
 import { SiteSearchTrigger } from './SiteSearch';
+import { InstallAppButton } from './InstallAppButton';
 
 interface SubItem {
   label: string;
@@ -22,7 +23,10 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Adoptar', href: '/adopta', description: 'Conoce a quienes esperan una familia.', icon: PawPrint },
+  { label: 'Adoptar', href: '/adopta', description: 'Conoce a quienes esperan una familia.', icon: PawPrint, children: [
+    { label: 'Animales del refugio', href: '/adopta' },
+    { label: 'Adopciones de la comunidad', href: '/comunidad' },
+  ] },
   { label: 'Cómo funciona', href: '/como-funciona', description: 'Un proceso claro y responsable.', icon: BookOpen },
   { label: 'Tienda', href: '/tienda', description: 'Compra con propósito.', icon: Sparkles },
   {
@@ -244,6 +248,7 @@ export function PublicHeader() {
           {/* Actions */}
           <div className="flex items-center gap-2">
             <SiteSearchTrigger />
+            <InstallAppButton />
             <ThemeToggle />
             {!isMobile && (
               <Button

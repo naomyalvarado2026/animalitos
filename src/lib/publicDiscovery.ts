@@ -6,6 +6,7 @@ export type DiscoveryResult = { id: string; title: string; description: string; 
 // Public destinations only. Add future public pages here; never include admin records.
 export const PUBLIC_DESTINATIONS: DiscoveryResult[] = [
   { id: 'adopt', title: 'Encuentra a tu compañero', description: 'Perfiles, necesidades y solicitudes de adopción.', href: '/adopta', kind: 'page', keywords: 'adoptar adopcion perros mascotas familia' },
+  { id: 'community-adoptions', title: 'Adopciones de la comunidad', description: 'Perros y gatos compartidos por familias que buscan un hogar.', href: '/comunidad', kind: 'page', keywords: 'gatos perros adopciones comunidad hogar whatsapp' },
   { id: 'process', title: 'Cómo funciona la adopción', description: 'Los pasos y la preparación antes de dar el sí.', href: '/como-funciona', kind: 'page', keywords: 'requisitos proceso entrevista hogar' },
   { id: 'help', title: 'Ayudar y hacer voluntariado', description: 'Áreas de participación, agenda y solicitudes.', href: '/voluntariado', kind: 'page', keywords: 'voluntario paseos calendario actividades hogar temporal foster' },
   { id: 'shop', title: 'Tienda solidaria', description: 'Productos con propósito y consultas de pedidos.', href: '/tienda', kind: 'page', keywords: 'comprar compra regalos precio stock inventario envio' },

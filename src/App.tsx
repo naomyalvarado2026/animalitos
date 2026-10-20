@@ -29,6 +29,7 @@ const TopDonorsPage = lazy(() => import('@/components/public/TopDonorsPage').the
 const ContactPage = lazy(() => import('@/components/public/ContactPage').then(m => ({ default: m.ContactPage })));
 const SupportPage = lazy(() => import('@/components/public/SupportPage').then(m => ({ default: m.SupportPage })));
 const AdoptionGalleryPage = lazy(() => import('@/components/public/AdoptionGalleryPage').then(m => ({ default: m.AdoptionGalleryPage })));
+const CommunityAdoptionPage = lazy(() => import('@/components/public/CommunityAdoptionPage').then(m => ({ default: m.CommunityAdoptionPage })));
 const DogProfilePage = lazy(() => import('@/components/public/DogProfilePage').then(m => ({ default: m.DogProfilePage })));
 const SponsorshipPage = lazy(() => import('@/components/public/SponsorshipPage').then(m => ({ default: m.SponsorshipPage })));
 const SuccessStoriesPage = lazy(() => import('@/components/public/SuccessStoriesPage').then(m => ({ default: m.SuccessStoriesPage })));
@@ -47,6 +48,7 @@ const AdminDashboard = lazy(() => import('@/components/admin/AdminDashboard').th
 const UserManagement = lazy(() => import('@/components/admin/UserManagement').then(m => ({ default: m.UserManagement })));
 const FinanceManagement = lazy(() => import('@/components/admin/FinanceManagement').then(m => ({ default: m.FinanceManagement })));
 const AnimalManagement = lazy(() => import('@/components/admin/AnimalManagement').then(m => ({ default: m.AnimalManagement })));
+const CommunityListingManagement = lazy(() => import('@/components/admin/CommunityListingManagement').then(m => ({ default: m.CommunityListingManagement })));
 const ActivityManagement = lazy(() => import('@/components/admin/ActivityManagement').then(m => ({ default: m.ActivityManagement })));
 const ApplicationsManagement = lazy(() => import('@/components/admin/ApplicationsManagement').then(m => ({ default: m.ApplicationsManagement })));
 const ContentManagement = lazy(() => import('@/components/admin/ContentManagement').then(m => ({ default: m.ContentManagement })));
@@ -96,6 +98,8 @@ export default function App() {
                     <Route element={<PublicLayout />}>
                       <Route path="/" element={<HomePage />} />
                       <Route path="/adopta" element={<AdoptionGalleryPage />} />
+                      <Route path="/comunidad" element={<CommunityAdoptionPage />} />
+                      <Route path="/comunidad/:slug" element={<CommunityAdoptionPage />} />
                       <Route path="/adopta/:slug" element={<DogProfilePage />} />
                       <Route path="/apadrina" element={<SponsorshipPage />} />
                       <Route path="/apadrina/:slug" element={<SponsorshipPage />} />
@@ -130,6 +134,7 @@ export default function App() {
                       <Route element={<AdminLayout />}>
                         <Route path="/admin" element={<AdminDashboard />} />
                         <Route path="/admin/animales" element={<AnimalManagement />} />
+                        <Route path="/admin/adopciones-comunidad" element={<CommunityListingManagement />} />
                         <Route path="/admin/solicitudes" element={<ApplicationsManagement />} />
                         <Route path="/admin/actividades" element={<ActivityManagement />} />
                         <Route path="/admin/finanzas" element={<FinanceManagement />} />
