@@ -42,7 +42,9 @@ function mergeProfile(local: Animal, remote: Animal): Animal {
     personality_summary: hasText(remote.personality_summary) ? remote.personality_summary : local.personality_summary,
     ideal_home: hasText(remote.ideal_home) ? remote.ideal_home : local.ideal_home,
     compatibility_notes: hasText(remote.compatibility_notes) ? remote.compatibility_notes : local.compatibility_notes,
-    main_image_url: hasText(remote.main_image_url) ? remote.main_image_url : local.main_image_url,
+    // Keep the current project portrait for known refuge dogs even when older
+    // Supabase rows still contain the previous image URL.
+    main_image_url: local.main_image_url,
     gallery_urls: remote.gallery_urls?.length ? remote.gallery_urls : local.gallery_urls,
     adoption_slug: hasText(remote.adoption_slug) ? remote.adoption_slug : local.adoption_slug,
     brand_message: hasText(remote.brand_message) ? remote.brand_message : local.brand_message,

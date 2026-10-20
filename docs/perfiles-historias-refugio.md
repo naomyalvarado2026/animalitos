@@ -45,7 +45,7 @@ El panel **Rescatados** permite:
 4. Editar historia, salud, personalidad, hogar ideal, convivencia, cuidados especiales, foto y orden.
 5. Activar opcionalmente un momento editorial AdoptaME y personalizar su frase.
 
-Las fotos se copiaron a `public/images/refugio/`. Las futuras imágenes de cuerpo completo sin fondo pueden añadirse como un campo/activo secundario sin sustituir estos retratos; la galería ya conserva `gallery_urls` para esa evolución.
+Los retratos fuente se conservan en `public/images/refugio/`. En octubre de 2026 se añadieron versiones naturalistas generadas a partir de esos retratos (`*-garden-2026-10.jpg`), y los perfiles las usan con nombres nuevos para evitar imágenes antiguas en caché. Son imágenes generadas, no fotografías tomadas en el refugio; los archivos fuente se mantienen intactos. La app prioriza estas rutas para los 12 perfiles incluso si una fila remota o una preferencia editorial guarda una URL anterior. Las futuras imágenes de cuerpo completo pueden añadirse como un activo secundario; la galería ya conserva `gallery_urls` para esa evolución.
 
 ## Publicación
 

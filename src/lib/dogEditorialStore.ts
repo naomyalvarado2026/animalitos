@@ -31,7 +31,7 @@ export function getDogEditorial(slug: string): DogEditorialProfile | undefined {
   const base = getDefaultDogEditorial(slug);
   if (!base) return undefined;
   const override = readOverrides()[slug];
-  return override ? { ...base, ...override, slug, timeline: override.timeline?.length ? override.timeline : base.timeline, gallery_urls: override.gallery_urls?.length ? override.gallery_urls : base.gallery_urls } : base;
+  return override ? { ...base, ...override, slug, cover_image_url: base.cover_image_url, timeline: override.timeline?.length ? override.timeline : base.timeline, gallery_urls: base.gallery_urls } : base;
 }
 
 export function getAllDogEditorial(): DogEditorialProfile[] {

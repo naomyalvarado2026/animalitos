@@ -21,6 +21,12 @@ test('cada perfil tiene foto local, historia y ficha editorial', () => {
   }
 });
 
+test('cada retrato naturalista usa un archivo nuevo y único para evitar caché antigua', () => {
+  const imagePaths = REFUGE_DOG_PROFILES.map((dog) => dog.main_image_url);
+  assert.ok(imagePaths.every((path) => path.endsWith('-garden-2026-10.jpg')));
+  assert.equal(new Set(imagePaths).size, 12);
+});
+
 test('no inventa raza, tamaño, vacunas o edad cuando el texto no los confirma', () => {
   assert.ok(REFUGE_DOG_PROFILES.every((dog) => dog.breed === null));
   assert.deepEqual(REFUGE_DOG_PROFILES.filter((dog) => dog.size !== 'unknown').map((dog) => [dog.name, dog.size]), [['Lobo', 'large']]);
@@ -78,6 +84,7 @@ test('mantiene visibles las historias reales cuando Supabase está vacío o usa 
   const max = withLegacyRows.find((dog) => dog.name === 'Max');
   assert.equal(max?.id, 'remote-max');
   assert.equal(max?.age_months, 108);
+  assert.equal(max?.main_image_url, REFUGE_DOG_PROFILES.find((dog) => dog.name === 'Max')?.main_image_url);
   assert.match(max?.description ?? '', /senior profundamente afectuoso/i);
   assert.equal(max ? isLocalRefugeDog(max) : true, false);
 });
