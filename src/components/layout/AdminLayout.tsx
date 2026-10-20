@@ -46,6 +46,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: LayoutDashboard, minLevel: 0 },
   { label: 'Rescatados', href: '/admin/animales', icon: Heart, minLevel: 4 },
   { label: 'Adopciones de la comunidad', href: '/admin/adopciones-comunidad', icon: Megaphone, minLevel: 4 },
+  { label: 'Interesados comunidad', href: '/admin/solicitudes-comunidad', icon: FileText, minLevel: 4 },
   { label: 'Historias de la manada', href: '/admin/historias-perros', icon: Images, minLevel: 4 },
   { label: 'Solicitudes', href: '/admin/solicitudes', icon: FileText, minLevel: 4 },
   { label: 'Actividades', href: '/admin/actividades', icon: Calendar, minLevel: 4 },
@@ -93,7 +94,7 @@ export function AdminLayout() {
   const sectionTitle = NAV_ITEMS.find(item => item.href === location.pathname)?.label ?? 'Administración';
   const groups = [
     { title: 'Resumen', paths: ['/admin', '/admin/reportes'] },
-    { title: 'Rescate y comunidad', paths: ['/admin/animales', '/admin/adopciones-comunidad', '/admin/solicitudes', '/admin/actividades', '/admin/equipo', '/admin/memoria'] },
+    { title: 'Rescate y comunidad', paths: ['/admin/animales', '/admin/adopciones-comunidad', '/admin/solicitudes-comunidad', '/admin/solicitudes', '/admin/actividades', '/admin/equipo', '/admin/memoria'] },
     { title: 'Tienda y aportes', paths: ['/admin/productos', '/admin/pedidos', '/admin/finanzas', '/admin/donadores', '/admin/impacto-donaciones'] },
     { title: 'Comunicación', paths: ['/admin/historias-perros', '/admin/historias', '/admin/contenido', '/admin/editorial', '/admin/estructura', '/admin/campanas'] },
     { title: 'Administración', paths: ['/admin/usuarios', '/admin/configuracion'] },
