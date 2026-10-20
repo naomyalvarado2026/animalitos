@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { SmartSchedulePicker } from '@/components/ui/SmartSchedulePicker';
+import { VolunteerAvailabilityPicker } from './VolunteerAvailabilityPicker';
 import { VolunteerCalendar } from './VolunteerCalendar';
 import { ContextualFaq } from './ContextualFaq';
 import { DogStoryMoment } from './DogStoryMoment';
@@ -42,6 +42,7 @@ const VOLUNTEER_ROLES = [
 
 export function VolunteerPage() {
   const [submitting, setSubmitting] = useState(false);
+  const [availabilityPickerKey, setAvailabilityPickerKey] = useState(0);
   const { data: settings } = usePublicSettings(['volunteer_intro']);
   const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<VolunteerFormData>({
     resolver: zodResolver(volunteerSchema),
@@ -62,6 +63,7 @@ export function VolunteerPage() {
       if (error) throw error;
       toast.success('¡Solicitud recibida! El equipo la verá en el panel y se pondrá en contacto contigo. 🐾');
       reset({ area_of_interest: 'dog_walking', availability: '', full_name: '', email: '', phone: '', experience: '' });
+      setAvailabilityPickerKey((key) => key + 1);
     } catch {
       toast.error('No pudimos registrar tu solicitud. Intenta nuevamente cuando el sistema esté disponible.');
     } finally {
@@ -127,11 +129,11 @@ export function VolunteerPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="rounded-[2rem] bg-[#fffdf9] p-6 text-[#171717] shadow-2xl sm:p-9">
             <div className="grid gap-5 sm:grid-cols-2">
-              <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="full_name">Nombre completo</Label><Input id="full_name" placeholder="Tu nombre" {...register('full_name')} />{errors.full_name && <p className="text-xs text-red-600">{errors.full_name.message}</p>}</div>
-              <div className="space-y-1.5"><Label htmlFor="email">Correo electrónico</Label><Input id="email" type="email" placeholder="tu@email.com" {...register('email')} />{errors.email && <p className="text-xs text-red-600">{errors.email.message}</p>}</div>
-              <div className="space-y-1.5"><Label htmlFor="phone">Teléfono / WhatsApp</Label><Input id="phone" placeholder="+57 300 000 0000" {...register('phone')} />{errors.phone && <p className="text-xs text-red-600">{errors.phone.message}</p>}</div>
+              <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="full_name">Nombre completo</Label><Input id="full_name" autoComplete="name" placeholder="Tu nombre" aria-invalid={Boolean(errors.full_name)} aria-describedby={errors.full_name ? 'full-name-error' : undefined} {...register('full_name')} />{errors.full_name && <p id="full-name-error" className="text-xs text-red-600">{errors.full_name.message}</p>}</div>
+              <div className="space-y-1.5"><Label htmlFor="email">Correo electrónico</Label><Input id="email" type="email" autoComplete="email" placeholder="tu@email.com" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'email-error' : undefined} {...register('email')} />{errors.email && <p id="email-error" className="text-xs text-red-600">{errors.email.message}</p>}</div>
+              <div className="space-y-1.5"><Label htmlFor="phone">Teléfono / WhatsApp</Label><Input id="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="+593 99 000 0000" aria-invalid={Boolean(errors.phone)} aria-describedby={errors.phone ? 'phone-error' : undefined} {...register('phone')} />{errors.phone && <p id="phone-error" className="text-xs text-red-600">{errors.phone.message}</p>}</div>
               <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="area_of_interest">Área de interés</Label><select id="area_of_interest" {...register('area_of_interest')} className="flex h-10 w-full rounded-lg border border-[var(--color-input)] bg-white px-3 text-sm">{VOLUNTEER_ROLES.map((role) => <option key={role.area} value={role.area}>{role.icon} {role.title}</option>)}</select></div>
-              <div className="space-y-1.5 sm:col-span-2"><Label>Disponibilidad y horarios</Label><SmartSchedulePicker onChange={(schedule) => setValue('availability', schedule.summary, { shouldValidate: true })} />{errors.availability && <p className="text-xs text-red-600">{errors.availability.message}</p>}</div>
+              <div className="space-y-1.5 sm:col-span-2"><Label>Disponibilidad semanal</Label><VolunteerAvailabilityPicker key={availabilityPickerKey} onChange={(availability) => setValue('availability', availability, { shouldValidate: true })} />{errors.availability && <p className="text-xs text-red-600">{errors.availability.message}</p>}</div>
               <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="experience">Experiencia o habilidades (opcional)</Label><Textarea id="experience" rows={4} placeholder="Cuéntanos sobre mascotas, oficios, fotografía, eventos o cualquier habilidad que quieras aportar…" {...register('experience')} /></div>
             </div>
             <div className="mt-6 rounded-xl bg-[#ede5da] p-4 text-xs leading-relaxed text-[#5f5a54]"><ShieldCheck className="mr-2 inline h-4 w-4 text-[#f0644a]" />Usaremos tus datos únicamente para gestionar tu solicitud de voluntariado.</div>

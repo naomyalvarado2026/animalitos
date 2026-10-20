@@ -329,6 +329,15 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   border: 1px solid var(--color-background);
 }
 
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--grad-start) var(--color-background);

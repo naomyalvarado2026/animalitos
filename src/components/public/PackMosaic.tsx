@@ -18,9 +18,9 @@ export function PackMosaic() {
           <div className="lg:pb-1"><p className="max-w-xl leading-relaxed text-white/65">No son fotografías de catálogo. Son quienes viven, juegan, sanan y esperan en el refugio. Entra en una imagen para escuchar su historia.</p><Link to="/adopta" className="mt-5 inline-flex items-center gap-2 font-bold text-[#ff8069]">Explorar todos los perfiles <ArrowUpRight className="h-4 w-4" /></Link></div>
         </div>
 
-        <div className="-mx-5 mt-12 flex snap-x gap-3 overflow-x-auto px-5 pb-3 sm:-mx-8 sm:px-8 lg:mx-0 lg:grid lg:auto-rows-[155px] lg:grid-cols-6 lg:px-0 lg:pb-0">
+        <div aria-label="Galería de los doce perros del refugio" className="-mx-5 mt-12 flex snap-x gap-3 overflow-x-auto px-5 pb-3 scrollbar-none sm:-mx-8 sm:px-8 lg:mx-0 lg:grid lg:auto-rows-[155px] lg:grid-cols-6 lg:px-0 lg:pb-0">
           {profiles.map(({ dog, editorial: story }, index) => (
-            <motion.article key={dog.adoption_slug} initial={{ opacity: 0, scale: .96 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, amount: .25 }} transition={{ delay: Math.min(index * .04, .25) }} className={`group relative min-w-[15rem] snap-center overflow-hidden rounded-[1.4rem] border border-white/10 bg-white/5 ${index === 0 || index === 7 ? 'lg:col-span-2 lg:row-span-2' : 'lg:col-span-1 lg:row-span-1'}`}>
+              <motion.article key={dog.adoption_slug} initial={{ opacity: 0, scale: .96 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, amount: .25 }} transition={{ delay: Math.min(index * .04, .25) }} className={`group relative min-w-[15rem] snap-center overflow-hidden rounded-[1.4rem] border border-white/10 bg-white/5 lg:min-w-0 ${index === 0 || index === 7 ? 'lg:col-span-2 lg:row-span-2' : 'lg:col-span-1 lg:row-span-1'}`}>
               <Link to={`/adopta/${dog.adoption_slug}`} className="block h-full">
                 <ResilientImage src={assetUrl(story?.cover_image_url || dog.main_image_url)} alt={`${dog.name}, integrante de la manada AdoptaME`} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" style={{ objectPosition: `${story?.focal_x ?? 50}% ${story?.focal_y ?? 50}%` }} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/5 to-transparent" />
@@ -29,6 +29,7 @@ export function PackMosaic() {
             </motion.article>
           ))}
         </div>
+        <p className="mt-3 flex items-center gap-2 text-xs font-semibold text-white/55 lg:hidden">Desliza para conocer a los 12 perros <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" /></p>
       </div>
     </section>
   );

@@ -21,10 +21,14 @@ import { formatDateShort } from '@/lib/utils';
 const CATEGORY_TABS = [
   { id: 'all', label: 'Todas las Actividades 🐾' },
   { id: 'dog_walking', label: 'Paseos 🐕' },
-  { id: 'medical', label: 'Médico 🏥' },
+  { id: 'medical', label: 'Cuidado médico 🏥' },
   { id: 'events', label: 'Eventos 🎟️' },
   { id: 'maintenance', label: 'Mantenimiento 🛠️' },
+  { id: 'cleaning', label: 'Limpieza 🧹' },
+  { id: 'foster', label: 'Hogar temporal 🏡' },
 ];
+
+function localDateString(date = new Date()) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
 
 export function VolunteerCalendar() {
   const [viewMode, setViewMode] = useState<'month' | 'agenda'>('agenda');
@@ -38,8 +42,8 @@ export function VolunteerCalendar() {
         const { data, error } = await supabase
           .from('volunteer_activities')
           .select('*')
-          .gte('activity_date', new Date().toISOString().slice(0, 10))
-          .neq('status', 'cancelled')
+          .gte('activity_date', localDateString())
+          .in('status', ['scheduled', 'in_progress'])
           .order('activity_date', { ascending: true });
         if (error) throw error;
         return (data ?? []) as VolunteerActivity[];
