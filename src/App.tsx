@@ -49,6 +49,8 @@ const UserManagement = lazy(() => import('@/components/admin/UserManagement').th
 const FinanceManagement = lazy(() => import('@/components/admin/FinanceManagement').then(m => ({ default: m.FinanceManagement })));
 const AnimalManagement = lazy(() => import('@/components/admin/AnimalManagement').then(m => ({ default: m.AnimalManagement })));
 const CommunityListingManagement = lazy(() => import('@/components/admin/CommunityListingManagement').then(m => ({ default: m.CommunityListingManagement })));
+const CommunityAdoptionInterestPage = lazy(() => import('@/components/public/CommunityAdoptionInterestPage').then(m => ({ default: m.CommunityAdoptionInterestPage })));
+const CommunityAdoptionApplicationsManagement = lazy(() => import('@/components/admin/CommunityAdoptionApplicationsManagement').then(m => ({ default: m.CommunityAdoptionApplicationsManagement })));
 const ActivityManagement = lazy(() => import('@/components/admin/ActivityManagement').then(m => ({ default: m.ActivityManagement })));
 const ApplicationsManagement = lazy(() => import('@/components/admin/ApplicationsManagement').then(m => ({ default: m.ApplicationsManagement })));
 const ContentManagement = lazy(() => import('@/components/admin/ContentManagement').then(m => ({ default: m.ContentManagement })));
@@ -100,6 +102,7 @@ export default function App() {
                       <Route path="/adopta" element={<AdoptionGalleryPage />} />
                       <Route path="/comunidad" element={<CommunityAdoptionPage />} />
                       <Route path="/comunidad/:slug" element={<CommunityAdoptionPage />} />
+                      <Route path="/comunidad/:slug/solicitud" element={<CommunityAdoptionInterestPage />} />
                       <Route path="/adopta/:slug" element={<DogProfilePage />} />
                       <Route path="/apadrina" element={<SponsorshipPage />} />
                       <Route path="/apadrina/:slug" element={<SponsorshipPage />} />
@@ -135,6 +138,7 @@ export default function App() {
                         <Route path="/admin" element={<AdminDashboard />} />
                         <Route path="/admin/animales" element={<AnimalManagement />} />
                         <Route path="/admin/adopciones-comunidad" element={<CommunityListingManagement />} />
+                        <Route path="/admin/solicitudes-comunidad" element={<CommunityAdoptionApplicationsManagement />} />
                         <Route path="/admin/solicitudes" element={<ApplicationsManagement />} />
                         <Route path="/admin/actividades" element={<ActivityManagement />} />
                         <Route path="/admin/finanzas" element={<FinanceManagement />} />
