@@ -1,8 +1,10 @@
+import { useEffect, useRef, useState } from 'react';
 import { BrandLogo } from './BrandLogo';
 import { Link } from 'react-router-dom';
-import { Heart, LockKeyhole, Mail, MapPin, Presentation } from 'lucide-react';
+import { Heart, LockKeyhole, Mail, MapPin, Presentation, RefreshCw } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { usePublicSettings } from '@/lib/publicSettings';
+import { toast } from 'sonner';
 
 const QUICK_LINKS = [
   { label: 'Inicio', href: '/' },
@@ -56,11 +58,71 @@ const SOCIAL_LINKS = [
   },
 ];
 
+async function waitForWorker(worker: ServiceWorker) {
+  if (worker.state === 'installed' || worker.state === 'activated' || worker.state === 'redundant') return;
+  await new Promise<void>((resolve) => {
+    const finish = () => {
+      window.clearTimeout(timeout);
+      worker.removeEventListener('statechange', onStateChange);
+      resolve();
+    };
+    const onStateChange = () => {
+      if (worker.state === 'installed' || worker.state === 'activated' || worker.state === 'redundant') finish();
+    };
+    const timeout = window.setTimeout(finish, 12000);
+    worker.addEventListener('statechange', onStateChange);
+  });
+}
+
 export function PublicFooter() {
   const { data: settings } = usePublicSettings(SOCIAL_LINKS.map(({ key }) => key));
+  const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
+  const shouldReloadRef = useRef(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const canUpdateApp = import.meta.env.PROD && typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
   const socialLinks = SOCIAL_LINKS
     .map((link) => ({ ...link, href: settings?.[link.key]?.trim() ?? '' }))
     .filter((link) => link.href);
+
+  useEffect(() => {
+    if (!canUpdateApp) return;
+    let active = true;
+    const onControllerChange = () => {
+      if (shouldReloadRef.current) window.location.reload();
+    };
+    void navigator.serviceWorker.ready.then((registration) => {
+      if (!active) return;
+      registrationRef.current = registration;
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+    return () => {
+      active = false;
+      navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+    };
+  }, [canUpdateApp]);
+
+  async function handleUpdateApp() {
+    if (!canUpdateApp) return;
+    setCheckingUpdate(true);
+    try {
+      const registration = registrationRef.current ?? await navigator.serviceWorker.ready;
+      registrationRef.current = registration;
+      await registration.update();
+      if (!registration.waiting && registration.installing) await waitForWorker(registration.installing);
+      if (!registration.waiting) {
+        toast.success('La app ya está actualizada.');
+        return;
+      }
+      const confirmed = window.confirm('La app se reiniciará para aplicar la actualización. Guarda cualquier formulario abierto antes de continuar. ¿Actualizar ahora?');
+      if (!confirmed) return;
+      shouldReloadRef.current = true;
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    } catch {
+      toast.error('No pudimos buscar actualizaciones. Revisa tu conexión e inténtalo otra vez.');
+    } finally {
+      setCheckingUpdate(false);
+    }
+  }
 
   return (
     <footer className="bg-[var(--color-card)] border-t border-[var(--color-border)] mt-auto">
@@ -145,6 +207,10 @@ export function PublicFooter() {
             Hecho con <Heart className="h-3 w-3 text-red-500 fill-red-500" /> para cada patita
           </span>
           <div className="flex flex-wrap items-center justify-center gap-2">
+          {canUpdateApp && <button type="button" onClick={() => void handleUpdateApp()} disabled={checkingUpdate} aria-label="Actualizar app" className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 text-xs font-semibold hover:bg-[var(--color-accent)] hover:text-[var(--color-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] transition-colors disabled:opacity-60">
+            <RefreshCw className={checkingUpdate ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5'} aria-hidden="true" />
+            {checkingUpdate ? 'Buscando actualización…' : 'Actualizar app'}
+          </button>
           <a
             href="https://canva.link/avjpmb6m97qxubx"
             target="_blank"
