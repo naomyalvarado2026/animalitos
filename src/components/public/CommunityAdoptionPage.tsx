@@ -117,7 +117,7 @@ export function CommunityAdoptionPage() {
         </div>
       </section>
 
-      {slug ? selected ? (
+      {slug ? (selected ? (
         <section className="mx-auto grid max-w-6xl gap-8 px-5 py-10 sm:px-8 lg:grid-cols-[1.1fr_.9fr]">
           <div className="space-y-3">
             <ResilientImage src={selected.main_image_url} alt={selected.name + ', en adopción comunitaria'} className="aspect-[4/3] w-full rounded-[2rem] object-cover" />
@@ -142,7 +142,7 @@ export function CommunityAdoptionPage() {
             </CardContent>
           </Card>
         </section>
-      ) : <section className="mx-auto max-w-4xl px-5 py-16 text-center"><h2 className="font-heading text-2xl font-bold">Este anuncio ya no está disponible</h2><p className="mt-2 text-sm text-[var(--color-muted-foreground)]">Pudo haber encontrado hogar o haber vencido.</p><Button asChild variant="warm" className="mt-5"><Link to="/comunidad">Ver otros animalitos</Link></Button></section> : null : (
+      ) : <section className="mx-auto max-w-4xl px-5 py-16 text-center"><h2 className="font-heading text-2xl font-bold">Este anuncio ya no está disponible</h2><p className="mt-2 text-sm text-[var(--color-muted-foreground)]">Pudo haber encontrado hogar o haber vencido.</p><Button asChild variant="warm" className="mt-5"><Link to="/comunidad">Ver otros animalitos</Link></Button></section>) : (
         <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
           <div className="mb-8 grid gap-3 rounded-3xl bg-[var(--color-card)] p-4 shadow-sm sm:grid-cols-[1fr_auto] sm:items-center">
             <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted-foreground)]" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre, ciudad o descripción" className="pl-9" /></div>
