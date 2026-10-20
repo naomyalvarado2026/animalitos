@@ -210,7 +210,7 @@ export function PublicFooter() {
           {canUpdateApp && <button type="button" onClick={() => void handleUpdateApp()} disabled={checkingUpdate} aria-label="Actualizar app" className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 text-xs font-semibold hover:bg-[var(--color-accent)] hover:text-[var(--color-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] transition-colors disabled:opacity-60">
             <RefreshCw className={checkingUpdate ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5'} aria-hidden="true" />
             {checkingUpdate ? 'Buscando actualización…' : 'Actualizar app'}
-          </button>
+          </button>}
           <a
             href="https://canva.link/avjpmb6m97qxubx"
             target="_blank"
