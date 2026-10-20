@@ -13,6 +13,7 @@ const PRIMARY_ITEMS = [
 const MORE_ITEMS = [
   { label: 'Centro de ayuda', href: '/faq' },
   { label: 'Cómo funciona', href: '/como-funciona' },
+  { label: 'Adopciones de la comunidad', href: '/comunidad' },
   { label: 'Santuario', href: '/santuario' },
   { label: 'Tienda solidaria', href: '/tienda' },
   { label: 'Voluntariado', href: '/voluntariado' },
