@@ -55,20 +55,6 @@ CREATE POLICY community_listings_admin_all
   USING (public.has_access_level(4))
   WITH CHECK (public.has_access_level(4));
 
-DROP POLICY IF EXISTS community_listing_contacts_public_read ON public.community_adoption_listing_contacts;
-CREATE POLICY community_listing_contacts_public_read
-  ON public.community_adoption_listing_contacts FOR SELECT TO anon, authenticated
-  USING (
-    share_whatsapp = true
-    AND EXISTS (
-      SELECT 1
-      FROM public.community_adoption_listings AS listing
-      WHERE listing.id = community_adoption_listing_contacts.listing_id
-        AND listing.status = 'published'
-        AND listing.expires_at > now()
-    )
-  );
-
 DROP POLICY IF EXISTS community_listing_contacts_admin_all ON public.community_adoption_listing_contacts;
 CREATE POLICY community_listing_contacts_admin_all
   ON public.community_adoption_listing_contacts FOR ALL TO authenticated
@@ -82,7 +68,7 @@ GRANT SELECT ON public.community_adoption_listings TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.community_adoption_listings TO authenticated;
 
 REVOKE ALL ON public.community_adoption_listing_contacts FROM PUBLIC, anon, authenticated;
-GRANT SELECT (listing_id, whatsapp_number) ON public.community_adoption_listing_contacts TO anon;
+REVOKE ALL ON public.community_adoption_listing_contacts FROM anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.community_adoption_listing_contacts TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.save_community_adoption_listing(p_listing JSONB, p_contact JSONB)
