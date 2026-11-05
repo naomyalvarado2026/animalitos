@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { Heart, Plus, Star, Trash2, Edit2 } from 'lucide-react';
+import { Heart, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ export function DonorManagement() {
   const [amount, setAmount] = useState('100');
   const [type, setType] = useState<DonorType>('individual');
   const [message, setMessage] = useState('');
-  const [isFeatured, setIsFeatured] = useState(true);
+  const [isFeatured] = useState(true);
 
   const { data: donors = [], isLoading } = useQuery({
     queryKey: ['admin-donors'],

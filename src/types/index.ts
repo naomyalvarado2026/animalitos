@@ -305,3 +305,33 @@ export interface FinancialSummary {
   donor_count: number;
   adoption_count: number;
 }
+
+// ── Sponsorship Inquiries & Contact Messages ────────────────────────
+export type SponsorshipInquiryStatus = 'pending' | 'contacted' | 'active' | 'closed';
+
+export interface SponsorshipInquiry {
+  id: string;
+  dog_slug: string;
+  supporter_name: string;
+  supporter_email: string;
+  supporter_phone: string;
+  amount_usd: number | null;
+  frequency: 'once' | 'monthly';
+  message: string;
+  status: SponsorshipInquiryStatus;
+  consent_at: string;
+  created_at: string;
+}
+
+export type ContactMessageType = 'general' | 'support' | 'donation' | 'volunteer';
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  type: ContactMessageType;
+  is_read: boolean;
+  created_at: string;
+}

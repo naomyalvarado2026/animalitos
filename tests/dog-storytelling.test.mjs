@@ -38,3 +38,48 @@ test('la migración futura protege edición y registra apadrinamientos sin expon
   assert.match(sql, /has_access_level\(4\)/);
   assert.match(sql, /kind IN \('cover', 'gallery', 'social', 'cutout', 'video'\)/);
 });
+
+test('el flujo de adopción, apadrinamiento, donaciones y bandeja operativa está unificado sin exponer PII en URLs', () => {
+  const gallery = readFileSync('src/components/public/AdoptionGalleryPage.tsx', 'utf8');
+  const dogProfile = readFileSync('src/components/public/DogProfilePage.tsx', 'utf8');
+  const sponsorship = readFileSync('src/components/public/SponsorshipPage.tsx', 'utf8');
+  const donate = readFileSync('src/components/public/DonatePage.tsx', 'utf8');
+  const support = readFileSync('src/components/public/SupportPage.tsx', 'utf8');
+  const contact = readFileSync('src/components/public/ContactPage.tsx', 'utf8');
+  const matchmaker = readFileSync('src/components/public/PetMatchmaker.tsx', 'utf8');
+  const publicLayout = readFileSync('src/components/layout/PublicLayout.tsx', 'utf8');
+  const adminInbox = readFileSync('src/components/admin/ApplicationsManagement.tsx', 'utf8');
+  const adoptDialog = readFileSync('src/components/public/AdoptionRequestDialog.tsx', 'utf8');
+
+  // 1. ScrollToTop en PublicLayout
+  assert.match(publicLayout, /window\.scrollTo\(\{ top: 0/);
+
+  // 2. Diálogo de adopción accesible unificado en Galería y Perfil individual
+  assert.match(gallery, /<AdoptionRequestDialog/);
+  assert.match(dogProfile, /<AdoptionRequestDialog/);
+  assert.match(adoptDialog, /buildAdoptionReference/);
+  assert.match(adoptDialog, /formatAdoptionContactMessage/);
+
+  // 3. Apadrinamiento persiste vía RPC create_sponsorship_inquiry y recibo en página sin PII en URL
+  assert.match(sponsorship, /create_sponsorship_inquiry/);
+  assert.match(sponsorship, /buildSponsorshipReference/);
+  assert.doesNotMatch(sponsorship, /navigate\(`\/contacto\?/);
+
+  // 4. Flujo de donaciones preserva monto y frecuencia y muestra FAQ contextual
+  assert.match(donate, /monto=\$\{encodeURIComponent/);
+  assert.match(donate, /<ContextualFaq category="donation"/);
+  assert.match(support, /searchParams\.get\('monto'\)/);
+  assert.match(contact, /<ContextualFaq category="visit"/);
+
+  // 5. Orientador de afinidad cualitativo y paleta del Manual de Marca
+  assert.match(matchmaker, /Afinidad destacada/);
+  assert.doesNotMatch(matchmaker, /% Match/);
+  for (const source of [gallery, dogProfile, sponsorship, matchmaker]) {
+    assert.doesNotMatch(source, /#171717|#ede5da|#f0644a/i);
+  }
+
+  // 6. Bandeja administrativa unificada con los 4 canales
+  for (const table of ['adoption_applications', 'volunteer_applications', 'sponsorship_inquiries', 'contact_messages']) {
+    assert.match(adminInbox, new RegExp(`from\\('${table}'\\)`));
+  }
+});

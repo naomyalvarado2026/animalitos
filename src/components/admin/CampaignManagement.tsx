@@ -10,7 +10,7 @@ export function CampaignManagement() {
   const query = useCampaigns(true); const qc = useQueryClient(); const [editing, setEditing] = useState<Campaign | null>(null);
   const save = useMutation({ mutationFn: async (c: Campaign) => {
     if (!c.title.trim() || !c.description.trim() || c.ends_on < c.starts_on) throw new Error('Completa el título, descripción y un período válido.');
-    if (!c.image_url.startsWith('/') && !/^https:\/\//.test(c.image_url)) throw new Error('Usa una ruta local o una imagen HTTPS.');
+    if (!c.image_url.startsWith('/') && !c.image_url.startsWith('https://')) throw new Error('Usa una ruta local o una imagen HTTPS.');
     const { error } = await supabase.from('seasonal_campaigns').update({ title:c.title.trim(), description:c.description.trim(), starts_on:c.starts_on, ends_on:c.ends_on, image_url:c.image_url, actions:c.actions.filter(Boolean), is_active:c.is_active }).eq('id', c.id);
     if (error) throw error;
   }, onSuccess: () => { qc.invalidateQueries({ queryKey:['seasonal-campaigns'] }); setEditing(null); toast.success('Campaña actualizada en la página pública.'); }, onError: (e: Error) => toast.error(e.message) });

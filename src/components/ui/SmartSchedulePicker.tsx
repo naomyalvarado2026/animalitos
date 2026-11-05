@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Calendar, Clock, RotateCw, Check, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Calendar, Clock, RotateCw, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +39,7 @@ const TIME_OPTIONS = Array.from({ length: 30 }).map((_, i) => {
   return `${formattedHour}:${minute}`;
 });
 
-export function SmartSchedulePicker({ value, onChange, compact = false }: SmartSchedulePickerProps) {
+export function SmartSchedulePicker({ value, onChange }: SmartSchedulePickerProps) {
   const [eventType, setEventType] = useState<EventType>(value?.event_type || 'single_day');
   const [startDate, setStartDate] = useState<string>(value?.start_date || new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState<string>(value?.end_date || '');

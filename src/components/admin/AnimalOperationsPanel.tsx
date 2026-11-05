@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Activity, Check, ClipboardList, HeartPulse, MapPin, Plus, Stethoscope, X } from 'lucide-react';
+import { Check, ClipboardList, HeartPulse, MapPin, Plus, Stethoscope, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Animal, AnimalMedicalRecord, AnimalMovement, AnimalTask } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

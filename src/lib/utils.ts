@@ -66,7 +66,7 @@ export function slugify(text?: string | null): string {
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-')
     .replace(/^-+|-+$/g, '');
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Calendar, Plus, Edit2, Trash2, Users, Clock, MapPin, Check, UserPlus } from 'lucide-react';
+import { Calendar, Plus, Edit2, Trash2, Users } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import type { VolunteerActivity, EventType, RecurrencePattern } from '@/types';
+import type { VolunteerActivity } from '@/types';
 import { formatDateShort } from '@/lib/utils';
 import { ParticipantRosterModal } from './ParticipantRosterModal';
 import { SmartSchedulePicker } from '@/components/ui/SmartSchedulePicker';
@@ -123,8 +123,6 @@ export function ActivityManagement() {
     });
     setShowForm(true);
   }
-
-  const selectedEventType = form.watch('event_type');
 
   return (
     <div className="space-y-6">

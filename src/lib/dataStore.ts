@@ -4,12 +4,8 @@ import type {
   ExpenseRecord,
   Donor,
   AdoptionApplication,
-  VolunteerApplication,
   VolunteerActivity,
-  SiteContent,
-  SiteSettings,
 } from '@/types';
-import { supabase } from '@/lib/supabase';
 
 // ── Initial Seed Data ────────────────────────────────────────────────────────
 

@@ -2,8 +2,10 @@
 import fs from 'node:fs';
 const env = Object.fromEntries(fs.readFileSync('.env.local','utf8').split(/\r?\n/).filter(line => line.includes('=')).map(line => { const i=line.indexOf('='); return [line.slice(0,i),line.slice(i+1).replace(/^['"]|['"]$/g,'')]; }));
 if (!env.VITE_SUPABASE_URL?.includes('uxktqlmffongcagaxgtr') || !env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('Verify the intended AdoptaME project and local service credential.');
-async function request(table, method='GET', body, query='') {
-  const response=await fetch(`${env.VITE_SUPABASE_URL}/rest/v1/${table}${query}`,{method,headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:`Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,'Content-Type':'application/json',Prefer:'resolution=ignore-duplicates,return=representation'},body:body?JSON.stringify(body):undefined});
+async function request(table, method='GET', body=null, query='') {
+  const options = { method, headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json', Prefer: 'resolution=ignore-duplicates,return=representation' } };
+  if (body && method !== 'GET' && method !== 'HEAD') options.body = JSON.stringify(body);
+  const response = await fetch(`${env.VITE_SUPABASE_URL}/rest/v1/${table}${query}`, options);
   if(!response.ok) throw new Error(`${table}: ${response.status} ${await response.text()}`);
   return response.status===204?[]:response.json();
 }
