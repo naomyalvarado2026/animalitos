@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { assetUrl } from '@/lib/assets';
 import { isLocalRefugeDog } from '@/lib/refugeDogs';
 import { supabase } from '@/lib/supabase';
+import { trackAnimalEvent } from '@/lib/analytics';
 import type { Animal } from '@/types';
 
 const adoptionSchema = z.object({
@@ -20,12 +22,13 @@ const adoptionSchema = z.object({
   applicant_email: z.string().trim().email('Ingresa un correo electrónico válido'),
   applicant_phone: z.string().trim().min(7, 'Ingresa un teléfono o WhatsApp válido').max(40),
   applicant_address: z.string().trim().min(5, 'Ingresa tu ciudad y sector de residencia').max(200),
-  housing_type: z.enum(['house', 'apartment', 'farm']),
-  has_yard: z.boolean(),
-  has_children: z.boolean(),
-  has_other_pets: z.boolean(),
+  housing_type: z.enum(['house', 'apartment', 'farm']).optional(),
+  has_yard: z.boolean().optional(),
+  has_children: z.boolean().optional(),
+  has_other_pets: z.boolean().optional(),
   other_pets_desc: z.string().max(400).optional(),
-  reason: z.string().trim().min(15, 'Cuéntanos un poco más sobre el hogar que ofreces (mínimo 15 caracteres)').max(1500),
+  preferred_contact_window: z.enum(['morning', 'afternoon', 'evening', 'flexible']).optional(),
+  reason: z.string().trim().max(1500).optional(),
   consent: z.boolean().refine(Boolean, 'Confirma que podemos contactarte para dar seguimiento'),
 });
 
@@ -43,11 +46,11 @@ export interface AdoptionReceipt {
 
 const ADOPTION_RECEIPTS_KEY = 'animalitos_adoption_receipts_v1';
 
-const housingLabels: Record<AdoptionRequestFormData['housing_type'], string> = {
+const housingLabels = {
   house: 'Casa',
   apartment: 'Departamento',
   farm: 'Finca / Casa de campo',
-};
+} as const;
 
 export function buildAdoptionReference(dogName: string, seed = Date.now().toString(36)): string {
   const prefix = (dogName || 'PER')
@@ -68,11 +71,13 @@ export function formatAdoptionContactMessage(animal: Pick<Animal, 'name' | 'adop
     `• Teléfono / WhatsApp: ${data.applicant_phone.trim()}`,
     `• Correo: ${data.applicant_email.trim().toLowerCase()}`,
     `• Residencia: ${data.applicant_address.trim()}`,
-    `• Vivienda: ${housingLabels[data.housing_type]} (${data.has_yard ? 'con patio/jardín cercado' : 'sin patio cercado'})`,
-    `• Convivencia: ${data.has_children ? 'Convive con niños' : 'Solo adultos'} · ${data.has_other_pets ? `Con otras mascotas (${data.other_pets_desc?.trim() || 'sí'})` : 'Sin otras mascotas'}`,
+    ...(data.housing_type ? [`• Vivienda: ${housingLabels[data.housing_type]}${data.has_yard === undefined ? '' : ` (${data.has_yard ? 'con patio/jardín cercado' : 'sin patio cercado'})`}`] : []),
+    ...(data.has_children !== undefined || data.has_other_pets !== undefined
+      ? [`• Convivencia: ${data.has_children === undefined ? 'por conversar' : data.has_children ? 'convive con niños' : 'solo adultos'} · ${data.has_other_pets === undefined ? 'otras mascotas por conversar' : data.has_other_pets ? `con otras mascotas (${data.other_pets_desc?.trim() || 'sí'})` : 'sin otras mascotas'}`]
+      : []),
+    ...(data.preferred_contact_window ? [`• Horario preferido: ${data.preferred_contact_window}`] : []),
     '',
-    'Motivo y rutina ofrecida:',
-    data.reason.trim(),
+    ...(data.reason?.trim() ? ['Motivo y rutina ofrecida:', data.reason.trim()] : []),
   ];
   return lines.join('\n');
 }
@@ -107,6 +112,7 @@ export function AdoptionRequestDialog({
   const [submitting, setSubmitting] = useState(false);
   const [receipt, setReceipt] = useState<AdoptionReceipt | null>(null);
   const [copied, setCopied] = useState(false);
+  const [step, setStep] = useState<1 | 2>(1);
 
   const {
     register,
@@ -114,18 +120,28 @@ export function AdoptionRequestDialog({
     formState: { errors },
     reset,
     watch,
+    trigger,
+    setError,
   } = useForm<AdoptionRequestFormData>({
     resolver: zodResolver(adoptionSchema),
     defaultValues: {
-      housing_type: 'house',
-      has_yard: true,
-      has_children: false,
-      has_other_pets: false,
       consent: false,
     },
   });
 
   const hasOtherPets = watch('has_other_pets');
+  const formCapabilitiesQuery = useQuery({
+    queryKey: ['adoption-form-capabilities'],
+    enabled: open && Boolean(animal) && !isLocalRefugeDog(animal!),
+    retry: false,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('adoption_form_supports_optional_details', {}, { get: true });
+      return !error && data === true;
+    },
+  });
+  const optionalDetailsEnabled = animal ? isLocalRefugeDog(animal) || formCapabilitiesQuery.data === true : false;
+  const capabilitiesPending = Boolean(animal && !isLocalRefugeDog(animal) && formCapabilitiesQuery.isLoading);
 
   if (!animal) return null;
 
@@ -133,6 +149,8 @@ export function AdoptionRequestDialog({
     if (submitting) return;
     setReceipt(null);
     setCopied(false);
+    setStep(1);
+    reset();
     onClose();
   };
 
@@ -149,30 +167,44 @@ export function AdoptionRequestDialog({
 
   async function onSubmit(data: AdoptionRequestFormData) {
     if (!animal || submitting) return;
+    if (!isLocalRefugeDog(animal) && !optionalDetailsEnabled) {
+      let missingDetails = false;
+      if (!data.housing_type) { setError('housing_type', { type: 'required', message: 'Por ahora necesitamos conocer tu tipo de vivienda' }); missingDetails = true; }
+      if (data.has_yard === undefined) { setError('has_yard', { type: 'required', message: 'Indica si tienes patio o prefieres conversarlo con el equipo' }); missingDetails = true; }
+      if (data.has_children === undefined) { setError('has_children', { type: 'required', message: 'Indica si viven niños en casa o prefieres conversarlo' }); missingDetails = true; }
+      if (data.has_other_pets === undefined) { setError('has_other_pets', { type: 'required', message: 'Indica si convives con otras mascotas o prefieres conversarlo' }); missingDetails = true; }
+      if (!data.reason?.trim() || data.reason.trim().length < 15) { setError('reason', { type: 'required', message: 'Cuéntanos brevemente sobre el hogar que ofreces (mínimo 15 caracteres)' }); missingDetails = true; }
+      if (missingDetails) {
+        toast.error('Por ahora completa vivienda, convivencia y un breve comentario para registrar tu interés.');
+        return;
+      }
+    }
     setSubmitting(true);
     const reference = buildAdoptionReference(animal.name);
     const nowIso = new Date().toISOString();
-    const slug = animal.adoption_slug || animal.name.toLowerCase();
+    const slug = animal.adoption_slug || animal.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
     try {
       let channel: AdoptionReceipt['channel'] = 'adoption_applications';
 
       if (!isLocalRefugeDog(animal)) {
+        const application = {
+          animal_id: animal.id,
+          applicant_name: data.applicant_name.trim(),
+          applicant_email: data.applicant_email.trim().toLowerCase(),
+          applicant_phone: data.applicant_phone.trim(),
+          applicant_address: data.applicant_address.trim(),
+          housing_type: data.housing_type ?? null,
+          has_yard: data.has_yard ?? null,
+          has_children: data.has_children ?? null,
+          has_other_pets: data.has_other_pets ?? null,
+          other_pets_desc: data.has_other_pets ? data.other_pets_desc?.trim() || null : null,
+          reason: data.reason?.trim() ? `[Ref: ${reference}] ${data.reason.trim()}` : null,
+          consent_at: nowIso,
+        };
+        if (optionalDetailsEnabled) Object.assign(application, { preferred_contact_window: data.preferred_contact_window ?? null });
         const { error } = await supabase.from('adoption_applications').insert([
-          {
-            animal_id: animal.id,
-            applicant_name: data.applicant_name.trim(),
-            applicant_email: data.applicant_email.trim().toLowerCase(),
-            applicant_phone: data.applicant_phone.trim(),
-            applicant_address: data.applicant_address.trim(),
-            housing_type: data.housing_type,
-            has_yard: data.has_yard,
-            has_children: data.has_children,
-            has_other_pets: data.has_other_pets,
-            other_pets_desc: data.has_other_pets ? data.other_pets_desc?.trim() || null : null,
-            reason: `[Ref: ${reference}] ${data.reason.trim()}`,
-            consent_at: nowIso,
-          },
+          application,
         ]);
         if (error) throw error;
       } else {
@@ -191,6 +223,7 @@ export function AdoptionRequestDialog({
         if (error) throw error;
       }
 
+      trackAnimalEvent('adoption_submit', slug);
       const savedReceipt: AdoptionReceipt = {
         reference,
         animalName: animal.name,
@@ -203,6 +236,7 @@ export function AdoptionRequestDialog({
       saveLocalAdoptionReceipt(savedReceipt);
       setReceipt(savedReceipt);
       reset();
+      setStep(1);
       toast.success(`Solicitud registrada para ${animal.name} (${reference}).`);
     } catch (err) {
       const msg = err instanceof Error && /solicitud activa/i.test(err.message)
@@ -212,6 +246,16 @@ export function AdoptionRequestDialog({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function submitStep(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (step === 1) {
+      const valid = await trigger(['applicant_name', 'applicant_email', 'applicant_phone', 'applicant_address', 'consent']);
+      if (valid) setStep(2);
+      return;
+    }
+    await handleSubmit(onSubmit)(event);
   }
 
   return (
@@ -303,7 +347,13 @@ export function AdoptionRequestDialog({
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-5 sm:p-7" noValidate>
+          <form onSubmit={(event) => void submitStep(event)} className="space-y-4 p-5 sm:p-7" noValidate>
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-[var(--color-secondary)]/40 px-4 py-3 text-xs">
+              <span className={`font-bold ${step === 1 ? 'text-[var(--color-primary)]' : 'text-[var(--color-muted-foreground)]'}`}>1 · Contacto</span>
+              <span className="h-px flex-1 bg-[var(--color-border)]" aria-hidden="true" />
+              <span className={`font-bold ${step === 2 ? 'text-[var(--color-primary)]' : 'text-[var(--color-muted-foreground)]'}`}>2 · Tu hogar ({!isLocalRefugeDog(animal) && !optionalDetailsEnabled ? 'por ahora requerido' : 'opcional'})</span>
+            </div>
+            {step === 1 && <>
             <div className="space-y-1.5">
               <Label htmlFor="applicant_name">Nombre completo *</Label>
               <Input
@@ -329,39 +379,63 @@ export function AdoptionRequestDialog({
               </div>
             </div>
 
+            <div className="space-y-1.5">
+              <Label htmlFor="applicant_address">Ciudad y sector de residencia *</Label>
+              <Input id="applicant_address" placeholder="Ej. Milagro, sector centro..." autoComplete="address-level2" {...register('applicant_address')} />
+              {errors.applicant_address && <p className="text-xs text-[var(--color-destructive)]">{errors.applicant_address.message}</p>}
+            </div>
+
+            <div className="space-y-1">
+              <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
+                <input type="checkbox" {...register('consent')} className="mt-0.5 h-4 w-4 rounded accent-[var(--color-primary)]" />
+                <span>Autorizo a AdoptaME a contactarme sobre este interés. Entiendo que el proceso es responsable y no garantiza una adopción. <a href={`${import.meta.env.BASE_URL}privacidad/`} target="_blank" rel="noreferrer" className="font-semibold text-[var(--color-primary)] underline">Privacidad</a>.</span>
+              </label>
+              {errors.consent && <p className="text-xs text-[var(--color-destructive)]">{errors.consent.message}</p>}
+            </div>
+            </>}
+
+            {step === 2 && <>
+            <div className="rounded-xl border border-[var(--color-border)] p-3 text-xs leading-relaxed text-[var(--color-muted-foreground)]">{isLocalRefugeDog(animal) || optionalDetailsEnabled ? 'Este paso es opcional. Puedes contarnos estos detalles ahora o conversar sobre ellos con el equipo después.' : capabilitiesPending ? 'Estamos preparando el formulario de contacto seguro…' : 'Por ahora el sistema requiere respuestas de vivienda y convivencia y un comentario breve para registrar la solicitud. Puedes ampliar otros detalles con el equipo después.'}</div>
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="applicant_address">Ciudad y sector de residencia *</Label>
-                <Input id="applicant_address" placeholder="Ej. Milagro, sector centro..." {...register('applicant_address')} />
-                {errors.applicant_address && <p className="text-xs text-[var(--color-destructive)]">{errors.applicant_address.message}</p>}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="housing_type">Tipo de vivienda *</Label>
+                <Label htmlFor="housing_type">Tipo de vivienda</Label>
                 <select
                   id="housing_type"
-                  {...register('housing_type')}
+                  {...register('housing_type', { setValueAs: (value) => value === '' ? undefined : value })}
                   className="flex h-10 w-full rounded-lg border border-[var(--color-input)] bg-[var(--color-card)] px-3 py-1 text-sm shadow-xs"
                 >
+                  <option value="">{!isLocalRefugeDog(animal) && !optionalDetailsEnabled ? 'Selecciona una opción' : 'Prefiero conversar primero'}</option>
                   <option value="house">Casa</option>
                   <option value="apartment">Departamento</option>
                   <option value="farm">Finca / Casa de campo</option>
                 </select>
+                {errors.housing_type && <p className="text-xs text-[var(--color-destructive)]">{errors.housing_type.message}</p>}
               </div>
             </div>
 
             <fieldset className="space-y-2.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] p-4">
               <legend className="px-1 text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">Sobre tu hogar y convivencia</legend>
-              <label className="flex cursor-pointer items-center gap-3 text-xs font-medium">
-                <input type="checkbox" {...register('has_yard')} className="h-4 w-4 rounded accent-[var(--color-primary)]" />
-                <span>Cuento con patio o jardín cercado y seguro</span>
+              <label className="grid gap-1.5 text-xs font-medium sm:grid-cols-[1fr_12rem] sm:items-center">
+                <span>¿Tienes patio o jardín cercado?</span>
+                <select {...register('has_yard', { setValueAs: (value) => value === '' ? undefined : value === 'true' })} className="h-9 rounded-lg border border-[var(--color-input)] bg-[var(--color-card)] px-2">
+                  <option value="">{!isLocalRefugeDog(animal) && !optionalDetailsEnabled ? 'Selecciona una opción' : 'Prefiero conversar'}</option><option value="true">Sí</option><option value="false">No</option>
+                </select>
+                {errors.has_yard && <p className="text-xs text-[var(--color-destructive)] sm:col-span-2">{errors.has_yard.message}</p>}
               </label>
-              <label className="flex cursor-pointer items-center gap-3 text-xs font-medium">
-                <input type="checkbox" {...register('has_children')} className="h-4 w-4 rounded accent-[var(--color-primary)]" />
-                <span>En casa viven niños pequeños</span>
+              <label className="grid gap-1.5 text-xs font-medium sm:grid-cols-[1fr_12rem] sm:items-center">
+                <span>¿Viven niños pequeños en casa?</span>
+                <select {...register('has_children', { setValueAs: (value) => value === '' ? undefined : value === 'true' })} className="h-9 rounded-lg border border-[var(--color-input)] bg-[var(--color-card)] px-2">
+                  <option value="">{!isLocalRefugeDog(animal) && !optionalDetailsEnabled ? 'Selecciona una opción' : 'Prefiero conversar'}</option><option value="true">Sí</option><option value="false">No</option>
+                </select>
+                {errors.has_children && <p className="text-xs text-[var(--color-destructive)] sm:col-span-2">{errors.has_children.message}</p>}
               </label>
-              <label className="flex cursor-pointer items-start gap-3 text-xs font-medium">
-                <input type="checkbox" {...register('has_other_pets')} className="mt-0.5 h-4 w-4 rounded accent-[var(--color-primary)]" />
-                <span>Convivo actualmente con otras mascotas</span>
+              <label className="grid gap-1.5 text-xs font-medium sm:grid-cols-[1fr_12rem] sm:items-center">
+                <span>¿Convives con otras mascotas?</span>
+                <select {...register('has_other_pets', { setValueAs: (value) => value === '' ? undefined : value === 'true' })} className="h-9 rounded-lg border border-[var(--color-input)] bg-[var(--color-card)] px-2">
+                  <option value="">{!isLocalRefugeDog(animal) && !optionalDetailsEnabled ? 'Selecciona una opción' : 'Prefiero conversar'}</option><option value="true">Sí</option><option value="false">No</option>
+                </select>
+                {errors.has_other_pets && <p className="text-xs text-[var(--color-destructive)] sm:col-span-2">{errors.has_other_pets.message}</p>}
               </label>
               {hasOtherPets && (
                 <div className="pt-2">
@@ -376,8 +450,19 @@ export function AdoptionRequestDialog({
               )}
             </fieldset>
 
+            {(isLocalRefugeDog(animal) || optionalDetailsEnabled) && <div className="space-y-1.5">
+              <Label htmlFor="preferred_contact_window">¿Cuándo prefieres que te contactemos?</Label>
+              <select id="preferred_contact_window" {...register('preferred_contact_window', { setValueAs: (value) => value === '' ? undefined : value })} className="flex h-10 w-full rounded-lg border border-[var(--color-input)] bg-[var(--color-card)] px-3 py-1 text-sm shadow-xs">
+                <option value="">Sin preferencia</option>
+                <option value="morning">Mañana</option>
+                <option value="afternoon">Tarde</option>
+                <option value="evening">Noche</option>
+                <option value="flexible">Flexible</option>
+              </select>
+            </div>}
+
             <div className="space-y-1.5">
-              <Label htmlFor="reason">¿Cómo sería el día a día de {animal.name} contigo? *</Label>
+              <Label htmlFor="reason">¿Cómo sería el día a día de {animal.name} contigo? (opcional)</Label>
               <Textarea
                 id="reason"
                 rows={3}
@@ -386,24 +471,15 @@ export function AdoptionRequestDialog({
               />
               {errors.reason && <p className="text-xs text-[var(--color-destructive)]">{errors.reason.message}</p>}
             </div>
-
-            <div className="space-y-1">
-              <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
-                <input type="checkbox" {...register('consent')} className="mt-0.5 h-4 w-4 rounded accent-[var(--color-primary)]" />
-                <span>
-                  Autorizo a AdoptaME a contactarme para evaluar esta solicitud. Entiendo que es un proceso de adopción responsable sujeto a entrevista y acompañamiento.
-                </span>
-              </label>
-              {errors.consent && <p className="text-xs text-[var(--color-destructive)]">{errors.consent.message}</p>}
-            </div>
+            </>}
 
             <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
               <Button type="button" variant="outline" onClick={handleDialogClose} disabled={submitting}>
                 Cancelar
               </Button>
-              <Button type="submit" variant="warm" size="lg" disabled={submitting}>
-                <Heart className="h-4 w-4" />
-                {submitting ? 'Registrando solicitud…' : <>Enviar solicitud para {animal.name} <ArrowRight className="h-4 w-4" /></>}
+              {step === 2 && <Button type="button" variant="outline" onClick={() => setStep(1)}>Volver al contacto</Button>}
+              <Button type="submit" variant="warm" size="lg" disabled={submitting || (step === 2 && capabilitiesPending)}>
+                {step === 1 ? <>Continuar <ArrowRight className="h-4 w-4" /></> : <><Heart className="h-4 w-4" /> {capabilitiesPending ? 'Verificando formulario…' : submitting ? 'Registrando interés…' : <>Enviar interés por {animal.name} <ArrowRight className="h-4 w-4" /></>}</>}
               </Button>
             </div>
           </form>

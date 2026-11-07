@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Activity, Plus, Edit2, Trash2, Heart, Search, Upload, Eye, EyeOff } from 'lucide-react';
+import { Activity, Plus, Edit2, Trash2, Heart, Search, Upload, Eye, EyeOff, BadgeCheck, CalendarClock } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -62,6 +62,15 @@ export function AnimalManagement() {
   const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
   const [search, setSearch] = useState('');
   const [operationsAnimal, setOperationsAnimal] = useState<Animal | null>(null);
+
+  const profileReviewsQuery = useQuery({
+    queryKey: ['animal-profile-reviews'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('animal_profile_reviews').select('animal_id, reviewer_name, verified_at').order('verified_at', { ascending: false });
+      if (error) return [];
+      return (data ?? []) as Array<{ animal_id: string; reviewer_name: string; verified_at: string }>;
+    },
+  });
 
   const { data: animals = [], isLoading } = useQuery({
     queryKey: ['admin-animals'],
@@ -135,6 +144,22 @@ export function AnimalManagement() {
       form.reset();
     },
     onError: () => toast.error('No se pudo guardar el registro en Supabase.'),
+  });
+
+  const verifyProfileMutation = useMutation({
+    mutationFn: async (animalId: string) => {
+      const { error } = await supabase.from('animals').update({ profile_verified_at: new Date().toISOString() }).eq('id', animalId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-animals'] });
+      qc.invalidateQueries({ queryKey: ['animals-public'] });
+      qc.invalidateQueries({ queryKey: ['animal-profile-reviews'] });
+      toast.success('La ficha quedó confirmada. Se guardó quién la revisó y cuándo.');
+    },
+    onError: (error: Error) => toast.error(/profile_verified_at|column/i.test(error.message)
+      ? 'Aplica primero la migración de seguimiento y vigencia de fichas.'
+      : `No se pudo confirmar la ficha: ${error.message}`),
   });
 
   const importStoriesMutation = useMutation({
@@ -334,8 +359,9 @@ export function AnimalManagement() {
             <div className="divide-y divide-[var(--color-border)]">
               {filteredAnimals.map((animal) => {
                 const img = resolveAnimalImage(animal);
+                const latestReview = profileReviewsQuery.data?.find((review) => review.animal_id === animal.id);
                 return (
-                  <div key={animal.id} className="flex items-center justify-between py-3 gap-4">
+                  <div key={animal.id} className="flex flex-col justify-between gap-3 py-3 sm:flex-row sm:items-center sm:gap-4">
                     <div className="flex items-center gap-3 min-w-0">
                       <ResilientImage src={img} alt={animal.name || 'Perrito'} className="w-12 h-12 rounded-xl object-cover border shrink-0" />
                       <div className="min-w-0">
@@ -347,9 +373,18 @@ export function AnimalManagement() {
                           <span title={animal.is_published === false ? 'Borrador' : 'Visible en la web'}>{animal.is_published === false ? <EyeOff className="h-4 w-4 text-amber-500" /> : <Eye className="h-4 w-4 text-emerald-500" />}</span>
                         </div>
                         <p className="text-xs text-[var(--color-muted-foreground)]">{animal.breed ?? 'Raza por confirmar'} · {animal.gender === 'male' ? 'Macho ♂' : 'Hembra ♀'} · {animal.age_months == null ? 'Edad por confirmar' : `${animal.age_is_estimated ? 'Aprox. ' : ''}${Math.floor(animal.age_months / 12)} años`}</p>
+                        <p className={`mt-1 flex items-center gap-1 text-[11px] ${animal.profile_verified_at ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`}>
+                          {animal.profile_verified_at ? <BadgeCheck className="h-3.5 w-3.5" /> : <CalendarClock className="h-3.5 w-3.5" />}
+                          {animal.profile_verified_at
+                            ? `Ficha confirmada ${latestReview?.reviewer_name ? `por ${latestReview.reviewer_name}` : 'por el equipo'} · ${new Intl.DateTimeFormat('es-EC', { dateStyle: 'medium' }).format(new Date(animal.profile_verified_at))}`
+                            : 'Pendiente de confirmar vigencia'}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+                      <Button size="sm" variant={animal.profile_verified_at ? 'outline' : 'secondary'} onClick={() => verifyProfileMutation.mutate(animal.id)} disabled={verifyProfileMutation.isPending}>
+                        <BadgeCheck className="mr-1.5 h-4 w-4" /> {animal.profile_verified_at ? 'Confirmar de nuevo' : 'Confirmar ficha'}
+                      </Button>
                       <Button size="icon" variant="ghost" onClick={() => setOperationsAnimal(animal)} aria-label={`Abrir ficha de ${animal.name}`}>
                         <Activity className="h-4 w-4 text-[var(--color-primary)]" />
                       </Button>

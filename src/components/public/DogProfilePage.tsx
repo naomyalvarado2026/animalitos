@@ -91,7 +91,7 @@ export function DogProfilePage() {
   }
 
   const share = async () => {
-    const url = window.location.href;
+    const url = `${window.location.origin}${import.meta.env.BASE_URL}${import.meta.env.BASE_URL.endsWith('/') ? '' : '/'}adopta/${slug}/`;
     try {
       if (navigator.share) await navigator.share({ title: `${dog.name} busca familia | AdoptaME`, text: editorial.social_caption, url });
       else {
@@ -111,6 +111,10 @@ export function DogProfilePage() {
     image: new URL(assetUrl(editorial.cover_image_url), window.location.origin).toString(),
     about: { '@type': 'Thing', name: 'Adopción responsable de perros' },
   };
+  const canonicalUrl = `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, '')}/adopta/${slug}/`;
+  const verifiedDate = dog.profile_verified_at
+    ? new Intl.DateTimeFormat('es-EC', { dateStyle: 'long', timeZone: 'America/Guayaquil' }).format(new Date(dog.profile_verified_at))
+    : null;
 
   return (
     <div className="overflow-hidden bg-[var(--color-background)] pt-16 text-[var(--color-foreground)]">
@@ -119,7 +123,9 @@ export function DogProfilePage() {
         <meta name="description" content={dog.description} />
         <meta property="og:title" content={`${dog.name} busca familia | AdoptaME`} />
         <meta property="og:description" content={editorial.voice_line} />
-        <meta property="og:image" content={assetUrl(editorial.cover_image_url)} />
+        <meta property="og:image" content={new URL(assetUrl(editorial.cover_image_url), window.location.origin).toString()} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:url" content={canonicalUrl} />
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
 
@@ -261,8 +267,8 @@ export function DogProfilePage() {
             <p className="mt-3 text-sm leading-relaxed text-[#f1e2ff]/75">
               {dog.location}. Las visitas se coordinan previamente para cuidar su rutina.
             </p>
-            <p className="mt-4 flex items-center gap-2 text-xs font-bold text-emerald-300">
-              <CheckCircle2 className="h-4 w-4" /> Perfil revisado por el refugio
+            <p className={`mt-4 flex items-center gap-2 text-xs font-bold ${verifiedDate ? 'text-emerald-300' : 'text-amber-200'}`}>
+              <CheckCircle2 className="h-4 w-4" /> {verifiedDate ? `Ficha confirmada el ${verifiedDate}` : 'Ficha pendiente de confirmar por el refugio'}
             </p>
           </article>
         </div>
