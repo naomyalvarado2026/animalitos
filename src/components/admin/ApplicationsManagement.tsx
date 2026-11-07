@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, CheckCircle2, FileText, HeartHandshake, Loader2, Mail, MapPin, MessageSquare, Phone, Search, XCircle } from 'lucide-react';
+import { AlertCircle, CalendarClock, CheckCircle2, FileText, HeartHandshake, Loader2, Mail, MapPin, MessageSquare, Phone, Search, UserRound, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import { formatDateShort } from '@/lib/utils';
 
 type ApplicationTab = 'adoptions' | 'volunteers' | 'sponsorships' | 'messages';
 type AdoptionFilter = 'all' | ApplicationStatus;
+type FollowUpFilter = 'all' | 'overdue';
 type VolunteerFilter = 'all' | VolunteerApplication['status'];
 type SponsorshipFilter = 'all' | SponsorshipInquiryStatus;
 type MessageFilter = 'all' | 'unread' | 'read' | ContactMessage['type'];
@@ -97,6 +98,7 @@ export function ApplicationsManagement() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<ApplicationTab>('adoptions');
   const [adoptionFilter, setAdoptionFilter] = useState<AdoptionFilter>('all');
+  const [followUpFilter, setFollowUpFilter] = useState<FollowUpFilter>('all');
   const [volunteerFilter, setVolunteerFilter] = useState<VolunteerFilter>('all');
   const [sponsorshipFilter, setSponsorshipFilter] = useState<SponsorshipFilter>('all');
   const [messageFilter, setMessageFilter] = useState<MessageFilter>('all');
@@ -156,6 +158,7 @@ export function ApplicationsManagement() {
   const messages = messagesQuery.data ?? [];
 
   const pendingAdoptionsCount = adoptions.filter((a) => a.status === 'pending').length;
+  const overdueAdoptionsCount = adoptions.filter((app) => app.next_contact_at && new Date(app.next_contact_at).getTime() < Date.now() && !['approved', 'rejected'].includes(app.status)).length;
   const pendingVolunteersCount = volunteers.filter((v) => v.status === 'pending').length;
   const pendingSponsorshipsCount = sponsorships.filter((s) => s.status === 'pending').length;
   const unreadMessagesCount = messages.filter((m) => !m.is_read).length;
@@ -166,14 +169,16 @@ export function ApplicationsManagement() {
     () =>
       adoptions.filter((app) => {
         const matchesStatus = adoptionFilter === 'all' || app.status === adoptionFilter;
+        const isOverdue = Boolean(app.next_contact_at && new Date(app.next_contact_at).getTime() < Date.now() && !['approved', 'rejected'].includes(app.status));
+        const matchesFollowUp = followUpFilter === 'all' || isOverdue;
         const matchesSearch =
           !normalizedSearch ||
           [app.applicant_name ?? '', app.applicant_email ?? '', app.applicant_phone ?? '', app.animal?.name ?? ''].some((value) =>
             value.toLowerCase().includes(normalizedSearch),
           );
-        return matchesStatus && matchesSearch;
+        return matchesStatus && matchesFollowUp && matchesSearch;
       }),
-    [adoptions, adoptionFilter, normalizedSearch],
+    [adoptions, adoptionFilter, followUpFilter, normalizedSearch],
   );
 
   const filteredVolunteers = useMemo(
@@ -521,6 +526,11 @@ export function ApplicationsManagement() {
               onClick={() => setAdoptionFilter(filter.value)}
             />
           ))}
+        {tab === 'adoptions' && <FilterChip
+          label={`Seguimiento vencido${overdueAdoptionsCount ? ` · ${overdueAdoptionsCount}` : ''}`}
+          selected={followUpFilter === 'overdue'}
+          onClick={() => setFollowUpFilter(followUpFilter === 'overdue' ? 'all' : 'overdue')}
+        />}
         {tab === 'volunteers' &&
           volunteerStatuses.map((filter) => (
             <FilterChip
@@ -675,6 +685,7 @@ function AdoptionList({
             <p className="border-l-2 border-[var(--color-primary)] pl-3 text-xs italic leading-relaxed">
               “{app.reason ?? 'Sin motivo especificado'}”
             </p>
+            <FollowUpPanel application={app} />
             <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-xs text-[var(--color-muted-foreground)]">Recibida: {formatDateShort(app.created_at)}</span>
               <div className="flex flex-wrap gap-2">
@@ -712,6 +723,96 @@ function AdoptionList({
       })}
     </div>
   );
+}
+
+type ContactEvent = { id: string; event_type: 'call' | 'whatsapp' | 'email' | 'visit' | 'note'; summary: string; occurred_at: string };
+
+function toDateTimeLocal(value?: string | null) {
+  if (!value) return '';
+  const date = new Date(value);
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
+}
+
+function FollowUpPanel({ application }: { application: AdoptionApplication }) {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [nextAction, setNextAction] = useState(application.next_action ?? '');
+  const [nextContactAt, setNextContactAt] = useState(toDateTimeLocal(application.next_contact_at));
+  const [eventType, setEventType] = useState<ContactEvent['event_type']>('whatsapp');
+  const [summary, setSummary] = useState('');
+  const eventsQuery = useQuery({
+    queryKey: ['admin-adoption-contact-events', application.id],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('adoption_contact_events').select('id, event_type, summary, occurred_at').eq('application_id', application.id).order('occurred_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as ContactEvent[];
+    },
+  });
+  const saveMutation = useMutation({
+    mutationFn: async (takeOwnership: boolean) => {
+      const patch: Record<string, unknown> = {
+        next_action: nextAction.trim() || null,
+        next_contact_at: nextContactAt ? new Date(nextContactAt).toISOString() : null,
+      };
+      if (takeOwnership) {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) throw userError ?? new Error('Inicia sesión de nuevo para tomar esta solicitud.');
+        patch.assigned_to = user.id;
+      }
+      const { error } = await supabase.from('adoption_applications').update(patch).eq('id', application.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin-adoptions'] });
+      toast.success('Seguimiento actualizado.');
+    },
+    onError: (error: Error) => toast.error(/assigned_to|next_action|next_contact_at|column/i.test(error.message) ? 'Aplica primero la migración de seguimiento de solicitudes en Supabase.' : `No se pudo guardar el seguimiento: ${error.message}`),
+  });
+  const logMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw userError ?? new Error('Inicia sesión de nuevo para registrar el contacto.');
+      const { error } = await supabase.from('adoption_contact_events').insert({ application_id: application.id, event_type: eventType, summary: summary.trim(), created_by: user.id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setSummary('');
+      void queryClient.invalidateQueries({ queryKey: ['admin-adoption-contact-events', application.id] });
+      void queryClient.invalidateQueries({ queryKey: ['admin-adoptions'] });
+      toast.success('Contacto agregado al historial.');
+    },
+    onError: (error: Error) => toast.error(/adoption_contact_events|relation|column/i.test(error.message) ? 'Aplica primero la migración de seguimiento de solicitudes en Supabase.' : `No se pudo registrar el contacto: ${error.message}`),
+  });
+  const eventLabels: Record<ContactEvent['event_type'], string> = { call: 'Llamada', whatsapp: 'WhatsApp', email: 'Correo', visit: 'Visita', note: 'Nota' };
+
+  return <details open={open} onToggle={(event) => setOpen(event.currentTarget.open)} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-background)]">
+    <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs font-semibold">
+      <CalendarClock className="h-4 w-4 text-[var(--color-primary)]" /> Seguimiento interno
+      {application.next_contact_at && <span className={`ml-auto font-medium ${new Date(application.next_contact_at).getTime() < Date.now() ? 'text-rose-600' : 'text-[var(--color-muted-foreground)]'}`}>{new Date(application.next_contact_at).getTime() < Date.now() ? 'Vencido · ' : 'Próximo · '}{new Date(application.next_contact_at).toLocaleString('es-EC')}</span>}
+      {application.assigned_to && <span className="ml-auto inline-flex items-center gap-1 text-[var(--color-muted-foreground)]"><UserRound className="h-3.5 w-3.5" />Asignada</span>}
+    </summary>
+    <div className="space-y-4 border-t border-[var(--color-border)] p-3">
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" size="sm" variant="outline" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate(true)}><UserRound className="mr-1.5 h-4 w-4" />Tomar solicitud</Button>
+        {application.last_contacted_at && <span className="self-center text-xs text-[var(--color-muted-foreground)]">Último contacto: {new Date(application.last_contacted_at).toLocaleString('es-EC')}</span>}
+      </div>
+      <form onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(false); }} className="grid gap-3 sm:grid-cols-[1fr_14rem_auto] sm:items-end">
+        <label className="space-y-1 text-xs font-medium">Próxima acción<input maxLength={500} value={nextAction} onChange={(event) => setNextAction(event.target.value)} placeholder="Ej. Escribir para conversar horarios" className="mt-1 h-10 w-full rounded-lg border border-[var(--color-input)] bg-[var(--color-card)] px-3" /></label>
+        <label className="space-y-1 text-xs font-medium">Fecha de seguimiento<input type="datetime-local" value={nextContactAt} onChange={(event) => setNextContactAt(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-[var(--color-input)] bg-[var(--color-card)] px-2" /></label>
+        <Button type="submit" size="sm" variant="secondary" disabled={saveMutation.isPending}>Guardar</Button>
+      </form>
+      <form onSubmit={(event) => { event.preventDefault(); if (summary.trim()) logMutation.mutate(); }} className="grid gap-2 sm:grid-cols-[9rem_1fr_auto] sm:items-end">
+        <label className="space-y-1 text-xs font-medium">Canal<select value={eventType} onChange={(event) => setEventType(event.target.value as ContactEvent['event_type'])} className="mt-1 h-10 w-full rounded-lg border border-[var(--color-input)] bg-[var(--color-card)] px-2">{Object.entries(eventLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        <label className="space-y-1 text-xs font-medium">Resumen del contacto<textarea maxLength={1500} required value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Anota lo conversado y el acuerdo siguiente" className="mt-1 min-h-10 w-full rounded-lg border border-[var(--color-input)] bg-[var(--color-card)] px-3 py-2" /></label>
+        <Button type="submit" size="sm" variant="outline" disabled={logMutation.isPending || !summary.trim()}>Registrar</Button>
+      </form>
+      {eventsQuery.isLoading && <p className="text-xs text-[var(--color-muted-foreground)]">Cargando historial…</p>}
+      {eventsQuery.error && <p role="status" className="text-xs text-amber-700 dark:text-amber-300">Historial disponible al aplicar la migración de seguimiento en Supabase.</p>}
+      {eventsQuery.data && <ol className="space-y-2 border-l border-[var(--color-border)] pl-3">{eventsQuery.data.length ? eventsQuery.data.map((entry) => <li key={entry.id} className="text-xs"><p className="font-semibold">{eventLabels[entry.event_type]} · {new Date(entry.occurred_at).toLocaleString('es-EC')}</p><p className="mt-0.5 whitespace-pre-wrap text-[var(--color-muted-foreground)]">{entry.summary}</p></li>) : <li className="text-xs text-[var(--color-muted-foreground)]">Aún no hay contactos registrados.</li>}</ol>}
+    </div>
+  </details>;
 }
 
 function VolunteerList({

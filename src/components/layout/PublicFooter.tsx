@@ -21,6 +21,7 @@ const QUICK_LINKS = [
   { label: 'Apadrinar', href: '/apadrina' },
   { label: 'En memoria de', href: '/en-memoria' },
   { label: 'Contacto', href: '/contacto' },
+  { label: 'Privacidad y métricas', href: '/privacidad' },
 ];
 
 const SOCIAL_LINKS = [

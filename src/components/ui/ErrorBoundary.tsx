@@ -32,8 +32,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleGoHome = () => {
     this.setState({ hasError: false, error: undefined });
-    window.location.hash = '#/';
-    window.location.reload();
+    window.location.assign(import.meta.env.BASE_URL);
   };
 
   public render() {

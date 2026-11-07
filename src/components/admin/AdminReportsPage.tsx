@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { downloadCsv, type CsvValue } from '@/lib/exportCsv';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { REFUGE_DOG_PROFILES } from '@/data/refugeDogProfiles';
 
 type DogRow = { id: string; name: string; breed: string | null; status: string; size: string; age_months: number; location: string; updated_at: string };
 type AdoptionRow = { id: string; animal_id: string; applicant_name: string; applicant_email: string; status: string; created_at: string; updated_at: string };
 type FinanceRow = { id: string; description: string; category: string; amount_usd: number; date: string; record_type: 'income' | 'expense' };
 type VolunteerRow = { id: string; full_name: string; email: string; area_of_interest: string; status: string; created_at: string };
+type AnalyticsSummaryRow = { animal_slug: string; event_type: 'profile_view' | 'adoption_submit'; event_count: number };
 
 type ReportsData = {
   dogs: DogRow[];
@@ -47,6 +49,14 @@ function rowsForReport(key: ReportKey, data: ReportsData, formatAmount: (amount:
 export function AdminReportsPage() {
   const { formatAmount } = useCurrency();
   const [activeReport, setActiveReport] = useState<ReportKey>('dogs');
+  const analyticsQuery = useQuery({
+    queryKey: ['admin-site-analytics-30d'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('site_analytics_summary_30d').select('animal_slug, event_type, event_count');
+      if (error) return { ready: false, rows: [] as AnalyticsSummaryRow[] };
+      return { ready: true, rows: (data ?? []) as AnalyticsSummaryRow[] };
+    },
+  });
   const reportsQuery = useQuery<ReportsData>({
     queryKey: ['admin-reports'],
     queryFn: async () => {
@@ -115,6 +125,34 @@ export function AdminReportsPage() {
           {!currentItems.length ? <p className="p-10 text-center text-sm text-[var(--color-muted-foreground)]">No hay registros disponibles para este reporte.</p> : <div className="overflow-x-auto"><table className="min-w-full text-left text-sm"><thead><tr className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]">{currentRows.headers.slice(0, 5).map((header) => <th key={header} className="whitespace-nowrap px-5 py-3 font-semibold">{header}</th>)}</tr></thead><tbody>{currentRows.rows.slice(0, 10).map((row, index) => <tr key={`${String(row[0])}-${index}`} className="border-b border-[var(--color-border)] last:border-0"><td className="max-w-44 truncate px-5 py-3">{String(row[0] ?? '—')}</td>{row.slice(1, 5).map((cell, cellIndex) => <td key={`${index}-${cellIndex}`} className="max-w-52 truncate whitespace-nowrap px-5 py-3">{String(cell ?? '—')}</td>)}</tr>)}</tbody></table>{currentItems.length > 10 && <p className="p-4 text-xs text-[var(--color-muted-foreground)]">Vista previa de 10 registros. El CSV incluye los {currentItems.length} registros.</p>}</div>}
         </div>
       </>}
+
+      <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 sm:p-6" aria-labelledby="adoption-interest-title">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 id="adoption-interest-title" className="font-heading text-lg font-bold">Interés por perfil · últimos 30 días</h2>
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[var(--color-muted-foreground)]">Solo cuenta eventos de quienes aceptaron las métricas. Una pestaña aporta como máximo una visita y un envío por perrito; estos totales no representan personas únicas ni una tasa de conversión.</p>
+          </div>
+          {analyticsQuery.isFetching && <RefreshCw className="h-4 w-4 animate-spin text-[var(--color-muted-foreground)]" aria-label="Actualizando métricas" />}
+        </div>
+        {analyticsQuery.isLoading ? (
+          <p className="mt-4 rounded-xl bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">Consultando métricas consentidas…</p>
+        ) : !analyticsQuery.data?.ready ? (
+          <p className="mt-4 rounded-xl bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">Métricas aún no disponibles. La migración de seguimiento debe aplicarse en Supabase para activar esta sección.</p>
+        ) : analyticsQuery.data.rows.length === 0 ? (
+          <p className="mt-4 rounded-xl bg-[var(--color-muted)] p-4 text-sm text-[var(--color-muted-foreground)]">Todavía no hay métricas consentidas para este periodo.</p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead><tr className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-muted-foreground)]"><th className="px-3 py-3 font-semibold">Perfil</th><th className="px-3 py-3 font-semibold">Visitas</th><th className="px-3 py-3 font-semibold">Intereses enviados</th></tr></thead>
+              <tbody>{Array.from(new Set(analyticsQuery.data.rows.map((row) => row.animal_slug))).sort((a, b) => (REFUGE_DOG_PROFILES.find((dog) => dog.adoption_slug === a)?.name ?? a).localeCompare(REFUGE_DOG_PROFILES.find((dog) => dog.adoption_slug === b)?.name ?? b)).map((slug) => {
+                const views = analyticsQuery.data.rows.find((row) => row.animal_slug === slug && row.event_type === 'profile_view')?.event_count ?? 0;
+                const submissions = analyticsQuery.data.rows.find((row) => row.animal_slug === slug && row.event_type === 'adoption_submit')?.event_count ?? 0;
+                return <tr key={slug} className="border-b border-[var(--color-border)] last:border-0"><th scope="row" className="px-3 py-3 font-semibold">{REFUGE_DOG_PROFILES.find((dog) => dog.adoption_slug === slug)?.name ?? slug}</th><td className="px-3 py-3 tabular-nums">{views}</td><td className="px-3 py-3 tabular-nums">{submissions}</td></tr>;
+              })}</tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </section>
   );
 }

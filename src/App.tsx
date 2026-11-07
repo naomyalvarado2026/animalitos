@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'sonner';
@@ -37,6 +37,7 @@ const VolunteerPage = lazy(() => import('@/components/public/VolunteerPage').the
 const FaqPage = lazy(() => import('@/components/public/FaqPage').then(m => ({ default: m.FaqPage })));
 const StorePage = lazy(() => import('@/components/public/StorePage').then(m => ({ default: m.StorePage })));
 const AdoptionProcessPage = lazy(() => import('@/components/public/AdoptionProcessPage').then(m => ({ default: m.AdoptionProcessPage })));
+const PrivacyPage = lazy(() => import('@/components/public/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
 const SanctuaryPage = lazy(() => import('@/components/public/SanctuaryPage').then(m => ({ default: m.SanctuaryPage })));
 const MemoryPage = lazy(() => import('@/components/public/MemoryPage').then(m => ({ default: m.MemoryPage })));
 const ResourcesPage = lazy(() => import('@/components/public/ResourcesPage').then(m => ({ default: m.ResourcesPage })));
@@ -93,7 +94,7 @@ export default function App() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <CurrencyProvider>
-              <HashRouter>
+              <BrowserRouter basename={import.meta.env.BASE_URL}>
                 <Suspense fallback={<LoadingScreen />}>
                   <Routes>
                     {/* ── Public routes ── */}
@@ -126,6 +127,7 @@ export default function App() {
                       <Route path="/donaciones/donadores-principales" element={<TopDonorsPage />} />
                       <Route path="/contacto" element={<ContactPage />} />
                       <Route path="/contacto/quiero-apoyar" element={<SupportPage />} />
+                      <Route path="/privacidad" element={<PrivacyPage />} />
                       <Route path="*" element={<NotFoundPage />} />
                     </Route>
 
@@ -162,7 +164,7 @@ export default function App() {
 
                   </Routes>
                 </Suspense>
-              </HashRouter>
+              </BrowserRouter>
 
               <Toaster
                 position="top-right"

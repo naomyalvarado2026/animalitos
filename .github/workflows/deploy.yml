@@ -30,6 +30,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: https://uxktqlmffongcagaxgtr.supabase.co
           VITE_SUPABASE_ANON_KEY: sb_publishable_S5TIxJBh496EsYvNyyV1-Q_2B6JT8qr
+          VITE_SITE_ORIGIN: https://naomyalvarado2026.github.io
 
       - name: Copy index to 404 for GitHub Pages SPA routing
         run: cp dist/index.html dist/404.html

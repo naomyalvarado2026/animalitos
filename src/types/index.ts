@@ -119,6 +119,7 @@ export interface Animal {
   show_brand_moment?: boolean;
   brand_message?: string | null;
   sort_order?: number;
+  profile_verified_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -170,15 +171,20 @@ export interface AdoptionApplication {
   applicant_name: string;
   applicant_email: string;
   applicant_phone: string;
-  applicant_address: string;
+  applicant_address: string | null;
   city: string | null;
-  housing_type: HousingType;
-  has_yard: boolean;
-  has_other_pets: boolean;
-  has_children: boolean;
+  housing_type: HousingType | null;
+  has_yard: boolean | null;
+  has_other_pets: boolean | null;
+  has_children: boolean | null;
   other_pets_desc: string | null;
   housing_notes: string | null;
-  reason: string;
+  reason: string | null;
+  assigned_to?: string | null;
+  next_action?: string | null;
+  next_contact_at?: string | null;
+  last_contacted_at?: string | null;
+  preferred_contact_window?: 'morning' | 'afternoon' | 'evening' | 'flexible' | null;
   status: ApplicationStatus;
   admin_notes: string | null;
   reviewed_by: string | null;

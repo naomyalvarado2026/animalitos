@@ -94,7 +94,7 @@ export function AdoptionGalleryPage() {
   };
 
   const handleShare = async (animal: Animal) => {
-    const shareUrl = `${window.location.origin}${window.location.pathname}#/adopta/${animal.adoption_slug || slugify(animal.name)}`;
+    const shareUrl = `${window.location.origin}${import.meta.env.BASE_URL}adopta/${animal.adoption_slug || slugify(animal.name)}/`;
     const shareData = {
       title: `¡Adopta a ${animal.name}! - AdoptaME`,
       text: `Conoce a ${animal.name}, un perrito en adopción en AdoptaME.`,

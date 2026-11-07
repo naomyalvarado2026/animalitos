@@ -68,7 +68,7 @@ export function CommunityAdoptionPage() {
   }, [listings, search, speciesFilter]);
 
   async function shareListing(item: PublicListing) {
-    const url = window.location.origin + window.location.pathname + '#/comunidad/' + item.slug;
+    const url = `${window.location.origin}${import.meta.env.BASE_URL}comunidad/${item.slug}/`;
     try {
       if (navigator.share) await navigator.share({ title: item.name + ' busca hogar | AdoptaME', text: 'Ayúdanos a encontrar un hogar para ' + item.name + '.', url });
       else { await navigator.clipboard.writeText(url); toast.success('Enlace copiado para compartir.'); }
