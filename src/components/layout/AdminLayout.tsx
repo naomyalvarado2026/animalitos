@@ -22,6 +22,9 @@ import {
   Archive,
   UserRound,
   HandHeart,
+  Home,
+  LifeBuoy,
+  FileCheck2,
   Images,
   X,
 } from 'lucide-react';
@@ -51,6 +54,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Historias de la manada', href: '/admin/historias-perros', icon: Images, minLevel: 4 },
   { label: 'Solicitudes', href: '/admin/solicitudes', icon: FileText, minLevel: 4 },
   { label: 'Actividades', href: '/admin/actividades', icon: Calendar, minLevel: 4 },
+  { label: 'Hogares temporales', href: '/admin/acogidas', icon: Home, minLevel: 4 },
+  { label: 'Apoyo comunitario', href: '/admin/apoyo-comunitario', icon: LifeBuoy, minLevel: 4 },
   { label: 'Finanzas', href: '/admin/finanzas', icon: DollarSign, minLevel: 4 },
   { label: 'Donadores', href: '/admin/donadores', icon: Users, minLevel: 4 },
   { label: 'Contenido & Redes', href: '/admin/contenido', icon: FileText, minLevel: 4 },
@@ -61,6 +66,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Productos', href: '/admin/productos', icon: Package, minLevel: 4 },
   { label: 'Historias', href: '/admin/historias', icon: BookHeart, minLevel: 4 },
   { label: 'Campañas', href: '/admin/campanas', icon: Calendar, minLevel: 4 },
+  { label: 'Rendición de campañas', href: '/admin/rendicion-campanas', icon: FileCheck2, minLevel: 7 },
   { label: 'Editorial', href: '/admin/editorial', icon: BookOpen, minLevel: 4 },
   { label: 'Estructura', href: '/admin/estructura', icon: Workflow, minLevel: 4 },
   { label: 'En memoria', href: '/admin/memoria', icon: Archive, minLevel: 4 },
@@ -95,8 +101,8 @@ export function AdminLayout() {
   const sectionTitle = NAV_ITEMS.find(item => item.href === location.pathname)?.label ?? 'Administración';
   const groups = [
     { title: 'Resumen', paths: ['/admin', '/admin/reportes'] },
-    { title: 'Rescate y comunidad', paths: ['/admin/animales', '/admin/adopciones-comunidad', '/admin/solicitudes-comunidad', '/admin/solicitudes', '/admin/actividades', '/admin/equipo', '/admin/memoria'] },
-    { title: 'Tienda y aportes', paths: ['/admin/productos', '/admin/pedidos', '/admin/finanzas', '/admin/donadores', '/admin/impacto-donaciones'] },
+    { title: 'Rescate y comunidad', paths: ['/admin/animales', '/admin/adopciones-comunidad', '/admin/solicitudes-comunidad', '/admin/solicitudes', '/admin/actividades', '/admin/acogidas', '/admin/apoyo-comunitario', '/admin/equipo', '/admin/memoria'] },
+    { title: 'Tienda y aportes', paths: ['/admin/productos', '/admin/pedidos', '/admin/finanzas', '/admin/rendicion-campanas', '/admin/donadores', '/admin/impacto-donaciones'] },
     { title: 'Comunicación', paths: ['/admin/historias-perros', '/admin/historias', '/admin/contenido', '/admin/editorial', '/admin/estructura', '/admin/campanas'] },
     { title: 'Administración', paths: ['/admin/usuarios', '/admin/configuracion'] },
   ];

@@ -42,28 +42,36 @@ export function PublicLayout() {
     return () => window.removeEventListener(ANALYTICS_CONSENT_EVENT, syncConsent);
   }, [pathname]);
 
-  const seo = pathname === '/adopta'
+  const routePath = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  const seo = routePath === '/adopta'
     ? { title: 'Adopta un perro | AdoptaME', description: 'Conoce perros rescatados y encuentra el compañero que encaja contigo.' }
-    : pathname === '/tienda'
+    : routePath === '/tienda'
       ? { title: 'Tienda solidaria | AdoptaME', description: 'Compra productos con propósito y ayuda a financiar el rescate de perros.' }
-      : pathname === '/donaciones'
+      : routePath === '/campanas'
+        ? { title: 'Campañas de temporada | AdoptaME', description: 'Conoce las propuestas de temporada y descubre formas de apoyar a la manada.' }
+        : routePath === '/hogar-temporal'
+          ? { title: 'Hogar temporal | AdoptaME', description: 'Conoce el proceso para ofrecer un hogar temporal y acompañar a un perro rescatado.' }
+          : routePath === '/apoyo-comunitario'
+            ? { title: 'Apoyo comunitario | AdoptaME', description: 'Solicita orientación, reporta un animal perdido o encontrado y consulta recursos verificados.' }
+      : routePath === '/donaciones'
         ? { title: 'Dona y salva una vida | AdoptaME', description: 'Tu apoyo cubre alimento, salud y recuperación para perros rescatados.' }
-      : pathname.startsWith('/apadrina')
+      : routePath.startsWith('/apadrina')
         ? { title: 'Apadrina un perro rescatado | AdoptaME', description: 'Acompaña el cuidado de un integrante de la manada mientras llega su familia.' }
-      : pathname === '/voluntariado'
+          : routePath === '/voluntariado'
           ? { title: 'Súmate como voluntario | AdoptaME', description: 'Comparte tu tiempo y ayuda a transformar la vida de un perro.' }
-          : pathname === '/como-funciona'
+          : routePath === '/como-funciona'
             ? { title: 'Cómo funciona la adopción | AdoptaME', description: 'Conoce el proceso responsable para adoptar un perro rescatado.' }
-            : pathname === '/santuario'
+            : routePath === '/santuario'
               ? { title: 'Santuario y padrinazgo | AdoptaME', description: 'Acompaña a los residentes permanentes que necesitan cuidados especiales.' }
-              : pathname === '/en-memoria'
+              : routePath === '/en-memoria'
                 ? { title: 'En memoria de | AdoptaME', description: 'Honramos a los perros que dejaron una huella en nuestra manada.' }
-                : pathname === '/recursos'
+                : routePath === '/recursos'
                   ? { title: 'Recursos de tenencia responsable | AdoptaME', description: 'Guías para cuidar, adaptar y convivir mejor con un perro.' }
           : { title: 'AdoptaME | Cada perro merece una historia feliz', description: 'Rescatamos perros, les devolvemos la confianza y encontramos hogares responsables.' };
   useEffect(() => {
     const syncDocumentTitle = () => {
-      const metaTitle = document.head.querySelector('meta[property="og:title"]')?.getAttribute('content');
+      const metaTitle = Array.from(document.head.querySelectorAll('meta[property="og:title"]'))
+        .at(-1)?.getAttribute('content');
       const title = metaTitle || seo.title;
       if (document.title !== title) document.title = title;
     };

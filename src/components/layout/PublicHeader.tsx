@@ -36,6 +36,8 @@ const NAV_ITEMS: NavItem[] = [
     icon: HeartHandshake,
     children: [
       { label: 'Voluntariado', href: '/voluntariado' },
+      { label: 'Hogar temporal', href: '/hogar-temporal' },
+      { label: 'Apoyo comunitario', href: '/apoyo-comunitario' },
       { label: 'Santuario', href: '/santuario' },
       { label: 'Tienda solidaria', href: '/tienda' },
       { label: 'Campañas de temporada', href: '/campanas' },
@@ -61,6 +63,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: BookOpen,
     children: [
       { label: 'Recursos', href: '/recursos' },
+      { label: 'Apoyo para familias', href: '/apoyo-comunitario' },
       { label: 'Centro de ayuda', href: '/faq' },
       { label: 'Transparencia', href: '/transparencia' },
       { label: 'Ingresos y egresos', href: '/transparencia/ingresos' },

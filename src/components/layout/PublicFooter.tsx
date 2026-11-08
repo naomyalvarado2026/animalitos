@@ -14,6 +14,8 @@ const QUICK_LINKS = [
   { label: 'Tienda solidaria', href: '/tienda' },
   { label: 'Santuario', href: '/santuario' },
   { label: 'Recursos educativos', href: '/recursos' },
+  { label: 'Hogar temporal', href: '/hogar-temporal' },
+  { label: 'Apoyo comunitario', href: '/apoyo-comunitario' },
   { label: 'Nosotros', href: '/nosotros' },
   { label: 'Preguntas Frecuentes', href: '/faq' },
   { label: 'Transparencia', href: '/transparencia' },

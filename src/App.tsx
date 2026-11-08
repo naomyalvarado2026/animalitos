@@ -41,6 +41,8 @@ const PrivacyPage = lazy(() => import('@/components/public/PrivacyPage').then(m 
 const SanctuaryPage = lazy(() => import('@/components/public/SanctuaryPage').then(m => ({ default: m.SanctuaryPage })));
 const MemoryPage = lazy(() => import('@/components/public/MemoryPage').then(m => ({ default: m.MemoryPage })));
 const ResourcesPage = lazy(() => import('@/components/public/ResourcesPage').then(m => ({ default: m.ResourcesPage })));
+const FosterApplicationPage = lazy(() => import('@/components/public/FosterApplicationPage').then(m => ({ default: m.FosterApplicationPage })));
+const CommunitySupportPage = lazy(() => import('@/components/public/CommunitySupportPage').then(m => ({ default: m.CommunitySupportPage })));
 const NotFoundPage = lazy(() => import('@/components/public/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 // Lazy-loaded Admin pages
@@ -67,6 +69,9 @@ const MemoryManagement = lazy(() => import('@/components/admin/MemoryManagement'
 const TeamManagement = lazy(() => import('@/components/admin/TeamManagement').then(m => ({ default: m.TeamManagement })));
 const DonationImpactManagement = lazy(() => import('@/components/admin/DonationImpactManagement').then(m => ({ default: m.DonationImpactManagement })));
 const DogStoryStudio = lazy(() => import('@/components/admin/DogStoryStudio').then(m => ({ default: m.DogStoryStudio })));
+const FosterManagement = lazy(() => import('@/components/admin/FosterManagement').then(m => ({ default: m.FosterManagement })));
+const CommunitySupportManagement = lazy(() => import('@/components/admin/CommunitySupportManagement').then(m => ({ default: m.CommunitySupportManagement })));
+const CampaignFinanceManagement = lazy(() => import('@/components/admin/CampaignFinanceManagement').then(m => ({ default: m.CampaignFinanceManagement })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -111,6 +116,8 @@ export default function App() {
                       <Route path="/santuario" element={<SanctuaryPage />} />
                       <Route path="/en-memoria" element={<MemoryPage />} />
                       <Route path="/recursos" element={<ResourcesPage />} />
+                      <Route path="/hogar-temporal" element={<FosterApplicationPage />} />
+                      <Route path="/apoyo-comunitario" element={<CommunitySupportPage />} />
                       <Route path="/campanas" element={<CampaignsPage />} />
                       <Route path="/tienda" element={<StorePage />} />
                       <Route path="/nosotros" element={<AboutPage />} />
@@ -143,6 +150,8 @@ export default function App() {
                         <Route path="/admin/solicitudes-comunidad" element={<CommunityAdoptionApplicationsManagement />} />
                         <Route path="/admin/solicitudes" element={<ApplicationsManagement />} />
                         <Route path="/admin/actividades" element={<ActivityManagement />} />
+                        <Route path="/admin/acogidas" element={<FosterManagement />} />
+                        <Route path="/admin/apoyo-comunitario" element={<CommunitySupportManagement />} />
                         <Route path="/admin/finanzas" element={<FinanceManagement />} />
                         <Route path="/admin/donadores" element={<DonorManagement />} />
                         <Route path="/admin/contenido" element={<ContentManagement />} />
@@ -151,6 +160,7 @@ export default function App() {
                         <Route path="/admin/pedidos" element={<OrdersManagement />} />
                         <Route path="/admin/reportes" element={<AdminReportsPage />} />
                         <Route path="/admin/campanas" element={<CampaignManagement />} />
+                        <Route path="/admin/rendicion-campanas" element={<CampaignFinanceManagement />} />
                         <Route path="/admin/productos" element={<ProductManagement />} />
                         <Route path="/admin/historias" element={<SuccessStoryManagement />} />
                         <Route path="/admin/editorial" element={<EditorialManagement />} />

@@ -41,6 +41,7 @@ export interface IncomeRecord {
   date: string;
   donor_id: string | null;
   event_name: string | null;
+  campaign_id?: string | null;
   receipt_url: string | null;
   is_public: boolean;
   created_at: string;
@@ -58,6 +59,7 @@ export interface ExpenseRecord {
   amount_usd: number; // stored in USD
   date: string;
   vendor: string | null;
+  campaign_id?: string | null;
   receipt_url: string | null;
   is_public: boolean;
   created_at: string;
@@ -250,9 +252,10 @@ export interface VolunteerActivity {
   max_volunteers: number;
   current_volunteers: number;
   coordinator_name: string;
-  coordinator_phone: string | null;
+  coordinator_phone?: string | null;
   requirements: string[];
   status: ActivityStatus;
+  is_published?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -265,6 +268,8 @@ export interface ActivityRegistration {
   volunteer_phone: string;
   notes: string | null;
   assigned_by_admin?: boolean;
+  consent_at?: string | null;
+  attendance_status?: 'registered' | 'waitlisted' | 'attended' | 'no_show' | 'cancelled';
   created_at: string;
   activity?: VolunteerActivity;
 }

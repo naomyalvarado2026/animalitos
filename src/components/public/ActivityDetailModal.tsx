@@ -15,10 +15,11 @@ import { formatDateShort } from '@/lib/utils';
 import { buildGoogleCalendarUrl, downloadIcsFile, buildWhatsAppShareUrl } from '@/lib/calendarExport';
 
 const registrationSchema = z.object({
-  volunteer_name: z.string().min(2, 'Ingresa tu nombre completo'),
+  volunteer_name: z.string().min(2, 'Ingresa tu nombre completo').max(120, 'Máximo 120 caracteres'),
   volunteer_email: z.string().email('Email inválido'),
-  volunteer_phone: z.string().min(7, 'Teléfono válido requerido'),
-  notes: z.string().optional(),
+  volunteer_phone: z.string().min(7, 'Teléfono válido requerido').max(40, 'Máximo 40 caracteres'),
+  notes: z.string().max(1500, 'Máximo 1500 caracteres').optional(),
+  consent: z.boolean().refine(value => value, 'Debes aceptar el uso de tus datos para gestionar la reserva'),
 });
 
 type RegistrationForm = z.infer<typeof registrationSchema>;
@@ -40,27 +41,24 @@ export function ActivityDetailModal({
   });
 
   const isFull = (activity.current_volunteers ?? 0) >= (activity.max_volunteers ?? 5);
-  const isTemplate = activity.id.startsWith('recurring-') || activity.id.startsWith('curated-');
 
   async function onSubmit(data: RegistrationForm) {
     setSubmitting(true);
     try {
-      if (isTemplate) {
-        // If template/curated without database UUID, notify team or submit application
-        toast.success(`¡Excelente, ${data.volunteer_name}! Nos comunicaremos a tu WhatsApp para coordinar esta fecha recurrente. 🐾`);
-        reset();
-        onClose();
-        return;
-      }
-
-      const { error } = await supabase.from('activity_registrations').insert([
-        {
-          activity_id: activity.id,
-          ...data,
-        },
-      ]);
+      const { data: result, error } = await supabase.rpc('register_for_volunteer_activity', {
+        p_activity_id: activity.id,
+        p_volunteer_name: data.volunteer_name,
+        p_volunteer_email: data.volunteer_email,
+        p_volunteer_phone: data.volunteer_phone,
+        p_consent: data.consent,
+        p_notes: data.notes || null,
+      });
       if (error) throw error;
-      toast.success(`¡Te has inscrito a "${activity.title}"! Gracias por tu apoyo. 🐾`);
+      const registration = Array.isArray(result) ? result[0] : null;
+      if (!registration?.attendance_status) throw new Error('La inscripción no devolvió su estado.');
+      toast.success(registration.attendance_status === 'waitlisted'
+        ? `Te añadimos a la lista de espera de “${activity.title}”. El equipo te avisará si se libera un cupo.`
+        : `Tu cupo para “${activity.title}” quedó reservado. Gracias por tu apoyo. 🐾`);
       reset();
       onRegistered();
       onClose();
@@ -108,7 +106,7 @@ export function ActivityDetailModal({
                 {String(activity.category ?? 'Actividad').replace(/_/g, ' ')}
               </Badge>
               <Badge variant={isFull ? 'secondary' : 'outline'} className="text-xs">
-                {isFull ? 'Cupos Llenos' : `${activity.current_volunteers ?? 0} / ${activity.max_volunteers ?? 5} Cupos disponibles`}
+                {isFull ? 'Cupo completo · lista de espera abierta' : `${activity.current_volunteers ?? 0} / ${activity.max_volunteers ?? 5} cupos ocupados`}
               </Badge>
             </div>
             <h2 className="font-heading text-2xl font-bold text-[var(--color-foreground)]">
@@ -190,11 +188,10 @@ export function ActivityDetailModal({
               <Button
                 variant="warm"
                 className="w-full bg-[#f0644a] text-white hover:bg-[#e94f3a]"
-                disabled={isFull}
                 onClick={() => setIsRegistering(true)}
               >
                 <Heart className="mr-2 h-4 w-4" />
-                {isFull ? 'Cupos Agotados' : '🤝 Unirme a esta Actividad'}
+                {isFull ? 'Unirme a la lista de espera' : '🤝 Reservar mi cupo'}
               </Button>
             </div>
           ) : (
@@ -236,12 +233,18 @@ export function ActivityDetailModal({
                 <Input id="vnotes" {...register('notes')} placeholder="Ej: Primera vez, voy con un amigo..." className="text-xs" />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <label className="flex items-start gap-2 text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
+                <input type="checkbox" {...register('consent')} className="mt-0.5" />
+                <span>Autorizo usar mis datos para gestionar esta reserva y contactarme sobre el turno. Consulta la política de privacidad de AdoptaME.</span>
+              </label>
+              {errors.consent && <p className="text-xs text-[var(--color-destructive)]">{errors.consent.message}</p>}
+
+              <div className="flex flex-wrap justify-end gap-2 pt-2">
                 <Button type="button" variant="ghost" size="sm" onClick={() => setIsRegistering(false)} className="text-xs">
                   Cancelar
                 </Button>
                 <Button type="submit" variant="warm" size="sm" disabled={submitting} className="bg-[#f0644a] text-white hover:bg-[#e94f3a] text-xs">
-                  {submitting ? 'Inscribiendo...' : 'Confirmar Mi Asistencia 🐾'}
+                  {submitting ? 'Registrando...' : isFull ? 'Solicitar lugar en espera 🐾' : 'Confirmar mi reserva 🐾'}
                 </Button>
               </div>
             </form>

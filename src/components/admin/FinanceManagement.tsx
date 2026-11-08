@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { IncomeRecord, ExpenseRecord, IncomeCategory, ExpenseCategory } from '@/types';
 import { formatDateShort } from '@/lib/utils';
+import { useCampaigns } from '@/lib/campaigns';
 
 const incomeSchema = z.object({
   description: z.string().min(1),
@@ -22,6 +23,7 @@ const incomeSchema = z.object({
   date: z.string().min(1),
   category: z.enum(['donation', 'event', 'other']),
   event_name: z.string().optional(),
+  campaign_id: z.string().optional(),
   is_public: z.boolean().default(true),
 });
 
@@ -31,6 +33,7 @@ const expenseSchema = z.object({
   date: z.string().min(1),
   category: z.enum(['food', 'medical', 'infrastructure', 'salary', 'utilities', 'supplies', 'other']),
   vendor: z.string().optional(),
+  campaign_id: z.string().optional(),
   is_public: z.boolean().default(true),
 });
 
@@ -40,6 +43,7 @@ interface IncomeForm {
   date: string;
   category: 'donation' | 'event' | 'other';
   event_name?: string;
+  campaign_id?: string;
   is_public: boolean;
 }
 
@@ -49,6 +53,7 @@ interface ExpenseForm {
   date: string;
   category: 'food' | 'medical' | 'infrastructure' | 'salary' | 'utilities' | 'supplies' | 'other';
   vendor?: string;
+  campaign_id?: string;
   is_public: boolean;
 }
 
@@ -75,6 +80,7 @@ export function FinanceManagement() {
   const [tab, setTab] = useState<'income' | 'expense'>('income');
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const campaigns = useCampaigns(true);
 
   const incomeQuery = useQuery({
     queryKey: ['admin-income', demo],
@@ -99,23 +105,24 @@ export function FinanceManagement() {
 
   const incomeForm = useForm<IncomeForm>({
     resolver: zodResolver(incomeSchema) as any,
-    defaultValues: { category: 'donation', is_public: true, date: new Date().toISOString().split('T')[0] },
+    defaultValues: { category: 'donation', is_public: true, date: new Date().toISOString().split('T')[0], campaign_id: '' },
   });
 
   const expenseForm = useForm<ExpenseForm>({
     resolver: zodResolver(expenseSchema) as any,
-    defaultValues: { category: 'food', is_public: true, date: new Date().toISOString().split('T')[0] },
+    defaultValues: { category: 'food', is_public: true, date: new Date().toISOString().split('T')[0], campaign_id: '' },
   });
 
   const addIncome = useMutation({
     mutationFn: async (data: IncomeForm) => {
-      const { error } = await supabase.from('income_records').insert([{ ...data, is_demo: demo, is_public: demo ? false : data.is_public }]);
+      const { error } = await supabase.from('income_records').insert([{ ...data, campaign_id: demo ? null : data.campaign_id || null, is_demo: demo, is_public: demo ? false : data.is_public }]);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-income'] });
       qc.invalidateQueries({ queryKey: ['transparency-income'] });
       qc.invalidateQueries({ queryKey: ['public-transparency'] });
+      qc.invalidateQueries({ queryKey: ['campaign-financial-reports'] });
       toast.success('Ingreso registrado.');
       incomeForm.reset();
       setShowIncomeForm(false);
@@ -125,13 +132,14 @@ export function FinanceManagement() {
 
   const addExpense = useMutation({
     mutationFn: async (data: ExpenseForm) => {
-      const { error } = await supabase.from('expense_records').insert([{ ...data, is_demo: demo, is_public: demo ? false : data.is_public }]);
+      const { error } = await supabase.from('expense_records').insert([{ ...data, campaign_id: demo ? null : data.campaign_id || null, is_demo: demo, is_public: demo ? false : data.is_public }]);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-expense'] });
       qc.invalidateQueries({ queryKey: ['transparency-expense'] });
       qc.invalidateQueries({ queryKey: ['public-transparency'] });
+      qc.invalidateQueries({ queryKey: ['campaign-financial-reports'] });
       toast.success('Egreso registrado.');
       expenseForm.reset();
       setShowExpenseForm(false);
@@ -254,6 +262,13 @@ export function FinanceManagement() {
                   {INCOME_CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="inc-campaign">Campaña vinculada (opcional)</Label>
+                <select id="inc-campaign" {...incomeForm.register('campaign_id')} disabled={demo || campaigns.isLoading} className="flex h-9 w-full rounded-lg border border-[var(--color-input)] bg-transparent px-3 py-1 text-sm">
+                  <option value="">Sin campaña</option>{campaigns.data?.map(campaign => <option key={campaign.id} value={campaign.id}>{campaign.title}</option>)}
+                </select>
+                <p className="text-[11px] text-[var(--color-muted-foreground)]">La rendición de campaña suma solo ingresos reales completados.</p>
+              </div>
               <div className="sm:col-span-2 flex justify-end gap-2">
                 <Button type="button" variant="ghost" onClick={() => setShowIncomeForm(false)}>Cancelar</Button>
                 <Button type="submit" variant="default" disabled={addIncome.isPending}>
@@ -297,6 +312,13 @@ export function FinanceManagement() {
               <div className="space-y-1.5">
                 <Label htmlFor="exp-vendor">Proveedor (opcional)</Label>
                 <Input id="exp-vendor" {...expenseForm.register('vendor')} placeholder="Nombre del proveedor" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="exp-campaign">Campaña vinculada (opcional)</Label>
+                <select id="exp-campaign" {...expenseForm.register('campaign_id')} disabled={demo || campaigns.isLoading} className="flex h-9 w-full rounded-lg border border-[var(--color-input)] bg-transparent px-3 py-1 text-sm">
+                  <option value="">Sin campaña</option>{campaigns.data?.map(campaign => <option key={campaign.id} value={campaign.id}>{campaign.title}</option>)}
+                </select>
+                <p className="text-[11px] text-[var(--color-muted-foreground)]">Los egresos vinculados entran en el cálculo de la rendición.</p>
               </div>
               <div className="sm:col-span-2 flex justify-end gap-2">
                 <Button type="button" variant="ghost" onClick={() => setShowExpenseForm(false)}>Cancelar</Button>

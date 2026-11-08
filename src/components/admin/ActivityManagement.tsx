@@ -30,6 +30,7 @@ const activitySchema = z.object({
   location: z.string().min(2, 'Ubicación requerida'),
   max_volunteers: z.coerce.number().min(1, 'Mínimo 1 voluntario'),
   coordinator_name: z.string().min(2, 'Coordinador requerido'),
+  is_published: z.boolean().default(false),
 });
 
 type ActivityForm = z.infer<typeof activitySchema>;
@@ -68,6 +69,7 @@ export function ActivityManagement() {
       location: 'Refugio Principal',
       max_volunteers: 6,
       coordinator_name: 'Equipo Animalitos',
+      is_published: false,
     },
   });
 
@@ -120,6 +122,7 @@ export function ActivityManagement() {
       location: act.location,
       max_volunteers: act.max_volunteers,
       coordinator_name: act.coordinator_name,
+      is_published: act.is_published ?? false,
     });
     setShowForm(true);
   }
@@ -208,6 +211,11 @@ export function ActivityManagement() {
                 <Textarea id="description" rows={3} {...form.register('description')} />
               </div>
 
+              <label className="flex items-start gap-2 rounded-xl border border-[var(--color-border)] p-3 text-sm sm:col-span-2">
+                <input type="checkbox" {...form.register('is_published')} className="mt-1" />
+                <span><strong>Publicar en la agenda.</strong> Solo los turnos confirmados con cupos reales aparecerán en el sitio público.</span>
+              </label>
+
               <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
                 <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button>
                 <Button type="submit" variant="warm" disabled={saveMutation.isPending}>Guardar Actividad</Button>
@@ -235,6 +243,7 @@ export function ActivityManagement() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-heading font-bold text-base">{act.title}</h3>
                       <Badge variant="warm" className="text-xs">{act.category}</Badge>
+                      <Badge variant={act.is_published ? 'default' : 'outline'} className="text-xs">{act.is_published ? 'Publicada' : 'Borrador'}</Badge>
                       <Badge variant="outline" className="text-xs">
                         {formatDateShort(act.activity_date)} {act.end_date ? `al ${formatDateShort(act.end_date)}` : ''}
                       </Badge>

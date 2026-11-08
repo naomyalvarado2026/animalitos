@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, UserPlus, Trash2 } from 'lucide-react';
+import { X, UserPlus, Trash2, MessageCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,6 +25,7 @@ export function ParticipantRosterModal({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
+  const [consentConfirmed, setConsentConfirmed] = useState(false);
 
   const { data: registrations = [], isLoading, refetch } = useQuery({
     queryKey: ['activity-registrations', activity.id],
@@ -49,6 +50,7 @@ export function ParticipantRosterModal({
           volunteer_phone: phone,
           notes: notes || null,
           assigned_by_admin: true,
+          consent_at: consentConfirmed ? new Date().toISOString() : null,
         },
       ]);
       if (error) throw error;
@@ -63,10 +65,35 @@ export function ParticipantRosterModal({
       setEmail('');
       setPhone('');
       setNotes('');
+      setConsentConfirmed(false);
       refetch();
     },
     onError: () => toast.error('Error al registrar la persona.'),
   });
+
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, attendance_status }: { id: string; attendance_status: NonNullable<ActivityRegistration['attendance_status']> }) => {
+      const { error } = await supabase.from('activity_registrations').update({ attendance_status }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['activity-registrations', activity.id] }),
+        qc.invalidateQueries({ queryKey: ['admin-activities'] }),
+        qc.invalidateQueries({ queryKey: ['volunteer-activities-public'] }),
+      ]);
+      toast.success('Asistencia actualizada. Si se liberó un cupo, se promovió a la primera persona en espera.');
+      refetch();
+    },
+    onError: () => toast.error('No se pudo actualizar la asistencia.'),
+  });
+
+  function openReminder(registration: ActivityRegistration) {
+    const phoneNumber = registration.volunteer_phone.replace(/\D/g, '');
+    const text = encodeURIComponent(`Hola ${registration.volunteer_name}, te recordamos tu jornada “${activity.title}” el ${formatDateShort(activity.activity_date)} de ${activity.start_time} a ${activity.end_time}. ¿Nos confirmas tu asistencia?`);
+    window.open(`https://wa.me/${phoneNumber}?text=${text}`, '_blank', 'noopener,noreferrer');
+    toast.info('Abrimos WhatsApp con un recordatorio listo. El envío depende de que lo confirmes allí.');
+  }
 
   const removeMutation = useMutation({
     mutationFn: async (regId: string) => {
@@ -103,7 +130,7 @@ export function ParticipantRosterModal({
             <div className="flex items-center gap-2 mb-1">
               <Badge variant="warm">Asignación Manual de Personas</Badge>
               <Badge variant="outline" className="text-xs">
-                {registrations.length} / {activity.max_volunteers} Inscritos
+                {registrations.filter(reg => (reg.attendance_status ?? 'registered') === 'registered').length} / {activity.max_volunteers} Cupos
               </Badge>
             </div>
             <h2 className="font-heading text-xl font-bold">{activity.title}</h2>
@@ -141,9 +168,13 @@ export function ParticipantRosterModal({
                   <Label htmlFor="rnotes">Notas (opcional)</Label>
                   <Input id="rnotes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Ej: Confirmó asistencia telefónica" />
                 </div>
+                <label className="flex items-start gap-2 text-xs leading-relaxed">
+                  <input type="checkbox" checked={consentConfirmed} onChange={e => setConsentConfirmed(e.target.checked)} className="mt-0.5" />
+                  <span>Confirmo que esta persona autorizó el uso de sus datos para gestionar la jornada.</span>
+                </label>
                 <div className="flex justify-end gap-2 pt-2">
                   <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>Cancelar</Button>
-                  <Button variant="warm" size="sm" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !name || !email}>
+                  <Button variant="warm" size="sm" onClick={() => addMutation.mutate()} disabled={addMutation.isPending || !name || !email || !phone || !consentConfirmed}>
                     Guardar Inscripción
                   </Button>
                 </div>
@@ -163,6 +194,9 @@ export function ParticipantRosterModal({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-[var(--color-foreground)]">{reg.volunteer_name}</span>
+                      <Badge variant={reg.attendance_status === 'waitlisted' ? 'secondary' : reg.attendance_status === 'cancelled' ? 'outline' : 'default'} className="text-[10px] py-0 px-1.5">
+                        {{ registered: 'Cupo confirmado', waitlisted: 'Lista de espera', attended: 'Asistió', no_show: 'No asistió', cancelled: 'Canceló' }[reg.attendance_status ?? 'registered']}
+                      </Badge>
                       {reg.assigned_by_admin && (
                         <Badge variant="secondary" className="text-[10px] py-0 px-1.5">Asignado por Admin</Badge>
                       )}
@@ -172,6 +206,19 @@ export function ParticipantRosterModal({
                       <span>📞 {reg.volunteer_phone}</span>
                     </div>
                   </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                  <select
+                    aria-label={`Estado de asistencia de ${reg.volunteer_name}`}
+                    value={reg.attendance_status ?? 'registered'}
+                    onChange={e => statusMutation.mutate({ id: reg.id, attendance_status: e.target.value as NonNullable<ActivityRegistration['attendance_status']> })}
+                    className="max-w-36 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)] px-2 py-1.5 text-[10px] text-[var(--color-foreground)]"
+                    disabled={statusMutation.isPending}
+                  >
+                    <option value="registered">Cupo confirmado</option><option value="waitlisted">Lista de espera</option><option value="attended">Asistió</option><option value="no_show">No asistió</option><option value="cancelled">Canceló</option>
+                  </select>
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-700" onClick={() => openReminder(reg)} aria-label={`Preparar recordatorio por WhatsApp para ${reg.volunteer_name}`}>
+                    <MessageCircle className="h-3.5 w-3.5" />
+                  </Button>
                   <Button
                     size="icon"
                     variant="ghost"
@@ -181,6 +228,7 @@ export function ParticipantRosterModal({
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
+                  </div>
                 </div>
               ))
             )}
