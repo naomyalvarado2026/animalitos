@@ -1,21 +1,34 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import * as Tabs from '@radix-ui/react-tabs';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { ArrowRight, Check, HeartHandshake, MessageCircleHeart, PawPrint, ShieldCheck, Sparkles } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import {
+  ArrowDown,
+  ArrowRight,
+  Check,
+  ClipboardList,
+  Heart,
+  MessageCircle,
+  PawPrint,
+  Search,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import { usePublicSettings } from '@/lib/publicSettings';
 import { ResilientImage } from '@/components/ui/ResilientImage';
 import { assetUrl } from '@/lib/assets';
 import { ContextualFaq } from './ContextualFaq';
-import { RefugeDogRibbon } from './RefugeDogRibbon';
 
-type ProcessStep = { number: string; title: string; text: string; emoji?: string };
+type ProcessStep = { number: string; title: string; text: string };
 
 const STEPS: ProcessStep[] = [
-  { number: '01', title: 'Conoce', text: 'Explora la personalidad, energía, salud y necesidades de cada perrito.', emoji: '🤝' },
-  { number: '02', title: 'Conecta', text: 'Completa una pre-solicitud para contarnos sobre tu hogar y tu rutina.', emoji: '📋' },
-  { number: '03', title: 'Prepárate', text: 'Conversamos contigo, resolvemos dudas y confirmamos que sea un buen match.', emoji: '🏠' },
-  { number: '04', title: 'Acompañamos', text: 'La adopción continúa con orientación para la adaptación y la tenencia responsable.', emoji: '🛡️' },
+  { number: '01', title: 'Conoce', text: 'Explora la personalidad, energía, salud y necesidades de cada perrito.' },
+  { number: '02', title: 'Conecta', text: 'Completa una pre-solicitud para contarnos sobre tu hogar y tu rutina.' },
+  { number: '03', title: 'Prepárate', text: 'Conversamos contigo, resolvemos dudas y confirmamos que sea un buen match.' },
+  { number: '04', title: 'Acompañamos', text: 'La adopción continúa con orientación para la adaptación y la tenencia responsable.' },
 ];
+
+const STEP_ICONS = [Search, ClipboardList, MessageCircle, Heart];
 
 const READINESS = [
   'Tiempo real para adaptación, paseos y compañía',
@@ -24,103 +37,235 @@ const READINESS = [
   'Un compromiso que acompaña toda su vida',
 ];
 
+function parseProcessSteps(value: string | undefined): ProcessStep[] {
+  try {
+    const parsed: unknown = JSON.parse(value ?? 'null');
+    if (!Array.isArray(parsed)) return STEPS;
+
+    const validSteps = parsed.flatMap((candidate, index) => {
+      if (!candidate || typeof candidate !== 'object') return [];
+      const step = candidate as Record<string, unknown>;
+      if (typeof step.title !== 'string' || typeof step.text !== 'string') return [];
+      const title = step.title.trim();
+      const text = step.text.trim();
+      if (!title || !text) return [];
+
+      return [{
+        number: typeof step.number === 'string' && step.number.trim()
+          ? step.number.trim()
+          : String(index + 1).padStart(2, '0'),
+        title,
+        text,
+      }];
+    });
+
+    return validSteps.length ? validSteps : STEPS;
+  } catch {
+    return STEPS;
+  }
+}
+
 export function AdoptionProcessPage() {
   const { data: settings } = usePublicSettings(['process_intro', 'adoption_process_steps']);
-  const steps = useMemo<ProcessStep[]>(() => {
-    try {
-      const parsed = JSON.parse(settings?.adoption_process_steps ?? 'null');
-      return Array.isArray(parsed) && parsed.length ? parsed : STEPS;
-    } catch {
-      return STEPS;
-    }
-  }, [settings]);
+  const shouldReduceMotion = useReducedMotion();
+  const [selectedStepIndex, setSelectedStepIndex] = useState(0);
+  const steps = useMemo(() => parseProcessSteps(settings?.adoption_process_steps), [settings?.adoption_process_steps]);
+  const activeStepIndex = Math.min(selectedStepIndex, steps.length - 1);
 
   return (
-    <div className="overflow-hidden bg-[#fffdf9] pt-16 text-[#171717]">
-      <section className="relative isolate min-h-[690px] bg-[#171717] text-white lg:min-h-[760px]">
-        <div className="absolute inset-y-0 right-0 -z-20 w-full lg:w-[52%]">
-          <ResilientImage src={assetUrl('/images/dog_max.jpg')} alt="Perro rescatado esperando conocer a su familia" className="h-full w-full object-cover opacity-45 lg:opacity-95" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#171717] via-[#171717]/75 to-transparent lg:from-[#171717]/90 lg:via-[#171717]/15" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#171717] via-transparent to-transparent lg:hidden" />
-        </div>
-
-        <div className="mx-auto grid min-h-[690px] max-w-7xl items-end gap-12 px-5 py-16 sm:px-8 lg:min-h-[760px] lg:grid-cols-[1.02fr_.98fr] lg:items-center lg:px-10 lg:py-24">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }} className="max-w-3xl">
-            <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-[.18em] text-[#ff9b87]"><Sparkles className="h-4 w-4" /> Un proceso humano y transparente</p>
-            <h1 className="mt-6 font-heading text-6xl font-extrabold leading-[.86] tracking-[-.075em] sm:text-7xl lg:text-[6.5rem]">4 pasos.<br /><span className="text-[#f0644a]">Una decisión</span><br />para toda la vida.</h1>
-            <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/75">{settings?.process_intro?.trim() || 'Queremos que la conexión sea bonita, pero también responsable. Te explicamos cada paso antes de pedirte un compromiso.'}</p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link to="/adopta" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#f0644a] px-6 py-3.5 font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#ff8069]">Conocer a los perritos <ArrowRight className="h-4 w-4" /></Link>
-              <button type="button" onClick={() => document.getElementById('el-proceso')?.scrollIntoView({ behavior: 'smooth' })} className="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 font-bold text-white backdrop-blur transition hover:bg-white/15">Ver cómo funciona</button>
+    <div className="bg-[var(--color-background)] pt-16 text-[var(--color-foreground)]">
+      <section aria-labelledby="adoption-process-title" className="relative isolate px-5 py-8 sm:px-8 lg:min-h-[406px] lg:pl-6 lg:pr-0 lg:py-0">
+        <div className="mx-auto grid grid-cols-[minmax(0,1fr)] max-w-[1328px] items-center gap-9 lg:min-h-[406px] lg:grid-cols-1">
+          <div className="relative z-10 min-w-0 max-w-[700px]">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.16em] text-[var(--color-primary)] sm:text-sm">
+              <Sparkles aria-hidden="true" className="h-4 w-4" />
+              Acompañamiento por etapas
+            </p>
+            <h1 id="adoption-process-title" className="mt-5 break-words font-heading text-5xl font-extrabold leading-[.96] tracking-[-.06em] max-[359px]:text-4xl sm:text-6xl xl:text-[4rem]">
+              Adoptar también <br className="hidden xl:block" /><span className="text-[#f0644a]">se vive acompañado.</span>
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-[var(--color-muted-foreground)] sm:text-lg">
+              {settings?.process_intro?.trim() || 'Te guiamos de forma cercana y transparente en cada etapa, para que tomes una decisión informada y con tranquilidad.'}
+            </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link
+                to="/adopta"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#ff8069] px-6 py-3 font-bold text-[#17022b] transition hover:bg-[#ff9a86] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2"
+              >
+                Conocer a los perritos <PawPrint aria-hidden="true" className="h-5 w-5" />
+              </Link>
+              <a
+                href="#el-proceso"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 py-3 font-semibold text-[var(--color-foreground)] transition hover:bg-[var(--color-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2"
+              >
+                Ver cómo funciona <ArrowDown aria-hidden="true" className="h-4 w-4" />
+              </a>
             </div>
-          </motion.div>
+          </div>
 
-          <div className="hidden self-end justify-self-end lg:block">
-            <div className="w-56 rounded-[2rem] border border-white/20 bg-white/10 p-6 backdrop-blur-xl"><PawPrint className="h-7 w-7 text-[#ff9b87]" /><p className="mt-12 font-heading text-2xl font-extrabold leading-tight">El match correcto importa más que la prisa.</p></div>
+          <div className="relative min-h-[280px] overflow-hidden rounded-[2rem] bg-[var(--color-secondary)] sm:min-h-[390px] lg:absolute lg:inset-y-0 lg:right-0 lg:w-[55%] lg:rounded-none">
+            <ResilientImage
+              src={assetUrl('/images/dog_max.jpg')}
+              alt="Max, un perro rescatado esperando conocer a su familia"
+              className="absolute inset-0 h-full w-full object-cover object-[center_35%]"
+            />
+            <div aria-hidden="true" className="absolute inset-y-0 left-0 hidden w-[28%] bg-gradient-to-r from-[var(--color-background)] via-[var(--color-background)]/55 to-transparent lg:block" />
           </div>
         </div>
       </section>
 
-      <section id="el-proceso" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
-        <div className="grid gap-8 lg:grid-cols-[.72fr_1.28fr] lg:gap-16">
-          <div className="lg:sticky lg:top-28 lg:self-start">
-            <p className="text-sm font-bold uppercase tracking-[.16em] text-[#f0644a]">Tu recorrido</p>
-            <h2 className="mt-4 font-heading text-5xl font-extrabold leading-[.95] tracking-[-.06em] sm:text-6xl">Sin letras pequeñas. Sin saltos de fe.</h2>
-            <p className="mt-6 max-w-md leading-relaxed text-[#6e6a64]">Cada etapa existe para proteger el bienestar del animal y darte la seguridad de que estás tomando una decisión informada.</p>
-          </div>
+      <section id="el-proceso" aria-labelledby="process-steps-title" className="scroll-mt-24 px-5 py-10 sm:px-8 lg:pb-0 lg:pt-8">
+        <div className="mx-auto max-w-[1320px]">
+          <header className="xl:pl-4">
+            <h2 id="process-steps-title" className="font-heading text-3xl font-extrabold tracking-[-.045em] sm:text-4xl lg:text-5xl">
+              Conoce el proceso de adopción
+            </h2>
+            <p className="mt-2 text-base text-[var(--color-muted-foreground)] sm:text-lg">
+              Un camino simple y acompañado, de principio a fin.
+            </p>
+          </header>
 
-          <div className="space-y-5">
-            {steps.map((step, index) => (
-              <motion.article key={`${step.number}-${step.title}`} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .25 }} transition={{ delay: index * .06 }} className={`group grid gap-7 rounded-[2rem] border border-[#171717]/10 p-7 transition hover:-translate-y-1 sm:grid-cols-[110px_1fr] sm:p-9 ${index === 1 ? 'bg-[#ffcf5a]' : index === 3 ? 'bg-[#171717] text-white' : 'bg-white shadow-[0_15px_45px_rgba(23,23,23,.05)]'}`}>
-                <div className="flex items-start justify-between sm:block">
-                  <span className={`font-heading text-5xl font-extrabold tracking-[-.06em] ${index === 3 ? 'text-[#f0644a]' : 'text-[#171717]/25'}`}>{step.number || String(index + 1).padStart(2, '0')}</span>
-                  <span className="mt-8 block text-4xl" aria-hidden="true">{step.emoji || '🐾'}</span>
-                </div>
-                <div className="self-center">
-                  <p className={`text-xs font-bold uppercase tracking-[.16em] ${index === 3 ? 'text-white/50' : 'text-[#f0644a]'}`}>Paso {index + 1}</p>
-                  <h3 className="mt-2 font-heading text-3xl font-extrabold tracking-[-.04em] sm:text-4xl">{step.title}</h3>
-                  <p className={`mt-4 max-w-xl leading-relaxed ${index === 3 ? 'text-white/70' : 'text-[#5f5a54]'}`}>{step.text}</p>
-                </div>
-              </motion.article>
-            ))}
+          <Tabs.Root
+            value={`step-${activeStepIndex}`}
+            onValueChange={(value) => setSelectedStepIndex(Number(value.replace('step-', '')))}
+            activationMode="automatic"
+            className="mt-7"
+          >
+            <div className="overflow-x-auto rounded-full bg-[var(--color-secondary)] p-1.5" style={{ scrollbarWidth: 'thin' }}>
+              <Tabs.List aria-label="Etapas del proceso de adopción" className="flex min-w-max gap-1 sm:min-w-0 sm:w-full">
+                {steps.map((step, index) => {
+                  const StepIcon = STEP_ICONS[index % STEP_ICONS.length] ?? PawPrint;
+                  return (
+                    <Tabs.Trigger
+                      key={`${step.number}-${step.title}-${index}`}
+                      value={`step-${index}`}
+                      className="inline-flex min-h-12 min-w-[8rem] flex-1 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-[var(--color-primary)] transition-colors hover:bg-[var(--color-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 data-[state=active]:bg-[#3c096c] data-[state=active]:text-white sm:min-w-0 sm:text-base"
+                    >
+                      <StepIcon aria-hidden="true" className="h-5 w-5 shrink-0" />
+                      <span>{step.title}</span>
+                    </Tabs.Trigger>
+                  );
+                })}
+              </Tabs.List>
+            </div>
+
+            {steps.map((step, index) => {
+              const StepIcon = STEP_ICONS[index % STEP_ICONS.length] ?? PawPrint;
+              return (
+                <Tabs.Content
+                  key={`${step.number}-${step.title}-${index}`}
+                  value={`step-${index}`}
+                  className="mt-8 rounded-[2rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-4"
+                >
+                  <motion.div
+                    initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: shouldReduceMotion ? 0 : 0.22 }}
+                    className="grid overflow-hidden rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-card)] shadow-[var(--surface-shadow)] sm:grid-cols-[minmax(180px,.31fr)_minmax(0,1fr)]"
+                  >
+                    <div className="flex min-h-36 items-center justify-center bg-[var(--color-secondary)] p-6 sm:min-h-[230px]">
+                      <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-[#ff8069]/20 text-[var(--color-primary)] sm:h-32 sm:w-32">
+                        <PawPrint aria-hidden="true" className="h-12 w-12 sm:h-16 sm:w-16" />
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-start justify-center p-6 sm:p-8 lg:justify-start lg:px-12 lg:pb-11 lg:pt-5">
+                      <p className="text-xs font-extrabold uppercase tracking-[.16em] text-[var(--color-primary)]">
+                        Paso {step.number || String(index + 1).padStart(2, '0')}
+                      </p>
+                      <h3 className="mt-2 font-heading text-3xl font-extrabold tracking-[-.045em] sm:text-4xl">
+                        {step.title}
+                      </h3>
+                      <p className="mt-3 max-w-xl leading-relaxed text-[var(--color-muted-foreground)]">
+                        {step.text}
+                      </p>
+                      <Link
+                        to="/adopta"
+                        className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#ff8069] px-5 py-2.5 font-bold text-[#17022b] transition hover:bg-[#ff9a86] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2 lg:mt-11"
+                      >
+                        <StepIcon aria-hidden="true" className="h-4 w-4" /> Explorar animales
+                      </Link>
+                    </div>
+                  </motion.div>
+                </Tabs.Content>
+              );
+            })}
+          </Tabs.Root>
+        </div>
+      </section>
+
+      <section aria-labelledby="adoption-reassurance-title" className="px-5 py-5 sm:px-8">
+        <div className="mx-auto flex max-w-[1320px] flex-col gap-5 rounded-[1.75rem] bg-[var(--color-secondary)] p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-7">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-card)] text-[var(--color-primary)]">
+            <ShieldCheck aria-hidden="true" className="h-7 w-7" />
+          </div>
+          <div className="flex-1">
+            <h2 id="adoption-reassurance-title" className="font-heading text-xl font-extrabold sm:text-2xl">
+              Un proceso humano y transparente
+            </h2>
+            <p className="mt-1 leading-relaxed text-[var(--color-muted-foreground)]">
+              Queremos conocerte y resolver tus dudas con honestidad, cuidar el bienestar del animal y acompañarte durante la adaptación.
+            </p>
+          </div>
+          <a
+            href="#preguntas"
+            className="inline-flex min-h-11 shrink-0 items-center gap-2 font-bold text-[var(--color-primary)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+          >
+            Preguntas frecuentes <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </a>
+        </div>
+      </section>
+
+      <section aria-labelledby="readiness-title" className="px-5 py-14 sm:px-8 lg:py-20">
+        <div className="mx-auto grid max-w-[1320px] overflow-hidden rounded-[2rem] bg-[var(--color-card)] shadow-[var(--surface-shadow)] lg:grid-cols-2">
+          <div className="relative min-h-[280px] overflow-hidden sm:min-h-[360px]">
+            <ResilientImage
+              src={assetUrl('/images/shelter_hero_1785817115197.jpg')}
+              alt="Una familia comparte tiempo con su perro en casa"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          </div>
+          <div className="p-6 sm:p-9 lg:p-12">
+            <p className="text-xs font-extrabold uppercase tracking-[.16em] text-[var(--color-primary)]">Antes de decir sí</p>
+            <h2 id="readiness-title" className="mt-3 font-heading text-3xl font-extrabold tracking-[-.045em] sm:text-4xl">
+              Hazte estas cuatro promesas.
+            </h2>
+            <ul className="mt-6 space-y-4">
+              {READINESS.map((item) => (
+                <li key={item} className="flex items-start gap-3 border-b border-[var(--color-border)] pb-4 leading-relaxed">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#ff8069] text-[#17022b]">
+                    <Check aria-hidden="true" className="h-4 w-4" />
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
 
-      <section className="bg-[#ede5da] px-5 py-20 sm:px-8 lg:py-28">
-        <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[2.25rem] bg-[#fffdf9] shadow-[0_25px_70px_rgba(23,23,23,.1)] lg:grid-cols-2">
-          <div className="relative min-h-[390px] overflow-hidden">
-            <ResilientImage src={assetUrl('/images/shelter_hero_1785817115197.jpg')} alt="Familia compartiendo con un perro adoptado" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
-            <p className="absolute bottom-7 left-7 max-w-sm font-heading text-3xl font-extrabold leading-tight text-white sm:bottom-10 sm:left-10 sm:text-4xl">Prepararse también es una forma de amar.</p>
-          </div>
-          <div className="p-7 sm:p-10 lg:p-14">
-            <p className="text-sm font-bold uppercase tracking-[.16em] text-[#f0644a]">Antes de decir sí</p>
-            <h2 className="mt-3 font-heading text-4xl font-extrabold tracking-[-.055em]">Hazte estas cuatro promesas.</h2>
-            <ul className="mt-8 space-y-5">{READINESS.map((item) => <li key={item} className="flex items-start gap-3 border-b border-[#171717]/10 pb-5 font-semibold leading-relaxed"><span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f0644a] text-white"><Check className="h-4 w-4" /></span>{item}</li>)}</ul>
-          </div>
-        </div>
-      </section>
+      <div id="preguntas" className="scroll-mt-20">
+        <ContextualFaq category="adoption" title="Antes de dar el sí, despeja tus dudas." />
+      </div>
 
-      <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-24">
-        <div className="grid gap-5 md:grid-cols-3">
-          <article className="rounded-[1.75rem] border border-[#171717]/10 bg-white p-7"><MessageCircleHeart className="h-7 w-7 text-[#f0644a]" /><h3 className="mt-8 font-heading text-2xl font-extrabold">Conversación, no examen</h3><p className="mt-3 leading-relaxed text-[#6e6a64]">Queremos conocerte y resolver dudas con honestidad. La conversación va en ambos sentidos.</p></article>
-          <article className="rounded-[1.75rem] bg-[#f0644a] p-7 text-white"><ShieldCheck className="h-7 w-7" /><h3 className="mt-8 font-heading text-2xl font-extrabold">Bienestar primero</h3><p className="mt-3 leading-relaxed text-white/80">Las necesidades de cada animal orientan el match, incluso cuando eso significa esperar un poco más.</p></article>
-          <article className="rounded-[1.75rem] border border-[#171717]/10 bg-white p-7"><HeartHandshake className="h-7 w-7 text-[#f0644a]" /><h3 className="mt-8 font-heading text-2xl font-extrabold">No te soltamos la mano</h3><p className="mt-3 leading-relaxed text-[#6e6a64]">La llegada a casa abre una nueva etapa. Te acompañamos con orientación para una adaptación gradual.</p></article>
-        </div>
-      </section>
-
-      <RefugeDogRibbon start={3} tone="dark" eyebrow="El proceso protege historias reales" title="Cada paso está pensado para alguien que ya conocemos." description="Lobo, Manchas, Max, Minnie, Moana y Noah nos recuerdan que el hogar correcto importa más que la prisa." />
-
-      <ContextualFaq category="adoption" title="Antes de dar el sí, despeja tus dudas." />
-
-      <section className="bg-[#171717] px-5 py-20 text-white sm:px-8">
+      <section aria-labelledby="adoption-next-step-title" className="bg-[#17022b] px-5 py-16 text-white sm:px-8 lg:py-20">
         <div className="mx-auto max-w-4xl text-center">
-          <p className="text-sm font-bold uppercase tracking-[.18em] text-[#ff9b87]">¿Listo para empezar?</p>
-          <h2 className="mt-4 font-heading text-5xl font-extrabold tracking-[-.06em] sm:text-6xl">Tu próximo mejor amigo puede estar esperando.</h2>
-          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link to="/adopta" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#f0644a] px-6 py-3.5 font-bold hover:bg-[#ff8069]">Explorar adopciones <ArrowRight className="h-4 w-4" /></Link>
-            <Link to="/voluntariado" className="inline-flex items-center justify-center rounded-xl border border-white/20 px-6 py-3.5 font-bold hover:bg-white/10">Todavía no puedo adoptar</Link>
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-[#ff8069]">¿Listo para empezar?</p>
+          <h2 id="adoption-next-step-title" className="mt-4 font-heading text-4xl font-extrabold tracking-[-.055em] sm:text-5xl">
+            Tu próximo mejor amigo puede estar esperando.
+          </h2>
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link
+              to="/adopta"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#ff8069] px-6 py-3 font-bold text-[#17022b] transition hover:bg-[#ff9a86] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#17022b]"
+            >
+              Explorar adopciones <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+            <Link
+              to="/voluntariado"
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/30 px-6 py-3 font-bold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#17022b]"
+            >
+              Todavía no puedo adoptar
+            </Link>
           </div>
         </div>
       </section>
