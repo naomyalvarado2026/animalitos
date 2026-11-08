@@ -33,7 +33,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useMobile } from '@/hooks/useMobile';
-import { Outlet } from 'react-router-dom';
+import { MotionConfig } from 'motion/react';
+import { RouteTransition } from '@/components/ui/RouteTransition';
 
 interface NavItem {
   label: string;
@@ -179,6 +180,7 @@ export function AdminLayout() {
   );
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="admin-shell flex h-dvh bg-[var(--color-background)] overflow-hidden">
       {/* Desktop Sidebar */}
       {!isMobile && (
@@ -228,9 +230,10 @@ export function AdminLayout() {
 
         {/* Content */}
         <main id="admin-content" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-[1440px]"><p className="mb-5 text-xs text-[var(--color-muted-foreground)]">Panel / <span className="font-semibold text-[var(--color-foreground)]">{sectionTitle}</span></p>
-          <Outlet />
+          <RouteTransition />
         </div></main>
       </div>
     </div>
+    </MotionConfig>
   );
 }

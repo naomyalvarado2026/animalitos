@@ -35,6 +35,9 @@
 
     /* ── Tokens de diseño ── */
     --radius: 1rem;
+    --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --motion-duration-quick: 160ms;
+    --motion-duration-base: 240ms;
     --card-opacity: 0.9;
     --surface-shadow: 0 1px 4px 0 rgba(139, 90, 50, 0.08), 0 4px 16px 0 rgba(139, 90, 50, 0.06);
     --backdrop-blur: blur(12px);
@@ -93,7 +96,7 @@
 
   /* ── Transiciones suaves de tema ── */
   button, a, input, textarea, select, .transition-colors, .transition-all {
-    transition: background-color 0.25s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    transition: background-color var(--motion-duration-base) var(--motion-ease-out), border-color var(--motion-duration-quick) var(--motion-ease-out), color var(--motion-duration-quick) var(--motion-ease-out), box-shadow var(--motion-duration-base) var(--motion-ease-out), transform var(--motion-duration-base) var(--motion-ease-out);
   }
 
   /* ── Superficies Glassmorphism ── */
@@ -159,6 +162,10 @@
 
 .public-shell .skip-link:focus-visible {
   transform: translate(-50%, 0);
+}
+
+.route-page-transition {
+  animation: route-page-enter var(--motion-duration-quick) var(--motion-ease-out) both;
 }
 
 .public-shell .hover-card {
@@ -278,6 +285,14 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   backdrop-filter: blur(6px);
 }
 
+.accessible-dialog[open] {
+  animation: dialog-enter var(--motion-duration-base) var(--motion-ease-out) both;
+}
+
+.accessible-dialog[open]::backdrop {
+  animation: dialog-backdrop-enter var(--motion-duration-base) ease-out both;
+}
+
 .accessible-dialog :focus-visible {
   outline: 2px solid var(--color-ring);
   outline-offset: 3px;
@@ -290,6 +305,21 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 }
 
 @keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes route-page-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialog-enter {
+  from { opacity: 0; transform: translateY(0.4rem) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dialog-backdrop-enter {
   from { opacity: 0; }
   to { opacity: 1; }
 }

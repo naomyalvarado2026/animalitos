@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { MotionConfig } from 'motion/react';
@@ -8,6 +8,7 @@ import { PublicHeader } from './PublicHeader';
 import { PublicFooter } from './PublicFooter';
 import { EmergencyBanner } from './EmergencyBanner';
 import { PublicMobileNav } from './PublicMobileNav';
+import { RouteTransition } from '@/components/ui/RouteTransition';
 import { assetUrl } from '@/lib/assets';
 import { SiteSearchProvider } from './SiteSearch';
 import { ANALYTICS_CONSENT_EVENT, getAnalyticsConsent, setAnalyticsConsent, trackAnimalEvent } from '@/lib/analytics';
@@ -88,7 +89,7 @@ export function PublicLayout() {
         <EmergencyBanner />
         <PublicHeader />
         <main className="flex-1 pb-20 lg:pb-0" id="main-content" tabIndex={-1}>
-          <Outlet />
+          <RouteTransition />
         </main>
         <PublicFooter />
         <PublicMobileNav />

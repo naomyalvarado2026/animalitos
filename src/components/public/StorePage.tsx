@@ -1,12 +1,15 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   ArrowRight,
   Check,
+  Eye,
   Heart,
   PackageCheck,
   PawPrint,
+  Search,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
@@ -20,28 +23,18 @@ import { Label } from '@/components/ui/label';
 import { ResilientImage } from '@/components/ui/ResilientImage';
 import { supabase } from '@/lib/supabase';
 import { assetUrl } from '@/lib/assets';
+import { getColorOptions, normalizeCatalogSearch, normalizeProductImageUrls, splitVariantLabel, type MerchandiseProduct, type MerchandiseVariantOption } from '@/lib/merchandise';
+import { motionDistance, motionDuration, motionEaseOut } from '@/lib/motionTokens';
 import { ContextualFaq } from './ContextualFaq';
+import { ProductDetailDialog } from './ProductDetailDialog';
 import { RefugeDogRibbon } from './RefugeDogRibbon';
 
-type Product = {
-  slug: string;
-  name: string;
-  category: string;
-  description: string;
-  details: readonly string[];
-  image: string;
+type Product = MerchandiseProduct & {
   color: keyof typeof productBackground;
   featured: boolean;
-  isLive: boolean;
-  price?: string;
-  priceCents?: number;
-  inventory?: number;
   selectedVariantId?: string;
   selectedVariantLabel?: string;
-  variants?: Array<{ id: string; name: string; hex: string; image: string; inventory: number; priceDelta: number }>;
 };
-
-type DatabaseProduct = Product;
 
 const productBackground = {
   coral: 'bg-[#ff8069]',
@@ -50,11 +43,15 @@ const productBackground = {
 } as const;
 
 export function StorePage() {
+  const shouldReduceMotion = useReducedMotion();
   const orderKey = useRef('');
   const orderSignature = useRef('');
-  const [chosenColors, setChosenColors] = useState<Record<string, string>>({});
+  const [chosenVariants, setChosenVariants] = useState<Record<string, string>>({});
   const [added, setAdded] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [detailProduct, setDetailProduct] = useState<Product | null>(null);
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<'recent' | 'name' | 'price-low' | 'price-high'>('recent');
   const [activeCategory, setActiveCategory] = useState('Todo');
   const [quantity, setQuantity] = useState(1);
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
@@ -63,17 +60,70 @@ export function StorePage() {
     queryKey: ['public-store-products'],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('slug, name, description, price_cents, image_url, inventory, is_proposal, category, characteristics, product_variants(id, label, color_hex, image_url, is_active, inventory, price_delta_cents)').eq('is_active', true).eq('currency', 'USD').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('products').select('slug, name, description, price_cents, image_url, gallery_urls, inventory, is_proposal, category, characteristics, created_at, product_variants(id, label, size_label, color_hex, image_url, is_active, inventory, price_delta_cents)').eq('is_active', true).eq('currency', 'USD').order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((product) => ({ ...product, category: product.category || 'Catálogo', details: product.characteristics?.length ? product.characteristics : [`${product.inventory ?? 0} disponibles`, 'Compra con propósito'], variants: product.product_variants.filter(v => v.is_active).map(v => ({ id: v.id, name: v.label, hex: v.color_hex || '#e0beff', image: v.image_url ? assetUrl(v.image_url) : (product.image_url ? assetUrl(product.image_url) : ''), inventory: v.inventory, priceDelta: v.price_delta_cents })), image: product.image_url ? assetUrl(product.image_url) : '', color: 'cream' as const, featured: false, isLive: !product.is_proposal, priceCents: product.price_cents ?? 0, price: `$${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD` })) as DatabaseProduct[];
+      return (data ?? []).map((product): Product => {
+        const galleryImages = normalizeProductImageUrls([...(product.gallery_urls ?? []), product.image_url]).map(assetUrl);
+        const variants: MerchandiseVariantOption[] = product.product_variants.filter((variant) => variant.is_active).map((variant) => ({
+          id: variant.id,
+          name: variant.label,
+          sizeLabel: variant.size_label,
+          hex: variant.color_hex || '#e0beff',
+          image: variant.image_url ? assetUrl(variant.image_url) : '',
+          inventory: variant.inventory,
+          priceDelta: variant.price_delta_cents,
+        }));
+        return {
+          slug: product.slug,
+          name: product.name,
+          category: product.category || 'Catálogo',
+          description: product.description || '',
+          details: product.characteristics?.length ? product.characteristics : [],
+          galleryImages,
+          image: galleryImages[0] ?? '',
+          isLive: !product.is_proposal,
+          priceCents: product.price_cents ?? 0,
+          price: `$${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD`,
+          inventory: variants.length ? variants.reduce((total, variant) => total + variant.inventory, 0) : product.inventory ?? 0,
+          variants,
+          color: 'cream',
+          featured: false,
+        };
+      });
     },
   });
   const databaseProducts = productsQuery.data ?? [];
   const catalog: Product[] = databaseProducts;
   const categories = Array.from(new Set(['Todo', ...catalog.map((product) => product.category)]));
-  const products = activeCategory === 'Todo' ? catalog : catalog.filter((product) => product.category === activeCategory);
+  const normalizedSearch = normalizeCatalogSearch(search);
+  const matchingProducts = catalog.filter((product) => {
+    const matchesCategory = activeCategory === 'Todo' || product.category === activeCategory;
+    const searchable = normalizeCatalogSearch([product.name, product.description, product.category, ...product.details, ...product.variants.map((variant) => variant.name)].join(' '));
+    return matchesCategory && (!normalizedSearch || searchable.includes(normalizedSearch));
+  });
+  const products = [...matchingProducts].sort((a, b) => {
+    if (sort === 'name') return a.name.localeCompare(b.name, 'es');
+    if (sort === 'price-low') return a.priceCents - b.priceCents;
+    if (sort === 'price-high') return b.priceCents - a.priceCents;
+    return catalog.indexOf(a) - catalog.indexOf(b);
+  });
 
-  const addProduct = (product: Product) => { if (!product.isLive) { toast.info('Este artículo está en preparación. Escríbenos para conocer disponibilidad.'); return; } orderKey.current = crypto.randomUUID(); setQuantity(1); setSelectedProduct(product); };
+  const addProduct = (product: Product, variant: MerchandiseVariantOption | null) => {
+    if (!product.isLive) { toast.info('Este artículo está en preparación. Escríbenos para conocer disponibilidad.'); return; }
+    const priceCents = product.priceCents + (variant?.priceDelta ?? 0);
+    orderKey.current = crypto.randomUUID();
+    setQuantity(1);
+    setSelectedProduct({
+      ...product,
+      image: variant?.image || product.image,
+      inventory: variant?.inventory ?? product.inventory,
+      selectedVariantId: variant?.id,
+      selectedVariantLabel: variant?.name,
+      priceCents,
+      price: `$${(priceCents / 100).toFixed(2)} USD`,
+    });
+    setDetailProduct(null);
+  };
 
   const submitOrder = async (event: FormEvent) => {
     event.preventDefault();
@@ -174,48 +224,84 @@ export function StorePage() {
           ))}
         </div>
 
-        {!productsQuery.isPending && !productsQuery.isError && !products.length && <p role="status" className="mt-8 rounded-2xl bg-[#f1e2ff] p-6">No hay productos publicados en esta categoría. Vuelve pronto para conocer la colección.</p>}
+        <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
+          <label className="relative block">
+            <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#65566f]" />
+            <Input aria-label="Buscar en la tienda" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto, color o característica…" className="min-h-11 border-[#17022b]/15 bg-white pl-10 text-[#17022b]" />
+          </label>
+          <label className="flex items-center gap-2 text-sm font-semibold text-[#65566f]">
+            <span className="sr-only">Ordenar productos</span>
+            <select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="min-h-11 w-full rounded-xl border border-[#17022b]/15 bg-white px-3 text-sm text-[#17022b] sm:min-w-52">
+              <option value="recent">Más recientes</option>
+              <option value="name">Nombre · A a Z</option>
+              <option value="price-low">Precio · menor a mayor</option>
+              <option value="price-high">Precio · mayor a menor</option>
+            </select>
+          </label>
+        </div>
+        <p className="mt-3 text-xs text-[#65566f]">{products.length} {products.length === 1 ? 'artículo' : 'artículos'} en esta selección</p>
+
+        {!productsQuery.isPending && !productsQuery.isError && !products.length && <p role="status" className="mt-8 rounded-2xl bg-[#f1e2ff] p-6">No encontramos artículos con esos filtros. Prueba otra palabra o categoría.</p>}
         <div className="mt-10 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
-          {products.map((product) => {
-            const chosen = product.variants?.find(item => item.name === chosenColors[product.slug]) ?? product.variants?.[0];
-            const image = chosen?.image ?? product.image;
-            const stock = product.variants?.length ? chosen?.inventory ?? 0 : product.inventory ?? 0;
+          <AnimatePresence initial={false} mode="popLayout">
+          {products.map((product, index) => {
+            const chosen = product.variants.find((item) => item.id === chosenVariants[product.slug]) ?? product.variants[0] ?? null;
+            const image = chosen?.image || product.image;
+            const stock = chosen?.inventory ?? product.inventory;
             const cents = (product.priceCents ?? 0) + (chosen?.priceDelta ?? 0);
+            const colorOptions = getColorOptions(product.variants);
             return (
-            <article key={product.slug} className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#17022b]/10 bg-white shadow-[0_12px_35px_rgba(23,23,23,.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(23,23,23,.12)]">
-              <div className={`relative aspect-[4/3] overflow-hidden ${productBackground[product.color]}`}>
-                <ResilientImage src={image} srcSet={!product.isLive && image.includes('-960.webp') ? `${image.replace('-960.webp', '-480.webp')} 480w, ${image} 960w` : undefined} sizes="(min-width: 1280px) 390px, (min-width: 768px) 50vw, 100vw" alt={product.isLive ? product.name : `Render de propuesta: ${product.name}`} width={1448} height={1086} loading="lazy" decoding="async" className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]" />
+            <motion.article
+              key={product.slug}
+              layout={!shouldReduceMotion}
+              initial={{ opacity: 0, y: shouldReduceMotion ? 0 : motionDistance.subtle }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.985 }}
+              transition={{
+                layout: { duration: shouldReduceMotion ? 0 : motionDuration.standard, ease: motionEaseOut },
+                opacity: { duration: motionDuration.quick },
+                y: { duration: shouldReduceMotion ? 0 : motionDuration.standard, ease: motionEaseOut, delay: shouldReduceMotion ? 0 : Math.min(index * 0.035, 0.14) },
+              }}
+              className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#17022b]/10 bg-white shadow-[0_12px_35px_rgba(23,23,23,.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(23,23,23,.12)]"
+            >
+              <button type="button" onClick={() => setDetailProduct(product)} className={`relative block aspect-[4/3] w-full overflow-hidden text-left ${productBackground[product.color]} focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-[-4px] focus-visible:outline-[#3c096c]`} aria-label={`Ver ficha completa de ${product.name}`}>
+                {image ? <ResilientImage src={image} srcSet={!product.isLive && image.includes('-960.webp') ? `${image.replace('-960.webp', '-480.webp')} 480w, ${image} 960w` : undefined} sizes="(min-width: 1280px) 390px, (min-width: 768px) 50vw, 100vw" alt={product.isLive ? product.name : `Render de propuesta: ${product.name}`} width={1448} height={1086} loading="lazy" decoding="async" className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center text-[#3c096c]/45"><PackageCheck aria-hidden="true" className="h-12 w-12" /></div>}
+                {product.galleryImages.length > 1 && <span className="absolute bottom-4 right-4 rounded-full bg-[#17022b]/85 px-3 py-1 text-xs font-bold text-white">{product.galleryImages.length} fotos</span>}
                 
                 <div className="absolute left-4 top-4 flex gap-2">
                   <span className="rounded-full bg-[#fffdf9] px-3 py-1 text-xs font-bold text-[#17022b]">{product.category}</span>
                   {!product.isLive && <span className="rounded-full bg-[#17022b] px-3 py-1 text-xs font-bold text-white">Propuesta</span>}
                 </div>
-              </div>
+                <span className="sr-only">Abrir ficha del producto</span>
+              </button>
               <div className="flex flex-1 flex-col p-6">
                 <div className="flex items-start justify-between gap-4">
                   <h3 className="font-heading text-2xl font-extrabold tracking-[-.04em]">{product.name}</h3>
                   <Heart className="mt-1 h-5 w-5 shrink-0 text-[#ff8069]" aria-hidden="true" />
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-[#65566f]">{product.description}</p>
-                {product.variants && <fieldset className="mt-5"><legend className="text-sm font-semibold">Color: {chosen?.name}</legend><div className="mt-2 flex gap-3">{product.variants.map(option => <button key={option.name} type="button" aria-label={`${product.name}: color ${option.name}`} aria-pressed={chosen?.name === option.name} onClick={() => setChosenColors(current => ({ ...current, [product.slug]: option.name }))} className={`flex h-11 w-11 items-center justify-center rounded-full border-2 ${chosen?.name === option.name ? 'border-[#3c096c]' : 'border-transparent hover:border-[#e0beff]'}`}><span className="flex h-8 w-8 items-center justify-center rounded-full border border-black/15" style={{ background: option.hex }}>{chosen?.name === option.name && <Check className="h-4 w-4" style={{ color: option.name === 'Morado' ? 'white' : '#17022b' }} />}</span></button>)}</div></fieldset>}
+                {colorOptions.length > 0 && <fieldset className="mt-5"><legend className="text-sm font-semibold">Color: {chosen ? splitVariantLabel(chosen).colorName : 'elige una opción'}</legend><div className="mt-2 flex flex-wrap gap-2">{colorOptions.map((option) => { const active = chosen ? option.key === getColorOptions([chosen])[0]?.key : false; return <button key={option.key} type="button" title={option.name} aria-label={`${product.name}: color ${option.name}`} aria-pressed={active} onClick={() => { const selectedSize = chosen ? splitVariantLabel(chosen).sizeLabel : null; const matching = option.variants.find((item) => splitVariantLabel(item).sizeLabel === selectedSize) ?? option.variants[0]; setChosenVariants((current) => ({ ...current, [product.slug]: matching.id })); }} className={`flex h-11 w-11 items-center justify-center rounded-full border-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3c096c] ${active ? 'border-[#3c096c]' : 'border-transparent hover:border-[#e0beff]'}`}><span className="flex h-8 w-8 items-center justify-center rounded-full border border-black/15" style={{ background: option.hex }}>{active && <Check className="h-4 w-4" style={{ color: option.hex.toLowerCase() === '#3c096c' ? 'white' : '#17022b' }} />}</span></button>; })}</div></fieldset>}
+                {chosen && splitVariantLabel(chosen).sizeLabel && <p className="mt-3 text-xs font-semibold text-[#65566f]">Talla seleccionada: {splitVariantLabel(chosen).sizeLabel} · elige otra en la ficha completa</p>}
                 {!product.isLive && <p className="mt-4 text-xs font-semibold text-[#65566f]">Características propuestas</p>}
                 <ul className="mt-3 space-y-2 text-sm text-[#4d4944]">
-                  {(product.details || []).map((detail) => <li key={detail} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#ff8069]" /> {detail}</li>)}
+                  {(product.details.slice(0, 2)).map((detail) => <li key={detail} className="flex items-center gap-2"><Check className="h-4 w-4 shrink-0 text-[#ff8069]" /> {detail}</li>)}
                 </ul>
                 <div className="mt-6 border-t border-[#17022b]/10 pt-4">
                   <p className="text-xs font-bold uppercase tracking-[.12em] text-[#65566f]">{product.isLive ? 'Valor' : 'Precio de referencia'}</p>
                   <p className="mt-1 font-heading text-lg font-extrabold text-[#3c096c]">{`$${(cents / 100).toFixed(2)} USD`}</p>
                 </div>
+                <Button variant="outline" onClick={() => setDetailProduct(product)} className="mt-4 w-full border-[#3c096c]/20 text-[#3c096c] hover:bg-[#f1e2ff]"><Eye aria-hidden="true" /> Ver ficha completa</Button>
                 {product.isLive ? (
-                  <Button disabled={stock < 1} onClick={() => addProduct({ ...product, image, inventory: stock, selectedVariantId: chosen?.id, selectedVariantLabel: chosen?.name, priceCents: cents, price: `$${(cents / 100).toFixed(2)} USD` })} className="mt-5 w-full bg-[#17022b] text-white hover:bg-[#38332f]">
+                  <Button disabled={stock < 1} onClick={() => addProduct(product, chosen)} className="mt-3 w-full bg-[#17022b] text-white hover:bg-[#38332f]">
                     {stock < 1 ? 'Sin existencias' : added.includes(product.name) ? <><Check /> Pedido recibido</> : <><ShoppingBag /> Lo quiero</>}
                   </Button>
                 ) : (
                   <Button asChild className="mt-5 w-full bg-[#17022b] text-white hover:bg-[#38332f]"><Link to="/contacto"><ShoppingBag /> Me interesa este diseño</Link></Button>
                 )}
               </div>
-            </article>
+            </motion.article>
           ); })}
+          </AnimatePresence>
         </div>
       </section>
 
@@ -243,6 +329,18 @@ export function StorePage() {
         <p className="mx-auto mt-3 max-w-lg text-[#65566f]">Una donación directa también nos ayuda a cuidar, alimentar y acompañar a nuestros rescatados.</p>
         <Link to="/donaciones" className="mt-6 inline-flex items-center gap-2 font-bold text-[#ff8069] transition hover:text-[#c84130]">Haz una donación <ArrowRight className="h-4 w-4" /></Link>
       </section>
+
+      <ProductDetailDialog
+        product={detailProduct}
+        variant={detailProduct ? detailProduct.variants.find((variant) => variant.id === chosenVariants[detailProduct.slug]) ?? detailProduct.variants[0] ?? null : null}
+        onClose={() => setDetailProduct(null)}
+        onSelectVariant={(variant) => {
+          if (detailProduct) setChosenVariants((current) => ({ ...current, [detailProduct.slug]: variant.id }));
+        }}
+        onOrder={() => {
+          if (detailProduct) addProduct(detailProduct, detailProduct.variants.find((variant) => variant.id === chosenVariants[detailProduct.slug]) ?? detailProduct.variants[0] ?? null);
+        }}
+      />
 
       {selectedProduct && (
         <AccessibleDialog open={!!selectedProduct} onClose={() => { if (!submitting) setSelectedProduct(null); }} title="Solicitar producto">
