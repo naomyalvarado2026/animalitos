@@ -21,10 +21,10 @@ export function PackMosaic() {
         <div aria-label="Galería de los doce perros del refugio" className="-mx-5 mt-12 flex snap-x gap-3 overflow-x-auto px-5 pb-3 scrollbar-none sm:-mx-8 sm:px-8 lg:mx-0 lg:grid lg:auto-rows-[155px] lg:grid-cols-6 lg:px-0 lg:pb-0">
           {profiles.map(({ dog, editorial: story }, index) => (
               <motion.article key={dog.adoption_slug} initial={{ opacity: 0, scale: .96 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, amount: .25 }} transition={{ delay: Math.min(index * .04, .25) }} className={`group relative min-w-[15rem] snap-center overflow-hidden rounded-[1.4rem] border border-white/10 bg-white/5 lg:min-w-0 ${index === 0 || index === 7 ? 'lg:col-span-2 lg:row-span-2' : 'lg:col-span-1 lg:row-span-1'}`}>
-              <Link to={`/adopta/${dog.adoption_slug}`} className="block h-full">
+              <Link to={`/adopta/${dog.adoption_slug}`} className="pack-mosaic-link block h-full">
                 <ResilientImage src={assetUrl(story?.cover_image_url || dog.main_image_url)} alt={`${dog.name}, integrante de la manada AdoptaME`} loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" style={{ objectPosition: `${story?.focal_x ?? 50}% ${story?.focal_y ?? 50}%` }} />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/5 to-transparent" />
-                <div className="absolute inset-x-4 bottom-4"><p className="font-heading text-xl font-extrabold">{dog.name}</p><p className="mt-1 line-clamp-2 translate-y-2 text-[11px] leading-relaxed text-white/0 transition duration-300 group-hover:translate-y-0 group-hover:text-white/75">{story?.voice_line}</p></div>
+                <div className="absolute inset-x-4 bottom-4"><p className="font-heading text-xl font-extrabold">{dog.name}</p><p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-white/80">{story?.voice_line}</p></div>
               </Link>
             </motion.article>
           ))}

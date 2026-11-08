@@ -137,6 +137,11 @@
   outline-offset: 3px;
 }
 
+.public-shell .pack-mosaic-link:focus-visible {
+  outline: 3px solid #ff8069;
+  outline-offset: -5px;
+}
+
 .public-shell .skip-link {
   position: fixed;
   z-index: 100;

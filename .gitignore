@@ -35,6 +35,7 @@ dist-ssr
 supabase/.temp/
 .temp/
 .playwright-cli/
-output/playwright/
+.playwright-mcp/
+output/
 
 .vercel

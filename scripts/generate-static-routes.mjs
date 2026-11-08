@@ -22,7 +22,7 @@ const staticRoutes = [
   { path: '/nosotros', title: 'Quiénes somos | AdoptaME', description: 'Conoce al equipo y la misión de AdoptaME.' },
   { path: '/nosotros/historia', title: 'Nuestra historia | AdoptaME', description: 'La historia del refugio y el trabajo por una vida mejor para cada perro.' },
   { path: '/historias-de-exito', title: 'Historias de adopción | AdoptaME', description: 'Historias de perros rescatados que encontraron una familia.' },
-  { path: '/voluntariado', title: 'Súmate como voluntario | AdoptaME', description: 'Comparte tu tiempo y ayuda a transformar la vida de un perro.' },
+  { path: '/voluntariado', title: 'Voluntariado | AdoptaME — Tu tiempo, su segunda oportunidad', description: 'Súmate como voluntario en AdoptaME. Paseos, salud, fotografía, eventos y hogares temporales para los 12 perritos rescatados.' },
   { path: '/faq', title: 'Preguntas frecuentes | AdoptaME', description: 'Respuestas sobre adopción, cuidado y apoyo a AdoptaME.' },
   { path: '/transparencia', title: 'Transparencia | AdoptaME', description: 'Consulta la información pública sobre el trabajo y los recursos de AdoptaME.' },
   { path: '/transparencia/ingresos', title: 'Ingresos | Transparencia AdoptaME', description: 'Consulta los ingresos registrados para apoyar el trabajo de AdoptaME.' },
