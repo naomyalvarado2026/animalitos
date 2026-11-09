@@ -71,6 +71,8 @@ const DonationImpactManagement = lazy(() => import('@/components/admin/DonationI
 const DogStoryStudio = lazy(() => import('@/components/admin/DogStoryStudio').then(m => ({ default: m.DogStoryStudio })));
 const FosterManagement = lazy(() => import('@/components/admin/FosterManagement').then(m => ({ default: m.FosterManagement })));
 const CommunitySupportManagement = lazy(() => import('@/components/admin/CommunitySupportManagement').then(m => ({ default: m.CommunitySupportManagement })));
+const DailyWellbeingManagement = lazy(() => import('@/components/admin/DailyWellbeingManagement').then(m => ({ default: m.DailyWellbeingManagement })));
+const AdoptionFollowupManagement = lazy(() => import('@/components/admin/AdoptionFollowupManagement').then(m => ({ default: m.AdoptionFollowupManagement })));
 const CampaignFinanceManagement = lazy(() => import('@/components/admin/CampaignFinanceManagement').then(m => ({ default: m.CampaignFinanceManagement })));
 
 const queryClient = new QueryClient({
@@ -152,6 +154,8 @@ export default function App() {
                         <Route path="/admin/actividades" element={<ActivityManagement />} />
                         <Route path="/admin/acogidas" element={<FosterManagement />} />
                         <Route path="/admin/apoyo-comunitario" element={<CommunitySupportManagement />} />
+                        <Route path="/admin/bienestar" element={<DailyWellbeingManagement />} />
+                        <Route path="/admin/seguimiento-adopciones" element={<AdoptionFollowupManagement />} />
                         <Route path="/admin/finanzas" element={<FinanceManagement />} />
                         <Route path="/admin/donadores" element={<DonorManagement />} />
                         <Route path="/admin/contenido" element={<ContentManagement />} />

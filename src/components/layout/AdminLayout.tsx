@@ -25,6 +25,8 @@ import {
   Home,
   LifeBuoy,
   FileCheck2,
+  ClipboardCheck,
+  HeartHandshake,
   Images,
   X,
 } from 'lucide-react';
@@ -56,6 +58,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Actividades', href: '/admin/actividades', icon: Calendar, minLevel: 4 },
   { label: 'Hogares temporales', href: '/admin/acogidas', icon: Home, minLevel: 4 },
   { label: 'Apoyo comunitario', href: '/admin/apoyo-comunitario', icon: LifeBuoy, minLevel: 4 },
+  { label: 'Bienestar y seguimientos', href: '/admin/bienestar', icon: ClipboardCheck, minLevel: 4 },
+  { label: 'Seguimiento posadopción', href: '/admin/seguimiento-adopciones', icon: HeartHandshake, minLevel: 4 },
   { label: 'Finanzas', href: '/admin/finanzas', icon: DollarSign, minLevel: 4 },
   { label: 'Donadores', href: '/admin/donadores', icon: Users, minLevel: 4 },
   { label: 'Contenido & Redes', href: '/admin/contenido', icon: FileText, minLevel: 4 },
@@ -101,7 +105,7 @@ export function AdminLayout() {
   const sectionTitle = NAV_ITEMS.find(item => item.href === location.pathname)?.label ?? 'Administración';
   const groups = [
     { title: 'Resumen', paths: ['/admin', '/admin/reportes'] },
-    { title: 'Rescate y comunidad', paths: ['/admin/animales', '/admin/adopciones-comunidad', '/admin/solicitudes-comunidad', '/admin/solicitudes', '/admin/actividades', '/admin/acogidas', '/admin/apoyo-comunitario', '/admin/equipo', '/admin/memoria'] },
+    { title: 'Rescate y comunidad', paths: ['/admin/animales', '/admin/adopciones-comunidad', '/admin/solicitudes-comunidad', '/admin/solicitudes', '/admin/actividades', '/admin/acogidas', '/admin/apoyo-comunitario', '/admin/bienestar', '/admin/seguimiento-adopciones', '/admin/equipo', '/admin/memoria'] },
     { title: 'Tienda y aportes', paths: ['/admin/productos', '/admin/pedidos', '/admin/finanzas', '/admin/rendicion-campanas', '/admin/donadores', '/admin/impacto-donaciones'] },
     { title: 'Comunicación', paths: ['/admin/historias-perros', '/admin/historias', '/admin/contenido', '/admin/editorial', '/admin/estructura', '/admin/campanas'] },
     { title: 'Administración', paths: ['/admin/usuarios', '/admin/configuracion'] },

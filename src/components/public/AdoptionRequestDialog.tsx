@@ -30,6 +30,7 @@ const adoptionSchema = z.object({
   preferred_contact_window: z.enum(['morning', 'afternoon', 'evening', 'flexible']).optional(),
   reason: z.string().trim().max(1500).optional(),
   consent: z.boolean().refine(Boolean, 'Confirma que podemos contactarte para dar seguimiento'),
+  post_adoption_follow_up_consent: z.boolean().optional(),
 });
 
 export type AdoptionRequestFormData = z.infer<typeof adoptionSchema>;
@@ -126,6 +127,7 @@ export function AdoptionRequestDialog({
     resolver: zodResolver(adoptionSchema),
     defaultValues: {
       consent: false,
+      post_adoption_follow_up_consent: false,
     },
   });
 
@@ -201,6 +203,7 @@ export function AdoptionRequestDialog({
           other_pets_desc: data.has_other_pets ? data.other_pets_desc?.trim() || null : null,
           reason: data.reason?.trim() ? `[Ref: ${reference}] ${data.reason.trim()}` : null,
           consent_at: nowIso,
+          post_adoption_follow_up_consent: data.post_adoption_follow_up_consent ?? false,
         };
         if (optionalDetailsEnabled) Object.assign(application, { preferred_contact_window: data.preferred_contact_window ?? null });
         const { error } = await supabase.from('adoption_applications').insert([
@@ -218,6 +221,8 @@ export function AdoptionRequestDialog({
             message: formatAdoptionContactMessage(animal, data, reference),
             consent_at: nowIso,
             source: 'adoption_modal',
+            animal_slug: slug,
+            post_adoption_follow_up_consent: data.post_adoption_follow_up_consent ?? false,
           },
         ]);
         if (error) throw error;
@@ -392,6 +397,10 @@ export function AdoptionRequestDialog({
               </label>
               {errors.consent && <p className="text-xs text-[var(--color-destructive)]">{errors.consent.message}</p>}
             </div>
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[var(--color-border)] p-3 text-xs leading-relaxed text-[var(--color-muted-foreground)]">
+              <input type="checkbox" {...register('post_adoption_follow_up_consent')} className="mt-0.5 h-4 w-4 rounded accent-[var(--color-primary)]" />
+              <span><strong className="text-[var(--color-foreground)]">Opcional:</strong> acepto recibir un breve seguimiento si la adopción se concreta, para conversar sobre adaptación o dudas. Puede ser a los 2, 10 y 45 días, con un contacto opcional a los 90 días. Esta autorización no influye en la evaluación.</span>
+            </label>
             </>}
 
             {step === 2 && <>
