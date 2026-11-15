@@ -1,0 +1,94 @@
+{
+  "camiseta-adoptame": {
+    "description": "Una camiseta para salir, pasear y hacer visible tu cariño por los animales. La huella de AdoptaME y sus versiones ilustradas llevan el mensaje de adopción a tu ropa de todos los días.",
+    "characteristics": [
+      "Propuestas gráficas con la marca, retratos caninos y huellas.",
+      "Una prenda para combinar con jeans y acompañar tus paseos.",
+      "Colores de referencia: morado, coral y crema.",
+      "Corte unisex y algodón propuestos; tallas S a XL y medidas por confirmar.",
+      "Las escenas con personas son imágenes ilustrativas generadas con IA."
+    ]
+  },
+  "panuelo-me-eligieron": {
+    "description": "Para ese compañero que convierte cualquier vuelta en un gran paseo. Un pañuelo con huellas y colores AdoptaME, pensado para compartir salidas, fotos y pequeños momentos juntos.",
+    "characteristics": [
+      "Estampados de huellas y motivos de la colección AdoptaME.",
+      "Colores de referencia: morado, coral y lavanda.",
+      "Formato triangular con nudo; tejido de algodón y medidas S y M propuestos.",
+      "El ajuste se define según el contorno del cuello; medidas por confirmar.",
+      "Usar con supervisión; no sustituye al collar ni al arnés."
+    ]
+  },
+  "tote-bag-adoptame": {
+    "description": "Dos hocicos que se encuentran y una historia que empieza. Este bolso tote lleva la ilustración de un perro y un cachorro a tus compras, paseos y planes de cada día.",
+    "characteristics": [
+      "Propuesta ilustrada de dos perros que se saludan, con corazón y huella.",
+      "Asas dobles y un formato pensado para llevar al hombro.",
+      "Colores de referencia del catálogo: morado, crema y coral.",
+      "Lona de algodón y formato de 38 × 42 cm propuestos; acabados por confirmar.",
+      "Las escenas con personas son imágenes ilustrativas generadas con IA."
+    ]
+  },
+  "taza-adoptame": {
+    "description": "Hay huellas que también acompañan tu café. Una taza para tus pausas en casa o en el trabajo, con diseños de patitas, corazones y un perrito que invitan a hablar de adopción.",
+    "characteristics": [
+      "Dos ideas en la galería: camino de huellas y retrato canino lineal.",
+      "Asas de color y detalles en morado y coral en las propuestas ilustradas.",
+      "Cerámica y capacidad de 330 ml propuestas; medidas y acabado por confirmar.",
+      "Cuidados y compatibilidad con microondas o lavavajillas por confirmar.",
+      "La escena de uso con una persona es una imagen ilustrativa generada con IA."
+    ]
+  },
+  "gorra-adoptame": {
+    "description": "Una huella pequeña para un cariño enorme. La gorra AdoptaME combina el morado y el coral de la marca en una propuesta para paseos, salidas y días al aire libre.",
+    "characteristics": [
+      "Huella al frente y colores de la identidad AdoptaME.",
+      "Visera curva y silueta clásica en los diseños de referencia.",
+      "Colores de referencia: morado y coral.",
+      "Sarga de algodón, talla de adulto y ajuste posterior propuestos.",
+      "Bordado, composición y medidas por confirmar antes de producir."
+    ]
+  },
+  "buzo-manada": {
+    "description": "Un abrazo de tu manada, incluso cuando sales de casa. Descubre los retratos caninos y los corazones de la colección en una propuesta para acompañar tus días frescos.",
+    "category": "Ropa solidaria",
+    "characteristics": [
+      "Retratos de perros combinados con corazones y huellas.",
+      "La galería explora versiones de cuello redondo y una alternativa con capucha.",
+      "Tallas de referencia: S, M y L; tabla de medidas por confirmar.",
+      "Algodón e interior afelpado propuestos; composición y modelo final por definir.",
+      "Colores y técnica del estampado se confirman según el diseño elegido."
+    ]
+  },
+  "adorno-navidad": {
+    "description": "Hazle un lugar a las huellas en tu árbol. Una esfera en los colores de AdoptaME para recordar a los animales que ya forman parte de tu familia y a los que esperan encontrarla.",
+    "characteristics": [
+      "Esfera morada con la marca AdoptaME y una huella coral.",
+      "Cinta coral para colgar y acabado brillante en la propuesta visual.",
+      "Diámetro de referencia: 8 cm; material y medidas por confirmar.",
+      "Una idea de regalo para quienes celebran la Navidad con su manada.",
+      "Artículo decorativo; mantener fuera del alcance de mascotas y niños pequeños."
+    ]
+  },
+  "manta-abrazos": {
+    "description": "Para esos ratos en los que estar juntos es todo el plan. La línea textil Abrazos reúne huellas, tonos morados y escenas de compañía; su galería explora una manta y una alternativa de toalla.",
+    "characteristics": [
+      "Diseños con huellas, perros y corazones en la paleta AdoptaME.",
+      "Dos aplicaciones en la galería: manta y toalla, con acabados diferentes.",
+      "Manta de referencia: 100 × 70 cm; tejido y medidas por confirmar.",
+      "Consulta el formato que te interesa para definir material, acabado y cuidados."
+    ]
+  },
+  "termo-huellas": {
+    "name": "Tomatodo Huellas AdoptaME",
+    "category": "Uso diario",
+    "description": "Un camino de huellas que termina en un corazón. Este tomatodo está pensado para acompañarte en paseos y salidas, con propuestas en coral y negro y el mensaje de adopción siempre a la vista.",
+    "characteristics": [
+      "Recorrido de patitas y corazón con huella como detalle principal.",
+      "La galería explora una versión coral y otra negra con estampado blanco y coral.",
+      "Acero inoxidable y capacidad de 500 ml propuestos; medidas por confirmar.",
+      "Tapa, cierre y desempeño térmico por validar según el modelo final.",
+      "La escena con una persona es una imagen ilustrativa generada con IA."
+    ]
+  }
+}
