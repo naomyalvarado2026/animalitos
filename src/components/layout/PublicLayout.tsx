@@ -8,6 +8,7 @@ import { PublicHeader } from './PublicHeader';
 import { PublicFooter } from './PublicFooter';
 import { EmergencyBanner } from './EmergencyBanner';
 import { PublicMobileNav } from './PublicMobileNav';
+import { ScrollEnhancements } from './ScrollEnhancements';
 import { RouteTransition } from '@/components/ui/RouteTransition';
 import { assetUrl } from '@/lib/assets';
 import { SiteSearchProvider } from './SiteSearch';
@@ -94,6 +95,7 @@ export function PublicLayout() {
           <meta property="og:image" content={`${window.location.origin}${assetUrl('/images/dog_max.jpg')}`} />
         </Helmet>
         <a className="skip-link" href="#main-content" onClick={(event) => { event.preventDefault(); const main = document.getElementById('main-content'); main?.focus(); main?.scrollIntoView(); }}>Saltar al contenido principal</a>
+        <ScrollEnhancements />
         <EmergencyBanner />
         <PublicHeader />
         <main className="flex-1 pb-20 lg:pb-0" id="main-content" tabIndex={-1}>

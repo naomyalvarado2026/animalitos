@@ -1,6 +1,6 @@
 import { CampaignsSection } from './CampaignsPage';
 import { Link } from 'react-router-dom';
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'motion/react';
 import { ArrowRight, CalendarDays, Check, HandHeart, Heart, PawPrint, ShieldCheck, Sparkles, Stethoscope, Users, Home as HomeIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -39,6 +39,20 @@ const trustHighlights = [
   { title: 'Ayuda', label: 'transparente', icon: Heart },
 ];
 
+const quickDiscoveryPaths = [
+  { label: 'Toda la manada', href: '/adopta#perritos' },
+  { label: 'Adultos', href: '/adopta?edad=adult#perritos' },
+  { label: 'Seniors', href: '/adopta?edad=senior#perritos' },
+  { label: 'Cuidados especiales', href: '/adopta?modo=medical#perritos' },
+  { label: 'Test de afinidad', href: '/adopta#matchmaker', accent: true },
+];
+
+const merchHighlights = [
+  { slug: 'camiseta', label: 'Camiseta' },
+  { slug: 'panuelo', label: 'Pañuelo' },
+  { slug: 'bolso', label: 'Bolso tote' },
+];
+
 function StorySpotlight({ story }: { story: SuccessStory | null | undefined }) {
   if (!story) {
     return <div className="flex min-h-[26rem] flex-col justify-center rounded-[2rem] border border-[var(--color-border)] bg-[var(--color-card)] p-7 text-[var(--color-foreground)] sm:p-10"><Sparkles className="h-8 w-8 text-[var(--color-primary)]" /><h2 className="mt-4 font-heading text-3xl font-extrabold">Las historias felices empiezan con una oportunidad.</h2><p className="mt-4 leading-relaxed text-[var(--color-muted-foreground)]">Conoce el proceso y descubre cómo acompañamos cada adopción de principio a fin.</p><Link to="/como-funciona" className="mt-6 inline-flex items-center gap-2 font-bold text-[var(--color-primary)]">Conocer el proceso <ArrowRight className="h-4 w-4" /></Link></div>;
@@ -55,6 +69,7 @@ function StorySpotlight({ story }: { story: SuccessStory | null | undefined }) {
 }
 
 function HeroVisual({ image, alt, dogName, dogHref }: { image: string; alt: string; dogName?: string; dogHref: string }) {
+  const shouldReduceMotion = useReducedMotion();
   const pointerX = useMotionValue(0.5);
   const pointerY = useMotionValue(0.5);
   const smoothX = useSpring(pointerX, { stiffness: 180, damping: 24, mass: 0.5 });
@@ -62,12 +77,13 @@ function HeroVisual({ image, alt, dogName, dogHref }: { image: string; alt: stri
   const rotateY = useTransform(smoothX, [0, 1], [6, -6]);
   const rotateX = useTransform(smoothY, [0, 1], [-5, 5]);
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (shouldReduceMotion) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     pointerX.set((event.clientX - bounds.left) / bounds.width);
     pointerY.set((event.clientY - bounds.top) / bounds.height);
   };
   const resetPointer = () => { pointerX.set(0.5); pointerY.set(0.5); };
-  return <motion.div className="hero-3d-scene relative lg:translate-x-8" onPointerMove={handlePointerMove} onPointerLeave={resetPointer} style={{ rotateX, rotateY, transformPerspective: 1200 }}>
+  return <motion.div className="hero-3d-scene relative lg:translate-x-8" onPointerMove={handlePointerMove} onPointerLeave={resetPointer} style={shouldReduceMotion ? undefined : { rotateX, rotateY, transformPerspective: 1200 }}>
     <div className="hero-3d-card relative rotate-[1deg] overflow-hidden rounded-[1.75rem] border-[6px] border-[#ffffff]/12 shadow-2xl sm:rotate-[1.5deg] sm:rounded-[2rem] sm:border-[10px]"><ResilientImage src={image} alt={alt} className="aspect-[16/11] w-full object-cover sm:aspect-[4/5]" /><div className="absolute bottom-3 left-3 right-3 flex items-center justify-between rounded-2xl bg-[#ffffff]/95 p-3.5 text-[#17022b] backdrop-blur-xs sm:bottom-4 sm:left-4 sm:right-4 sm:p-4"><div><p className="text-xs text-[#65566f]">Conoce a</p><p className="font-heading text-lg font-bold sm:text-xl">{dogName ?? 'un perrito'}</p></div><Link to={dogHref} className="text-sm font-bold text-[#3c096c]">Ver ficha <span className="text-xl">→</span></Link></div></div>
     <div className="pointer-events-none absolute -right-3 top-6 hidden rounded-2xl border border-white/20 bg-[#17022b]/85 px-4 py-3 text-white shadow-xl backdrop-blur-md sm:block lg:-right-5 lg:top-12" style={{ transform: 'translateZ(42px)' }}><PawPrint className="h-5 w-5 text-[#e0beff]" /><span className="mt-1 block text-xs font-semibold">Una oportunidad<br />lo cambia todo</span></div>
     <div className="pointer-events-none absolute -bottom-4 -left-3 hidden rotate-[-6deg] rounded-2xl bg-[#e0beff] px-4 py-3 font-heading text-sm font-bold text-[#17022b] shadow-lg sm:block lg:-bottom-5 lg:-left-5" style={{ transform: 'translateZ(36px) rotate(-6deg)' }}>Tu mejor amigo<br />te está esperando</div>
@@ -99,6 +115,27 @@ export function HomePage() {
     <section className="relative isolate overflow-hidden bg-[#17022b] pt-20 pb-10 text-[#ffffff] sm:pt-24 sm:pb-16 lg:pt-28 lg:pb-24"><div aria-hidden="true" className="pointer-events-none absolute right-[-8%] top-[54%] hidden h-[80%] w-[55%] -translate-y-1/2 rounded-full bg-[#ff8069]/45 blur-3xl lg:block" /><div className="relative z-10 mx-auto grid max-w-7xl items-center gap-7 px-5 sm:gap-10 sm:px-8 lg:grid-cols-[1.02fr_.98fr] lg:gap-12 lg:px-10"><motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .55 }}><div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#ff8069]/30 px-3 py-1 text-xs font-semibold uppercase tracking-[.16em] text-[#ff8069] sm:mb-7 sm:py-1.5"><PawPrint className="h-4 w-4" /> Rescate · cuidado · adopción</div><h1 className="max-w-2xl font-heading text-4xl font-extrabold leading-[.98] tracking-[-.05em] sm:text-6xl lg:text-[5.3rem]">{heroTitle}</h1><p className="mt-4 max-w-xl text-base leading-relaxed text-white/75 sm:mt-7 sm:text-lg">{heroSubtitle}</p><div className="mt-6 flex flex-col gap-3 sm:mt-9 sm:flex-row"><Button size="xl" className="bg-[#ff8069] text-[#17022b] hover:bg-[#ff8069]/90" asChild><Link to="/adopta">Quiero adoptar <ArrowRight /></Link></Button><Button size="xl" variant="ghost" className="border border-white/20 text-white hover:bg-white/10" asChild><Link to="/donaciones">Ayudar ahora</Link></Button></div><div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-white/65 sm:mt-8"><span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-[#e0beff]" /> Proceso responsable</span><span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4 text-[#e0beff]" /> Acompañamiento real</span></div></motion.div><motion.div initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .65, delay: .1 }}><HeroVisual image={heroDog ? animalImage(heroDog) : settings?.home_hero_image?.trim() ? assetUrl(settings.home_hero_image) : animalImage(undefined)} alt={heroDog ? `${heroDog.name}, perrito rescatado de AdoptaME` : 'Perrito rescatado de AdoptaME'} dogName={heroDog?.name} dogHref={heroDog ? `/adopta/${animalSlug(heroDog)}` : '/adopta'} /></motion.div></div></section>
     <section aria-label="Impacto de AdoptaME" className="bg-[#3c096c] py-6 text-white sm:py-7"><div className="mx-auto grid max-w-7xl grid-cols-2 gap-5 px-5 sm:grid-cols-4 sm:px-8 lg:px-10">{impactQuery.isError || (!impactQuery.isLoading && !hasRealCounterData) ? fallbackHighlights.map(({ title, label, icon: Icon }) => <div key={title} className="flex items-center justify-center gap-2.5 text-center sm:block"><Icon className="h-5 w-5 shrink-0 text-[#e0beff] sm:mx-auto sm:mb-1" /><div><span className="block font-heading text-lg font-extrabold leading-tight">{title}</span><span className="text-xs text-white/80 sm:text-sm">{label}</span></div></div>) : rawMetrics.map((item) => <div key={item.label} className="text-center">{impactQuery.isLoading ? <span className="mx-auto mb-1 block h-9 w-16 animate-pulse rounded-lg bg-white/20" /> : item.value != null ? <AnimatedCounter value={String(item.value)} className="block font-heading text-3xl font-extrabold" /> : <span className="block font-heading text-3xl font-extrabold">—</span>}<span className="text-xs text-white/80 sm:text-sm">{item.label}</span></div>)}</div></section>
     <PackMosaic />
+    <section aria-label="Explorar por afinidad" className="border-y border-white/10 bg-[#250743] py-5 text-white">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-5 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-10">
+        <p className="text-xs font-bold uppercase tracking-[.16em] text-[#e0beff]">Explora según tu ritmo</p>
+        <div className="flex flex-wrap gap-2">
+          {quickDiscoveryPaths.map((item) => (
+            <Link
+              key={item.label}
+              to={item.href}
+              className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition ${
+                item.accent
+                  ? 'bg-[#ff8069] text-[#17022b] hover:bg-[#ff9885]'
+                  : 'border border-white/20 bg-white/[0.06] text-white/90 hover:border-[#ff8069] hover:bg-white/[0.12]'
+              }`}
+            >
+              {item.accent && <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />}
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
     <section className="relative bg-[var(--color-card)] py-16 text-[var(--color-foreground)] lg:py-24"><div className="pointer-events-none absolute -left-40 top-16 h-52 w-52 rounded-full border-[44px] border-[#ff8069]/10" /><div className="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><div className="grid gap-10 lg:grid-cols-[.75fr_1.25fr] lg:items-end"><div><p className="text-sm font-bold uppercase tracking-[.15em] text-[var(--color-primary)]">De la calle a casa</p><h2 className="mt-3 max-w-lg font-heading text-4xl font-extrabold tracking-[-.05em] sm:text-5xl">No solo rescatamos. Reconstruimos historias.</h2><p className="mt-5 max-w-md leading-relaxed text-[var(--color-muted-foreground)]">Cada adopción visible empezó mucho antes: con una llamada, una consulta veterinaria y alguien que decidió no mirar hacia otro lado.</p><Link to="/como-funciona" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)]">Conocer el proceso paso a paso <ArrowRight className="h-4 w-4" /></Link></div><div className="grid gap-3 md:grid-cols-3">{rescueJourney.map(({ number, title, text, icon: Icon }, index) => <motion.article key={number} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .35 }} transition={{ delay: index * .1 }} className="relative overflow-hidden rounded-[1.5rem] border border-[var(--color-border)] bg-[var(--color-background)] p-5"><span className="absolute right-3 top-0 font-heading text-7xl font-extrabold leading-none text-[var(--color-foreground)]/[.045]">{number}</span><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#17022b] text-[#e0beff]"><Icon className="h-5 w-5" /></div><h3 className="mt-8 font-heading text-2xl font-extrabold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-[var(--color-muted-foreground)]">{text}</p></motion.article>)}</div></div></div></section>
     <section className="bg-[var(--color-secondary)] py-16 text-[var(--color-foreground)] lg:py-20"><div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10"><div className="mb-10 max-w-2xl"><p className="text-sm font-bold uppercase tracking-[.15em] text-[var(--color-primary)]">Hay muchas formas de cambiar una vida</p><h2 className="mt-3 font-heading text-4xl font-extrabold tracking-[-.05em] sm:text-5xl">Elige cómo quieres ser parte.</h2></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">{helpWays.map(({ title, text, href, icon: Icon, color }) => <Link key={title} to={href} className={`group min-h-52 rounded-[1.5rem] p-5 transition hover:-translate-y-1 hover:shadow-xl ${color}`}><Icon className="h-7 w-7" /><div className="mt-10"><h3 className="font-heading text-2xl font-extrabold">{title}</h3><p className="mt-2 text-sm leading-relaxed opacity-85">{text}</p><span className="mt-4 inline-flex items-center gap-2 text-sm font-bold">Conocer más <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span></div></Link>)}</div></div></section>
     <section className="mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:px-8 lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:py-24">
@@ -109,7 +146,7 @@ export function HomePage() {
       <StorySpotlight story={story} />
     </section>
     <CampaignsSection compact />
-    <section className="bg-[#3c096c] py-16 text-white"><div className="mx-auto grid max-w-7xl gap-9 px-5 sm:px-8 lg:grid-cols-2 lg:items-center lg:px-10"><div><p className="text-sm font-bold uppercase tracking-[.15em] text-[#e0beff]">Colección en preparación</p><h2 className="mt-3 font-heading text-4xl font-bold tracking-tight">La causa también se lleva puesta.</h2><p className="mt-5 max-w-lg leading-relaxed text-white/80">Camisetas, pañuelos y bolsos con identidad AdoptaME. Explora las propuestas y cuéntanos cuál te gustaría ver en la colección.</p><Button asChild className="mt-7 bg-[#ff8069] text-[#17022b] hover:bg-[#e0beff]"><Link to="/tienda">Explorar la colección <ArrowRight /></Link></Button></div><div className="grid grid-cols-3 gap-3" aria-label="Propuestas de merchandising">{['camiseta', 'panuelo', 'bolso'].map((piece, index) => <Link to="/tienda" key={piece} aria-label={`Ver propuesta de ${['camiseta', 'pañuelo', 'bolso'][index]}`} className="overflow-hidden rounded-2xl transition-transform hover:-translate-y-2"><img src={assetUrl(`/brand/merch/${piece}-render-480.webp`)} alt={`Propuesta de ${['camiseta', 'pañuelo', 'bolso'][index]} AdoptaME`} width="480" height="360" loading="lazy" decoding="async" className="aspect-[4/3] w-full object-contain" /></Link>)}</div></div></section>
+    <section className="bg-[#3c096c] py-16 text-white"><div className="mx-auto grid max-w-7xl gap-9 px-5 sm:px-8 lg:grid-cols-2 lg:items-center lg:px-10"><div><p className="text-sm font-bold uppercase tracking-[.15em] text-[#e0beff]">Colección en preparación</p><h2 className="mt-3 font-heading text-4xl font-bold tracking-tight">La causa también se lleva puesta.</h2><p className="mt-5 max-w-lg leading-relaxed text-white/80">Camisetas dedicadas a cada perrito, pañuelos y bolsos con identidad AdoptaME. Conoce sus historias, explora las propuestas y encuentra tu diseño favorito.</p><Button asChild className="mt-7 bg-[#ff8069] text-[#17022b] hover:bg-[#e0beff]"><Link to="/tienda">Explorar la colección <ArrowRight /></Link></Button></div><div className="grid grid-cols-3 gap-3" aria-label="Propuestas de merchandising">{merchHighlights.map(({ slug, label }) => <Link to="/tienda" key={slug} aria-label={`Ver propuesta de ${label.toLowerCase()}`} className="group overflow-hidden rounded-2xl border border-white/15 bg-white/[0.07] p-2.5 text-center backdrop-blur-xs transition duration-300 hover:-translate-y-1.5 hover:border-[#ff8069]/60 hover:bg-white/[0.12]"><img src={assetUrl(`/brand/merch/${slug}-render-480.webp`)} alt={`Propuesta de ${label.toLowerCase()} AdoptaME`} width="480" height="360" loading="lazy" decoding="async" className="aspect-[4/3] w-full object-contain transition duration-300 group-hover:scale-[1.03]" /><span className="mt-2 block text-xs font-bold text-white/90">{label}</span></Link>)}</div></div></section>
     <section className="border-y border-[var(--color-border)] bg-[var(--color-background)] py-8 text-[var(--color-foreground)]"><div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">{activity ? <div className="flex items-start gap-4"><div className="rounded-2xl bg-[#e0beff] p-3 text-[#17022b]"><CalendarDays className="h-6 w-6" /></div><div><p className="text-xs font-bold uppercase tracking-[.15em] text-[var(--color-primary)]">Próxima actividad</p><h2 className="mt-1 font-heading text-xl font-bold">{activity.title}</h2><p className="mt-1 text-sm text-[var(--color-muted-foreground)]">{formatDateShort(activity.activity_date)} · {activity.start_time} · {activity.location}</p></div></div> : <div className="flex items-center gap-3"><Stethoscope className="h-6 w-6 text-[var(--color-primary)]" /><p className="font-heading text-lg font-bold">Adoptar es un compromiso para toda la vida.</p></div>}<Link to="/voluntariado" className="inline-flex items-center gap-2 font-bold text-[var(--color-primary)]">Ver actividades <ArrowRight className="h-4 w-4" /></Link></div></section>
     <section className="mx-auto max-w-5xl px-5 py-16 text-center sm:px-8 lg:py-20"><ShieldCheck className="mx-auto h-9 w-9 text-[var(--color-primary)]" /><h2 className="mt-4 font-heading text-3xl font-extrabold sm:text-4xl">Una adopción responsable cambia dos vidas.</h2><p className="mx-auto mt-4 max-w-2xl leading-relaxed text-[var(--color-muted-foreground)]">Te acompañamos antes, durante y después para que la llegada de tu nuevo mejor amigo sea una historia feliz para ambos.</p><div className="mt-7 flex flex-wrap justify-center gap-3"><Button variant="warm" asChild><Link to="/como-funciona">Conoce el proceso <ArrowRight /></Link></Button><Button variant="outline" asChild><Link to="/faq">Resolver mis dudas</Link></Button></div></section>
   </div>;

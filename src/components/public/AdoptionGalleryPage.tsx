@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Baby, Check, CheckCircle2, Heart, House, MapPin, PawPrint, RotateCcw, Ruler, Search, Share2, ShieldCheck, Sparkles, Stethoscope, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -59,11 +59,27 @@ export function slugify(value?: string | null): string {
 export function AdoptionGalleryPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { hash } = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const dismissedSlugRef = useRef<string | null>(null);
-  const [galleryMode, setGalleryMode] = useState<GalleryMode>('all');
-  const [search, setSearch] = useState('');
-  const [sizeFilter, setSizeFilter] = useState<'all' | 'small' | 'medium' | 'large'>('all');
-  const [ageFilter, setAgeFilter] = useState<'all' | 'puppy' | 'adult' | 'senior'>('all');
+  const modeParam = searchParams.get('modo');
+  const sizeParam = searchParams.get('tamano');
+  const ageParam = searchParams.get('edad');
+  const galleryMode: GalleryMode = modeParam === 'medical' || modeParam === 'favorites' ? modeParam : 'all';
+  const sizeFilter = sizeParam === 'small' || sizeParam === 'medium' || sizeParam === 'large' ? sizeParam : 'all';
+  const ageFilter = ageParam === 'puppy' || ageParam === 'adult' || ageParam === 'senior' ? ageParam : 'all';
+  const search = (searchParams.get('q') ?? '').slice(0, 200);
+  const updateFilter = (key: string, value: string) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      if (!value || value === 'all') next.delete(key); else next.set(key, value);
+      return next;
+    }, { replace: true, preventScrollReset: true });
+  };
+  const setGalleryMode = (value: GalleryMode) => updateFilter('modo', value);
+  const setSizeFilter = (value: typeof sizeFilter) => updateFilter('tamano', value);
+  const setAgeFilter = (value: typeof ageFilter) => updateFilter('edad', value);
+  const setSearch = (value: string) => updateFilter('q', value.slice(0, 200));
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailAnimal, setDetailAnimal] = useState<Animal | null>(null);
@@ -131,6 +147,13 @@ export function AdoptionGalleryPage() {
   });
   const animals = useMemo(() => mergeRefugeDogs(remoteAnimals), [remoteAnimals]);
 
+  // The gallery is lazy-loaded; wait for its final layout before following a home shortcut.
+  useEffect(() => {
+    if (!hash || isLoading) return;
+    const frame = requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'auto' }));
+    return () => cancelAnimationFrame(frame);
+  }, [hash, isLoading]);
+
   const beginAdoption = (animal: Animal) => {
     setSelectedAnimal(animal);
     setIsModalOpen(true);
@@ -177,10 +200,9 @@ export function AdoptionGalleryPage() {
   const heroAnimals = adoptableAnimals.slice(0, 2);
   const activeFilterCount = Number(galleryMode !== 'all') + Number(sizeFilter !== 'all') + Number(ageFilter !== 'all') + Number(Boolean(search.trim()));
   const resetFilters = () => {
-    setGalleryMode('all');
-    setSearch('');
-    setSizeFilter('all');
-    setAgeFilter('all');
+    const next = new URLSearchParams(searchParams);
+    ['modo', 'q', 'tamano', 'edad'].forEach((key) => next.delete(key));
+    setSearchParams(next, { replace: true, preventScrollReset: true });
   };
 
   return (
@@ -372,6 +394,54 @@ export function AdoptionGalleryPage() {
               </select>
             </label>
           </div>
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-1" aria-label="Filtros activos">
+              {galleryMode !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setGalleryMode('all')}
+                  aria-label="Quitar filtro de favoritos o cuidados especiales"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-bold text-[var(--color-accent-foreground)] transition hover:opacity-80"
+                >
+                  {galleryMode === 'medical' ? 'Cuidados especiales' : 'Solo favoritos'}
+                  <X className="h-3 w-3" aria-hidden="true" />
+                </button>
+              )}
+              {sizeFilter !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setSizeFilter('all')}
+                  aria-label="Quitar filtro de tamaño"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-bold text-[var(--color-accent-foreground)] transition hover:opacity-80"
+                >
+                  Tamaño: {sizeLabels[sizeFilter]}
+                  <X className="h-3 w-3" aria-hidden="true" />
+                </button>
+              )}
+              {ageFilter !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setAgeFilter('all')}
+                  aria-label="Quitar filtro de edad"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-bold text-[var(--color-accent-foreground)] transition hover:opacity-80"
+                >
+                  Edad: {ageFilter === 'puppy' ? 'Cachorros' : ageFilter === 'adult' ? 'Adultos' : 'Senior'}
+                  <X className="h-3 w-3" aria-hidden="true" />
+                </button>
+              )}
+              {search.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label="Quitar búsqueda por texto"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-bold text-[var(--color-accent-foreground)] transition hover:opacity-80"
+                >
+                  “{search.trim()}”
+                  <X className="h-3 w-3" aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

@@ -1,7 +1,22 @@
 import type { FaqItem } from './faq.ts';
 import { FAQ_CATEGORIES, normalizeSearch } from './faq.ts';
 
-export type DiscoveryResult = { id: string; title: string; description: string; href: string; kind: 'page' | 'faq'; keywords?: string };
+export type DiscoveryResult = {
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+  kind: 'page' | 'faq' | 'dog';
+  keywords?: string;
+};
+
+export type SearchableDog = {
+  name: string;
+  adoption_slug: string;
+  description: string;
+  personality_summary?: string | null;
+  ideal_home?: string | null;
+};
 
 // Public destinations only. Add future public pages here; never include admin records.
 export const PUBLIC_DESTINATIONS: DiscoveryResult[] = [
@@ -22,12 +37,20 @@ export const PUBLIC_DESTINATIONS: DiscoveryResult[] = [
   { id: 'partners', title: 'Alianzas y otras formas de apoyar', description: 'Comparte tu propuesta con el equipo del refugio.', href: '/contacto/quiero-apoyar', kind: 'page', keywords: 'empresa patrocinio aliados donacion especie' },
 ];
 
-export function searchPublicContent(query: string, faqs: FaqItem[] = []): DiscoveryResult[] {
+export function searchPublicContent(query: string, faqs: FaqItem[] = [], dogs: SearchableDog[] = []): DiscoveryResult[] {
   const normalized = normalizeSearch(query);
   if (!normalized) return PUBLIC_DESTINATIONS.slice(0, 6);
   const terms = normalized.split(' ');
   const candidates: DiscoveryResult[] = [
     ...PUBLIC_DESTINATIONS,
+    ...dogs.map((dog) => ({
+      id: `dog-${dog.adoption_slug}`,
+      title: dog.name,
+      description: dog.description,
+      href: `/adopta/${dog.adoption_slug}`,
+      kind: 'dog' as const,
+      keywords: [dog.personality_summary, dog.ideal_home, 'perro adoptar perfil refugio'].filter(Boolean).join(' '),
+    })),
     ...faqs.map((faq) => ({ id: `faq-${faq.category}-${faq.question}`, title: faq.question, description: faq.answer, href: `/faq?${new URLSearchParams({ category: faq.category, q: faq.question })}`, kind: 'faq' as const, keywords: FAQ_CATEGORIES[faq.category] })),
   ];
   return candidates

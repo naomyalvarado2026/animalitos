@@ -97,3 +97,20 @@ test('limita listas extensas sin introducir destinos externos o privados', () =>
   assert.ok(PUBLIC_DESTINATIONS.every((item) => item.href.startsWith('/') && !item.href.startsWith('//') && !item.href.startsWith('/admin')));
   assert.equal(new Set(PUBLIC_DESTINATIONS.map((item) => item.id)).size, PUBLIC_DESTINATIONS.length);
 });
+
+test('encuentra perfiles de perritos cuando se pasan al buscador público', () => {
+  const sampleDogs = [
+    {
+      name: 'Blanquita',
+      adoption_slug: 'blanquita',
+      description: 'Extrovertida y aventurera.',
+      personality_summary: 'Energía alegre',
+      ideal_home: 'Familia activa',
+    },
+  ];
+  const byName = searchPublicContent('Blanquita', DEFAULT_FAQS, sampleDogs);
+  assert.equal(byName[0]?.kind, 'dog');
+  assert.equal(byName[0]?.href, '/adopta/blanquita');
+  const byTrait = searchPublicContent('aventurera', DEFAULT_FAQS, sampleDogs);
+  assert.ok(byTrait.some((item) => item.id === 'dog-blanquita'));
+});

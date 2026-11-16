@@ -43,6 +43,32 @@ const productBackground = {
   cream: 'bg-[#f1e2ff]',
 } as const;
 
+function ProductCardImage({ image, preview, name, isLive }: { image: string; preview?: string; name: string; isLive: boolean }) {
+  const [loadedPreview, setLoadedPreview] = useState<string | null>(null);
+  const previewReady = Boolean(preview && loadedPreview === preview);
+  return (
+    <>
+      <ResilientImage
+        src={image}
+        srcSet={!isLive && image.includes('-960.webp') ? `${image.replace('-960.webp', '-480.webp')} 480w, ${image} 960w` : undefined}
+        sizes="(min-width: 1280px) 390px, (min-width: 768px) 50vw, 100vw"
+        alt={isLive ? name : `Propuesta de diseño: ${name}`}
+        width={1448} height={1086} loading="lazy" decoding="async"
+        className={`h-full w-full object-contain transition duration-500 ${previewReady ? 'group-hover/image:opacity-0 group-focus-visible/image:opacity-0' : 'group-hover/image:scale-[1.02] motion-reduce:group-hover/image:scale-100'}`}
+      />
+      {preview && (
+        <img
+          src={preview} alt="" aria-hidden="true"
+          width={1448} height={1086} loading="lazy" decoding="async"
+          onLoad={() => setLoadedPreview(preview)}
+          onError={() => setLoadedPreview(null)}
+          className={`pointer-events-none absolute inset-0 h-full w-full object-contain opacity-0 transition duration-500 ${previewReady ? 'group-hover/image:opacity-100 group-focus-visible/image:opacity-100' : ''}`}
+        />
+      )}
+    </>
+  );
+}
+
 export function StorePage() {
   const shouldReduceMotion = useReducedMotion();
   const orderKey = useRef('');
@@ -215,10 +241,10 @@ export function StorePage() {
           ))}
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
-          <label className="relative block">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
+          <label className="relative block sm:col-span-2 lg:col-span-1">
             <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#65566f]" />
-            <Input aria-label="Buscar en la tienda" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto, color o característica…" className="min-h-11 border-[#17022b]/15 bg-white pl-10 text-[#17022b]" />
+            <Input id="store-search" aria-label="Buscar en la tienda" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto, perrito o color…" className="min-h-11 border-[#17022b]/15 bg-white pl-10 text-[#17022b]" />
           </label>
           <label className="flex items-center gap-2 text-sm font-semibold text-[#65566f]">
             <span className="sr-only">Productos por perrito</span>
@@ -246,14 +272,36 @@ export function StorePage() {
             </select>
           </label>
         </div>
-        <p className="mt-3 text-xs text-[#65566f]">{products.length} {products.length === 1 ? 'artículo' : 'artículos'} en esta selección</p>
+        <p role="status" aria-live="polite" className="mt-3 text-xs text-[#65566f]">{products.length} {products.length === 1 ? 'artículo' : 'artículos'} en esta selección</p>
 
-        {!productsQuery.isPending && !productsQuery.isError && !products.length && <p role="status" className="mt-8 rounded-2xl bg-[#f1e2ff] p-6">No encontramos artículos con esos filtros. Prueba otra palabra o categoría.</p>}
+        {!productsQuery.isPending && !productsQuery.isError && !products.length && (
+          <div role="status" className="mt-8 flex flex-col items-start justify-between gap-4 rounded-2xl bg-[#f1e2ff] p-6 sm:flex-row sm:items-center">
+            <p className="text-sm font-medium text-[#17022b]">No encontramos artículos con esos filtros. Prueba otra palabra o categoría.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearch('');
+                setActiveCategory('Todo');
+                setSort('recent');
+                const params = new URLSearchParams(searchParams);
+                params.delete('perrito');
+                params.delete('producto');
+                setDetailProduct(null);
+                setSearchParams(params, { replace: true, preventScrollReset: true });
+                document.getElementById('store-search')?.focus({ preventScroll: true });
+              }}
+              className="shrink-0 rounded-xl bg-[#17022b] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#3c096c]"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
         <div className="mt-10 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
           <AnimatePresence initial={false} mode="popLayout">
           {products.map((product, index) => {
             const chosen = product.variants.find((item) => item.id === chosenVariants[product.slug]) ?? product.variants[0] ?? null;
             const image = chosen?.image || product.image;
+            const hoverImage = product.galleryImages.find((url) => url !== image);
             const stock = chosen?.inventory ?? product.inventory;
             const cents = (product.priceCents ?? 0) + (chosen?.priceDelta ?? 0);
             const colorOptions = getColorOptions(product.variants);
@@ -271,8 +319,10 @@ export function StorePage() {
               }}
               className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#17022b]/10 bg-white shadow-[0_12px_35px_rgba(23,23,23,.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(23,23,23,.12)]"
             >
-              <button type="button" onClick={() => setDetailProduct(product)} className={`relative block aspect-[4/3] w-full overflow-hidden text-left ${productBackground[product.color]} focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-[-4px] focus-visible:outline-[#3c096c]`} aria-label={`Ver ficha completa de ${product.name}`}>
-                {image ? <ResilientImage src={image} srcSet={!product.isLive && image.includes('-960.webp') ? `${image.replace('-960.webp', '-480.webp')} 480w, ${image} 960w` : undefined} sizes="(min-width: 1280px) 390px, (min-width: 768px) 50vw, 100vw" alt={product.isLive ? product.name : `Render de propuesta: ${product.name}`} width={1448} height={1086} loading="lazy" decoding="async" className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center text-[#3c096c]/45"><PackageCheck aria-hidden="true" className="h-12 w-12" /></div>}
+              <button type="button" onClick={() => setDetailProduct(product)} className={`group/image relative block aspect-[4/3] w-full overflow-hidden text-left ${productBackground[product.color]} focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-[-4px] focus-visible:outline-[#3c096c]`} aria-label={`Ver ficha completa de ${product.name}`}>
+                {image ? (
+                  <ProductCardImage image={image} preview={hoverImage} name={product.name} isLive={product.isLive} />
+                ) : <div className="flex h-full items-center justify-center text-[#3c096c]/45"><PackageCheck aria-hidden="true" className="h-12 w-12" /></div>}
                 {product.galleryImages.length > 1 && <span className="absolute bottom-4 right-4 rounded-full bg-[#17022b]/85 px-3 py-1 text-xs font-bold text-white">{product.galleryImages.length} fotos</span>}
                 
                 <div className="absolute left-4 top-4 flex gap-2">
