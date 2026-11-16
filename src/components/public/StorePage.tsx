@@ -192,7 +192,7 @@ export function StorePage() {
                 <Sparkles className="h-4 w-4" /> Tienda solidaria
               </p>
               <h1 className="mt-5 font-heading text-5xl font-extrabold leading-[.9] tracking-[-.065em] sm:text-7xl lg:text-8xl">
-                Lleva un <span className="text-[#ff8069]">ME</span> contigo.
+                Lleva <span className="text-[#ff8069]">ME</span> contigo.
               </h1>
               <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/75">
                 Objetos con propósito para hacer visible una idea simple: adoptar cambia vidas. Cada pedido nos acerca al cuidado que nuestros rescatados necesitan.
