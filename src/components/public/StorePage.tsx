@@ -1,6 +1,5 @@
-import { useRef, useState, type FormEvent } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   ArrowRight,
@@ -23,11 +22,13 @@ import { Label } from '@/components/ui/label';
 import { ResilientImage } from '@/components/ui/ResilientImage';
 import { supabase } from '@/lib/supabase';
 import { assetUrl } from '@/lib/assets';
-import { getColorOptions, normalizeCatalogSearch, normalizeProductImageUrls, splitVariantLabel, type MerchandiseProduct, type MerchandiseVariantOption } from '@/lib/merchandise';
+import { getColorOptions, normalizeCatalogSearch, splitVariantLabel, type MerchandiseProduct, type MerchandiseVariantOption } from '@/lib/merchandise';
 import { motionDistance, motionDuration, motionEaseOut } from '@/lib/motionTokens';
 import { ContextualFaq } from './ContextualFaq';
 import { ProductDetailDialog } from './ProductDetailDialog';
 import { RefugeDogRibbon } from './RefugeDogRibbon';
+import { useStoreProducts } from '@/hooks/useStoreProducts';
+import { merchandiseDogName } from '@/lib/merchandiseDogs';
 
 type Product = MerchandiseProduct & {
   color: keyof typeof productBackground;
@@ -56,50 +57,40 @@ export function StorePage() {
   const [quantity, setQuantity] = useState(1);
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
-  const productsQuery = useQuery({
-    queryKey: ['public-store-products'],
-    staleTime: 60_000,
-    queryFn: async () => {
-      const { data, error } = await supabase.from('products').select('slug, name, description, price_cents, image_url, gallery_urls, inventory, is_proposal, category, characteristics, created_at, product_variants(id, label, size_label, color_hex, image_url, is_active, inventory, price_delta_cents)').eq('is_active', true).eq('currency', 'USD').order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map((product): Product => {
-        const galleryImages = normalizeProductImageUrls([...(product.gallery_urls ?? []), product.image_url]).map(assetUrl);
-        const variants: MerchandiseVariantOption[] = product.product_variants.filter((variant) => variant.is_active).map((variant) => ({
-          id: variant.id,
-          name: variant.label,
-          sizeLabel: variant.size_label,
-          hex: variant.color_hex || '#e0beff',
-          image: variant.image_url ? assetUrl(variant.image_url) : '',
-          inventory: variant.inventory,
-          priceDelta: variant.price_delta_cents,
-        }));
-        return {
-          slug: product.slug,
-          name: product.name,
-          category: product.category || 'Catálogo',
-          description: product.description || '',
-          details: product.characteristics?.length ? product.characteristics : [],
-          galleryImages,
-          image: galleryImages[0] ?? '',
-          isLive: !product.is_proposal,
-          priceCents: product.price_cents ?? 0,
-          price: `$${(((product.price_cents ?? 0) / 100)).toFixed(2)} USD`,
-          inventory: variants.length ? variants.reduce((total, variant) => total + variant.inventory, 0) : product.inventory ?? 0,
-          variants,
-          color: 'cream',
-          featured: false,
-        };
-      });
-    },
-  });
+  const productsQuery = useStoreProducts();
   const databaseProducts = productsQuery.data ?? [];
-  const catalog: Product[] = databaseProducts;
+  const catalog: Product[] = databaseProducts.map((product) => ({ ...product, color: 'cream', featured: false }));
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedDog = searchParams.get('perrito') || '';
+  const linkedProductSlug = searchParams.get('producto') || '';
+  const openedProductSlug = useRef('');
+  const dogOptions = [...new Set(catalog.flatMap((product) => product.dogSlugs))]
+    .sort((a, b) => merchandiseDogName(a).localeCompare(merchandiseDogName(b), 'es'));
+
+  useEffect(() => {
+    if (!linkedProductSlug) { openedProductSlug.current = ''; return; }
+    if (openedProductSlug.current === linkedProductSlug) return;
+    const product = productsQuery.data?.find((item) => item.slug === linkedProductSlug);
+    if (product) {
+      setDetailProduct({ ...product, color: 'cream', featured: false });
+      openedProductSlug.current = linkedProductSlug;
+    }
+  }, [linkedProductSlug, productsQuery.data]);
+
+  const closeDetails = () => {
+    setDetailProduct(null);
+    if (searchParams.has('producto')) {
+      const params = new URLSearchParams(searchParams);
+      params.delete('producto');
+      setSearchParams(params, { replace: true });
+    }
+  };
   const categories = Array.from(new Set(['Todo', ...catalog.map((product) => product.category)]));
   const normalizedSearch = normalizeCatalogSearch(search);
   const matchingProducts = catalog.filter((product) => {
     const matchesCategory = activeCategory === 'Todo' || product.category === activeCategory;
-    const searchable = normalizeCatalogSearch([product.name, product.description, product.category, ...product.details, ...product.variants.map((variant) => variant.name)].join(' '));
-    return matchesCategory && (!normalizedSearch || searchable.includes(normalizedSearch));
+    const searchable = normalizeCatalogSearch([product.name, product.description, product.category, ...product.details, ...product.variants.map((variant) => variant.name), ...product.dogSlugs.map(merchandiseDogName)].join(' '));
+    return matchesCategory && (!selectedDog || product.dogSlugs.includes(selectedDog)) && (!normalizedSearch || searchable.includes(normalizedSearch));
   });
   const products = [...matchingProducts].sort((a, b) => {
     if (sort === 'name') return a.name.localeCompare(b.name, 'es');
@@ -230,6 +221,22 @@ export function StorePage() {
             <Input aria-label="Buscar en la tienda" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto, color o característica…" className="min-h-11 border-[#17022b]/15 bg-white pl-10 text-[#17022b]" />
           </label>
           <label className="flex items-center gap-2 text-sm font-semibold text-[#65566f]">
+            <span className="sr-only">Productos por perrito</span>
+            <select aria-label="Productos por perrito" value={selectedDog} onChange={(event) => {
+              const params = new URLSearchParams(searchParams);
+              if (event.target.value) params.set('perrito', event.target.value); else params.delete('perrito');
+              params.delete('producto');
+              setDetailProduct(null);
+              setSearchParams(params);
+              setActiveCategory('Todo');
+              setSearch('');
+            }} className="min-h-11 w-full rounded-xl border border-[#17022b]/15 bg-white px-3 text-sm text-[#17022b] sm:min-w-48">
+              <option value="">Toda la manada</option>
+              {selectedDog && !dogOptions.includes(selectedDog) && <option value={selectedDog}>{merchandiseDogName(selectedDog)}</option>}
+              {dogOptions.map((slug) => <option key={slug} value={slug}>{merchandiseDogName(slug)}</option>)}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-sm font-semibold text-[#65566f]">
             <span className="sr-only">Ordenar productos</span>
             <select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="min-h-11 w-full rounded-xl border border-[#17022b]/15 bg-white px-3 text-sm text-[#17022b] sm:min-w-52">
               <option value="recent">Más recientes</option>
@@ -279,6 +286,7 @@ export function StorePage() {
                   <h3 className="font-heading text-2xl font-extrabold tracking-[-.04em]">{product.name}</h3>
                   <Heart className="mt-1 h-5 w-5 shrink-0 text-[#ff8069]" aria-hidden="true" />
                 </div>
+                {product.dogSlugs.length > 0 && <div className="mt-3 flex flex-wrap gap-2" aria-label="Perritos de este diseño">{product.dogSlugs.map((slug) => <Link key={slug} to={`/adopta/${slug}`} className="inline-flex min-h-9 items-center gap-1 rounded-full bg-[#f1e2ff] px-3 text-xs font-bold text-[#3c096c] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"><PawPrint aria-hidden="true" className="h-3 w-3" />Conoce a {merchandiseDogName(slug)}</Link>)}</div>}
                 <p className="mt-3 text-sm leading-relaxed text-[#65566f]">{product.description}</p>
                 {colorOptions.length > 0 && <fieldset className="mt-5"><legend className="text-sm font-semibold">Color: {chosen ? splitVariantLabel(chosen).colorName : 'elige una opción'}</legend><div className="mt-2 flex flex-wrap gap-2">{colorOptions.map((option) => { const active = chosen ? option.key === getColorOptions([chosen])[0]?.key : false; return <button key={option.key} type="button" title={option.name} aria-label={`${product.name}: color ${option.name}`} aria-pressed={active} onClick={() => { const selectedSize = chosen ? splitVariantLabel(chosen).sizeLabel : null; const matching = option.variants.find((item) => splitVariantLabel(item).sizeLabel === selectedSize) ?? option.variants[0]; setChosenVariants((current) => ({ ...current, [product.slug]: matching.id })); }} className={`flex h-11 w-11 items-center justify-center rounded-full border-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3c096c] ${active ? 'border-[#3c096c]' : 'border-transparent hover:border-[#e0beff]'}`}><span className="flex h-8 w-8 items-center justify-center rounded-full border border-black/15" style={{ background: option.hex }}>{active && <Check className="h-4 w-4" style={{ color: option.hex.toLowerCase() === '#3c096c' ? 'white' : '#17022b' }} />}</span></button>; })}</div></fieldset>}
                 {chosen && splitVariantLabel(chosen).sizeLabel && <p className="mt-3 text-xs font-semibold text-[#65566f]">Talla seleccionada: {splitVariantLabel(chosen).sizeLabel} · elige otra en la ficha completa</p>}
@@ -333,7 +341,7 @@ export function StorePage() {
       <ProductDetailDialog
         product={detailProduct}
         variant={detailProduct ? detailProduct.variants.find((variant) => variant.id === chosenVariants[detailProduct.slug]) ?? detailProduct.variants[0] ?? null : null}
-        onClose={() => setDetailProduct(null)}
+        onClose={closeDetails}
         onSelectVariant={(variant) => {
           if (detailProduct) setChosenVariants((current) => ({ ...current, [detailProduct.slug]: variant.id }));
         }}

@@ -7,6 +7,7 @@ import { ResilientImage } from '@/components/ui/ResilientImage';
 import { getColorOptions, getVariantColorKey, splitVariantLabel, type MerchandiseProduct, type MerchandiseVariantOption } from '@/lib/merchandise';
 import { motionDuration, motionEaseOut } from '@/lib/motionTokens';
 import { Link } from 'react-router-dom';
+import { merchandiseDogName } from '@/lib/merchandiseDogs';
 
 type ProductDetailDialogProps = {
   product: MerchandiseProduct | null;
@@ -99,6 +100,7 @@ export function ProductDetailDialog({ product, variant, onClose, onSelectVariant
                 {!product.isLive && <span className="rounded-full bg-[#17022b] px-3 py-1 text-xs font-bold text-white">Propuesta</span>}
               </div>
               <h3 className="mt-3 font-heading text-3xl font-extrabold leading-tight tracking-[-.045em] sm:text-4xl">{product.name}</h3>
+              {product.dogSlugs.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{product.dogSlugs.map((slug) => <Link key={slug} to={`/adopta/${slug}`} className="inline-flex min-h-9 items-center rounded-full bg-[#f1e2ff] px-3 text-xs font-bold text-[#3c096c] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Conoce a {merchandiseDogName(slug)}</Link>)}</div>}
               <p className="mt-3 leading-relaxed text-[#65566f]">{product.description || 'Un artículo solidario de la colección AdoptaME.'}</p>
             </div>
 

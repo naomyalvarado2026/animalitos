@@ -20,6 +20,7 @@ export type MerchandiseColorOption = {
 
 export type MerchandiseProduct = {
   slug: string;
+  dogSlugs: string[];
   name: string;
   category: string;
   description: string;

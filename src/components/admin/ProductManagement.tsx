@@ -15,6 +15,9 @@ import { PRODUCT_GALLERY_LIMIT, PRODUCT_IMAGE_BUCKET, isSupportedProductImageUrl
 import { getProductImageStoragePath, prepareProductImage } from '@/lib/productImages';
 import { motionDistance, motionDuration, motionEaseOut } from '@/lib/motionTokens';
 import { VariantManager } from './VariantManager';
+import { mergeRefugeDogs } from '@/lib/refugeDogs';
+import { merchandiseDogName } from '@/lib/merchandiseDogs';
+import type { Animal } from '@/types';
 
 type ProductVariant = {
   id: string;
@@ -41,6 +44,7 @@ type Product = {
   category: string;
   characteristics: string[];
   product_variants: ProductVariant[];
+  dog_slugs?: string[];
 };
 
 type ProductForm = {
@@ -54,6 +58,7 @@ type ProductForm = {
   isProposal: boolean;
   category: string;
   characteristics: string;
+  dogSlugs: string[];
 };
 
 type ProductFilter = 'all' | 'published' | 'proposal' | 'hidden' | 'low-stock' | 'no-stock';
@@ -71,6 +76,7 @@ const emptyForm: ProductForm = {
   isProposal: true,
   category: 'Catálogo',
   characteristics: '',
+  dogSlugs: [],
 };
 
 function toSlug(value?: string | null) {
@@ -141,6 +147,17 @@ export function ProductManagement() {
     },
   });
 
+  const dogsQuery = useQuery({
+    queryKey: ['admin-merchandise-dogs'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('animals').select('*').eq('species', 'dog');
+      if (error) throw error;
+      return (data ?? []) as Animal[];
+    },
+    staleTime: 60_000,
+  });
+  const dogOptions = mergeRefugeDogs(dogsQuery.data ?? []).filter((dog) => dog.is_published);
+
   useEffect(() => {
     if (!editing && isCreating && form.name && !form.slug) {
       setForm((current) => ({ ...current, slug: toSlug(current.name) }));
@@ -208,6 +225,7 @@ export function ProductManagement() {
           is_proposal: payload.isProposal,
           category: payload.category.trim() || 'Catálogo',
           characteristics: payload.characteristics.split('\n').map((line) => line.trim()).filter(Boolean),
+          dog_slugs: [...new Set(payload.dogSlugs)],
           updated_at: new Date().toISOString(),
         };
 
@@ -261,7 +279,7 @@ export function ProductManagement() {
   const products = productsQuery.data ?? [];
   const normalizedSearch = search.trim().toLocaleLowerCase('es');
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = `${product.name} ${product.slug} ${product.category}`.toLocaleLowerCase('es').includes(normalizedSearch);
+    const matchesSearch = `${product.name} ${product.slug} ${product.category} ${(product.dog_slugs ?? []).map(merchandiseDogName).join(' ')}`.toLocaleLowerCase('es').includes(normalizedSearch);
     const matchesFilter = filter === 'all'
       || (filter === 'published' && product.is_active && !product.is_proposal)
       || (filter === 'proposal' && product.is_proposal)
@@ -294,6 +312,7 @@ export function ProductManagement() {
       isProposal: product.is_proposal,
       category: product.category || 'Catálogo',
       characteristics: (product.characteristics ?? []).join('\n'),
+      dogSlugs: product.dog_slugs ?? [],
     });
     window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   }
@@ -319,6 +338,7 @@ export function ProductManagement() {
       isProposal: true,
       category: product.category || 'Catálogo',
       characteristics: (product.characteristics ?? []).join('\n'),
+      dogSlugs: product.dog_slugs ?? [],
     });
     window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   }
@@ -406,6 +426,22 @@ export function ProductManagement() {
                 <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="product-description">Descripción</Label><Textarea id="product-description" maxLength={1000} rows={3} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="Qué hace especial a este artículo solidario…" /></div>
                 <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="product-characteristics">Características · una por línea</Label><Textarea id="product-characteristics" rows={4} value={form.characteristics} onChange={(event) => setForm((current) => ({ ...current, characteristics: event.target.value }))} placeholder={'Material\nMedidas\nCuidados'} /><p className="text-xs text-[var(--color-muted-foreground)]">Aparecerán en la ficha completa del producto.</p></div>
               </div>
+
+              <fieldset className="space-y-3 rounded-2xl border border-[var(--color-border)] p-4 sm:p-5">
+                <legend className="px-1 font-semibold">Perritos de este diseño</legend>
+                <p className="text-sm text-[var(--color-muted-foreground)]">El producto aparecerá en la ficha de cada perrito seleccionado. Puedes vincular varios productos al mismo perrito.</p>
+                {dogsQuery.isError && <p role="status" className="text-sm text-amber-700">No pudimos actualizar la lista. Se muestran las fichas conocidas del refugio.</p>}
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {dogOptions.map((dog) => {
+                    const slug = dog.adoption_slug || dog.name.toLowerCase();
+                    return <label key={slug} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-[var(--color-border)] px-3 py-2 text-sm font-semibold has-[:checked]:border-[#3c096c] has-[:checked]:bg-[#f1e2ff] has-[:checked]:text-[#3c096c]">
+                      <input type="checkbox" className="h-4 w-4 accent-[#3c096c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" checked={form.dogSlugs.includes(slug)} onChange={(event) => setForm((current) => ({ ...current, dogSlugs: event.target.checked ? [...current.dogSlugs, slug] : current.dogSlugs.filter((item) => item !== slug) }))} />
+                      {dog.name}
+                    </label>;
+                  })}
+                </div>
+                {form.dogSlugs.length === 0 && <p className="text-xs text-[var(--color-muted-foreground)]">Sin selección: producto general de la tienda.</p>}
+              </fieldset>
 
               <section aria-labelledby="product-gallery-title" className="space-y-3 rounded-2xl border border-[var(--color-border)] p-4 sm:p-5">
                 <div>

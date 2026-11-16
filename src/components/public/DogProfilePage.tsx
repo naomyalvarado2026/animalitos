@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ResilientImage } from '@/components/ui/ResilientImage';
 import { AdoptionRequestDialog } from './AdoptionRequestDialog';
 import { DogSocialCardPreview } from './DogSocialCardPreview';
+import { DogProductsSection } from './DogProductsSection';
 import { RefugeDogRibbon } from './RefugeDogRibbon';
 import { supabase } from '@/lib/supabase';
 import { assetUrl } from '@/lib/assets';
@@ -273,6 +274,8 @@ export function DogProfilePage() {
           </article>
         </div>
       </section>
+
+      <DogProductsSection dogSlug={slug} dogName={dog.name} />
 
       <section className="border-t border-[var(--color-border)] bg-[var(--color-muted)]/40 px-5 py-16 sm:px-8 lg:py-22">
         <div className="mx-auto max-w-6xl rounded-[2.25rem] border border-[var(--color-border)] bg-[var(--color-card)] p-6 sm:p-10 lg:p-14">

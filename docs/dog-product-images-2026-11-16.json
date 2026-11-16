@@ -1,0 +1,194 @@
+[
+  {
+    "dog": "blanquita",
+    "name": "Blanquita",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/blanquita-960.webp",
+    "bytes": 79534,
+    "sha256": "dde3b303a63fc64e028f520d598cc97b68dc25c83e55416874dd574b246678d1"
+  },
+  {
+    "dog": "blanquita",
+    "name": "Blanquita",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/blanquita-480.webp",
+    "bytes": 28852,
+    "sha256": "7d9bedffc5459e2a81fc6609fadcc3e218a7efd5dcdd99afaf36dcca6c39d56c"
+  },
+  {
+    "dog": "brandon",
+    "name": "Brandon",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/brandon-960.webp",
+    "bytes": 80916,
+    "sha256": "c8f3d1d7cb57e0c3f5bd85053c8b71466373395d33ad2965d0a39d25041f4eac"
+  },
+  {
+    "dog": "brandon",
+    "name": "Brandon",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/brandon-480.webp",
+    "bytes": 25618,
+    "sha256": "c47981334665bc71caea5fec9b4b5766a287a87f97c6198169a4500034a63548"
+  },
+  {
+    "dog": "cheesy",
+    "name": "Cheesy",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/cheesy-960.webp",
+    "bytes": 67954,
+    "sha256": "958e75b82fda4c4c2a63dbcb629ab31b300e21ee3e45bbb1c21c7ff71c6619c8"
+  },
+  {
+    "dog": "cheesy",
+    "name": "Cheesy",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/cheesy-480.webp",
+    "bytes": 25878,
+    "sha256": "e0c4b798d1adcda3586d63742a7e5a44fc4f960a05b1d44ebdf08344f9bef23b"
+  },
+  {
+    "dog": "lobo",
+    "name": "Lobo",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/lobo-960.webp",
+    "bytes": 65620,
+    "sha256": "3a8e6448cc00376f63887ae764b91ed0e8aa4583abcbd2a64bc3e0990b73054b"
+  },
+  {
+    "dog": "lobo",
+    "name": "Lobo",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/lobo-480.webp",
+    "bytes": 25242,
+    "sha256": "919cc2477b7cfc5183c6672d53c25a02e058a11377499ee69938dce2dd9f0e95"
+  },
+  {
+    "dog": "manchas",
+    "name": "Manchas",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/manchas-960.webp",
+    "bytes": 127324,
+    "sha256": "487d566e17df1e877ec6c0decc579e9156e0bd2a72e7bceeb4f1303822752f71"
+  },
+  {
+    "dog": "manchas",
+    "name": "Manchas",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/manchas-480.webp",
+    "bytes": 32150,
+    "sha256": "f50351320dd002c86a6c451d024b7af003959bc862f874efc76942c9bf757e1f"
+  },
+  {
+    "dog": "max",
+    "name": "Max",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/max-960.webp",
+    "bytes": 134918,
+    "sha256": "8695d73445825a036ed632a4a3a7e31541921f2554c58927a18b59464bc5e3d3"
+  },
+  {
+    "dog": "max",
+    "name": "Max",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/max-480.webp",
+    "bytes": 34324,
+    "sha256": "6ab5c096e7a45ab201500a659f2cf00815075681ff1515bffe754e9f5276190a"
+  },
+  {
+    "dog": "minnie",
+    "name": "Minnie",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/minnie-960.webp",
+    "bytes": 130608,
+    "sha256": "2df03d2b74c4ed28d7f44ecd34a711cd227606f04380d656a8da2f59f0c00de7"
+  },
+  {
+    "dog": "minnie",
+    "name": "Minnie",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/minnie-480.webp",
+    "bytes": 34060,
+    "sha256": "2b55c9ccab6638b743825fec1099503576546c4b1fd15132c7dfe7391ef0aa72"
+  },
+  {
+    "dog": "moana",
+    "name": "Moana",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/moana-960.webp",
+    "bytes": 124876,
+    "sha256": "88fc257278fc87a386a121a17f015d3cd9e097781eeb298242f8a2017917e42f"
+  },
+  {
+    "dog": "moana",
+    "name": "Moana",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/moana-480.webp",
+    "bytes": 30478,
+    "sha256": "e7bd4f92926f050c277f21e4364cf3a8dd4f6f80193b7ad52e5ac19968f2fd10"
+  },
+  {
+    "dog": "noah",
+    "name": "Noah",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/noah-960.webp",
+    "bytes": 155992,
+    "sha256": "48c8b2ad52c2c255cff6bf15899395fe59b09848daebf39ac8d36a0d04bc906d"
+  },
+  {
+    "dog": "noah",
+    "name": "Noah",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/noah-480.webp",
+    "bytes": 36344,
+    "sha256": "cc8accdff3398676e0ac2438cc8e85ba23fe5684de57c08c7932c4d00faab8fd"
+  },
+  {
+    "dog": "scooby",
+    "name": "Scooby",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/scooby-960.webp",
+    "bytes": 131772,
+    "sha256": "5cd959661339f85a54ae4ded3c363360b1fd751c63f0668cf67159fb056f7f2b"
+  },
+  {
+    "dog": "scooby",
+    "name": "Scooby",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/scooby-480.webp",
+    "bytes": 31906,
+    "sha256": "3f010609b3bee0ce44866d7eb102e36b65ac09c2918ce7d182bd234ec3869017"
+  },
+  {
+    "dog": "tigresa",
+    "name": "Tigresa",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/tigresa-960.webp",
+    "bytes": 148852,
+    "sha256": "93c69983a157871b26197e104abb7523eefddfbf13e54efee35b218c89141fbd"
+  },
+  {
+    "dog": "tigresa",
+    "name": "Tigresa",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/tigresa-480.webp",
+    "bytes": 33790,
+    "sha256": "ec2c6189196c241f1c36201c73f9fc665b2772715c55deca8c7ba97bd9af51c3"
+  },
+  {
+    "dog": "yeri",
+    "name": "Yeri",
+    "size": 960,
+    "path": "/brand/merch/dogs-2026-11-16/yeri-960.webp",
+    "bytes": 133466,
+    "sha256": "f430db855737a87c1d4516dfe404be51165fa738bc2db45c554e734bc6a02b67"
+  },
+  {
+    "dog": "yeri",
+    "name": "Yeri",
+    "size": 480,
+    "path": "/brand/merch/dogs-2026-11-16/yeri-480.webp",
+    "bytes": 31736,
+    "sha256": "de2960d6621b23b06f92a2d534f8af7b589aecbee3fc916ac7b8658c17e34df4"
+  }
+]
