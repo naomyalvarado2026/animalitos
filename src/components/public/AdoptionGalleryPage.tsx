@@ -72,7 +72,7 @@ export function AdoptionGalleryPage() {
   const updateFilter = (key: string, value: string) => {
     setSearchParams((current) => {
       const next = new URLSearchParams(current);
-      if (!value || value === 'all') next.delete(key); else next.set(key, value);
+      if (!value || (key !== 'q' && value === 'all')) next.delete(key); else next.set(key, value);
       return next;
     }, { replace: true, preventScrollReset: true });
   };
@@ -436,7 +436,7 @@ export function AdoptionGalleryPage() {
                   aria-label="Quitar búsqueda por texto"
                   className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-[var(--color-accent)] px-3 py-1 text-xs font-bold text-[var(--color-accent-foreground)] transition hover:opacity-80"
                 >
-                  “{search.trim()}”
+                  <span className="max-w-[min(65vw,18rem)] truncate">“{search.trim()}”</span>
                   <X className="h-3 w-3" aria-hidden="true" />
                 </button>
               )}
