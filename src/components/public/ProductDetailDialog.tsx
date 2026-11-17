@@ -7,7 +7,7 @@ import { ResilientImage } from '@/components/ui/ResilientImage';
 import { getColorOptions, getVariantColorKey, splitVariantLabel, type MerchandiseProduct, type MerchandiseVariantOption } from '@/lib/merchandise';
 import { motionDuration, motionEaseOut } from '@/lib/motionTokens';
 import { Link } from 'react-router-dom';
-import { merchandiseDogName } from '@/lib/merchandiseDogs';
+import { merchandiseDogName, productInquiryUrl } from '@/lib/merchandiseDogs';
 
 type ProductDetailDialogProps = {
   product: MerchandiseProduct | null;
@@ -172,7 +172,7 @@ export function ProductDetailDialog({ product, variant, onClose, onSelectVariant
               </Button>
             ) : (
               <Button asChild className="min-h-12 w-full bg-[#17022b] text-white hover:bg-[#38332f]">
-                <Link to="/contacto"><ShoppingBag aria-hidden="true" /> Consultar por este diseño</Link>
+                <Link to={productInquiryUrl(product.name, product.dogSlugs)}><ShoppingBag aria-hidden="true" /> Consultar por este diseño</Link>
               </Button>
             )}
             <p className="text-xs leading-relaxed text-[#65566f]">El envío y el pago se coordinan contigo antes de confirmar el pedido. Esta solicitud no realiza cobros.</p>

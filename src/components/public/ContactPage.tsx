@@ -29,7 +29,8 @@ export function ContactPage() {
   const [sentConfirmation, setSentConfirmation] = useState<{ subject: string; email: string } | null>(null);
   const [searchParams] = useSearchParams();
   const campaignName = searchParams.get('campana')?.trim().slice(0, 100) || '';
-  const dogName = searchParams.get('perrito')?.trim() || '';
+  const dogName = searchParams.get('perrito')?.trim().slice(0, 160) || '';
+  const productName = searchParams.get('producto')?.trim().slice(0, 100) || '';
   const sponsorName = searchParams.get('apadrina')?.trim() || '';
   const queryType = searchParams.get('tipo')?.trim() || '';
   const donationMonto = searchParams.get('monto')?.trim() || '';
@@ -47,11 +48,13 @@ export function ContactPage() {
   const initialType: FormData['type'] =
     queryType === 'donacion' || donationMonto
       ? 'donation'
-      : sponsorName || campaignName
+      : productName || sponsorName || campaignName
         ? 'support'
         : 'general';
 
-  const initialSubject = campaignName
+  const initialSubject = productName
+    ? `Consulta sobre ${productName}`
+    : campaignName
     ? `Quiero participar en ${campaignName}`
     : sponsorName
       ? `Quiero apadrinar a ${sponsorName}`
@@ -62,6 +65,9 @@ export function ContactPage() {
           : '';
 
   const initialMessage =
+    (productName
+      ? `Hola, me interesa el diseño «${productName}»${dogName ? `, asociado a ${dogName}` : ''}. ¿Podrían confirmarme disponibilidad, precio final, materiales, medidas, opciones y envío antes de decidir?`
+      : '') ||
     (campaignName
       ? `Hola, quisiera conocer las opciones para participar en la campaña ${campaignName}. ¿Podemos coordinar los insumos y la logística?`
       : '') ||
@@ -185,7 +191,9 @@ export function ContactPage() {
                 ) : (
                   <>
                     <h2 className="mb-2 font-heading text-xl font-semibold">
-                      {sponsorName
+                      {productName
+                        ? `Consulta por ${productName}`
+                        : sponsorName
                         ? `Conversemos sobre el apadrinamiento de ${sponsorName}`
                         : dogName
                           ? `Conversemos sobre ${dogName}`
@@ -193,7 +201,7 @@ export function ContactPage() {
                             ? `Coordinemos tu aporte de $${donationMonto} USD`
                             : 'Envíanos un mensaje'}
                     </h2>
-                    {(dogName || sponsorName || donationMonto || campaignName) && (
+                    {(productName || dogName || sponsorName || donationMonto || campaignName) && (
                       <p className="mb-6 rounded-xl border border-[var(--color-primary)]/25 bg-[var(--color-primary)]/10 p-3 text-sm text-[var(--color-foreground)]">
                         Ya preparamos el asunto y el mensaje según tu selección. Completa tu nombre y correo para que el equipo te responda.
                       </p>

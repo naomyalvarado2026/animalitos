@@ -28,7 +28,7 @@ import { ContextualFaq } from './ContextualFaq';
 import { ProductDetailDialog } from './ProductDetailDialog';
 import { RefugeDogRibbon } from './RefugeDogRibbon';
 import { useStoreProducts } from '@/hooks/useStoreProducts';
-import { merchandiseDogName } from '@/lib/merchandiseDogs';
+import { merchandiseDogName, productInquiryUrl } from '@/lib/merchandiseDogs';
 
 type Product = MerchandiseProduct & {
   color: keyof typeof productBackground;
@@ -354,7 +354,7 @@ export function StorePage() {
                     {stock < 1 ? 'Sin existencias' : added.includes(product.name) ? <><Check /> Pedido recibido</> : <><ShoppingBag /> Lo quiero</>}
                   </Button>
                 ) : (
-                  <Button asChild className="mt-5 w-full bg-[#17022b] text-white hover:bg-[#38332f]"><Link to="/contacto"><ShoppingBag /> Me interesa este diseño</Link></Button>
+                  <Button asChild className="mt-5 w-full bg-[#17022b] text-white hover:bg-[#38332f]"><Link to={productInquiryUrl(product.name, product.dogSlugs)}><ShoppingBag /> Me interesa este diseño</Link></Button>
                 )}
               </div>
             </motion.article>

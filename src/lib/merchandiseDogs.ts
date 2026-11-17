@@ -10,3 +10,10 @@ export function dogProductUrl(dogSlug: string, productSlug?: string) {
   if (productSlug) params.set('producto', productSlug);
   return `/tienda?${params.toString()}`;
 }
+
+export function productInquiryUrl(productName: string, dogSlugs: string[] = []) {
+  const params = new URLSearchParams({ producto: productName.slice(0, 100) });
+  const dogs = dogSlugs.map(merchandiseDogName).join(', ');
+  if (dogs) params.set('perrito', dogs.slice(0, 160));
+  return `/contacto?${params.toString()}`;
+}
