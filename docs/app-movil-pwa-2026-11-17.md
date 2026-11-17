@@ -1,7 +1,7 @@
 # AdoptaME móvil instalable — PWA
 
 Fecha: 17 de noviembre de 2026
-Estado: implementación local pendiente de configurar Google OAuth y probar en teléfonos reales. No está publicada.
+Estado: publicada en https://naomyalvarado2026.github.io/animalitos/. Google OAuth y las pruebas en teléfonos reales siguen pendientes.
 
 ## Decisión de arquitectura
 
