@@ -13,6 +13,8 @@ import { RouteTransition } from '@/components/ui/RouteTransition';
 import { assetUrl } from '@/lib/assets';
 import { SiteSearchProvider } from './SiteSearch';
 import { ANALYTICS_CONSENT_EVENT, getAnalyticsConsent, setAnalyticsConsent, trackAnimalEvent } from '@/lib/analytics';
+import { OfflineStatusNotice } from '@/components/pwa/OfflineStatusNotice';
+import { PwaAccountBar } from '@/components/pwa/PwaAccountBar';
 
 export function PublicLayout() {
   const { pathname, hash } = useLocation();
@@ -98,6 +100,8 @@ export function PublicLayout() {
         <ScrollEnhancements />
         <EmergencyBanner />
         <PublicHeader />
+        <PwaAccountBar />
+        <OfflineStatusNotice />
         <main className="flex-1 pb-20 lg:pb-0" id="main-content" tabIndex={-1}>
           <RouteTransition />
         </main>

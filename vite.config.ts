@@ -5,6 +5,7 @@ import path from 'path';
 
 export default defineConfig({
   base: '/animalitos/',
+  build: { manifest: true },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

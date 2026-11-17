@@ -1,4 +1,4 @@
-const CACHE_NAME = 'adoptame-shell-v2';
+const CACHE_NAME = 'adoptame-shell-__PWA_CACHE_VERSION__';
 const SCOPE_URL = new URL('./', self.registration.scope);
 const SHELL_URL = new URL('index.html', SCOPE_URL).toString();
 
@@ -7,18 +7,28 @@ self.addEventListener('install', (event) => {
     const cache = await caches.open(CACHE_NAME);
     const response = await fetch(SHELL_URL, { cache: 'reload' });
     if (response.ok) {
-      const html = await response.clone().text();
       await cache.put(SHELL_URL, response);
-      const matches = [...html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css))[^"']*["']/g)];
-      const assets = matches.map((match) => new URL(match[1], SCOPE_URL)).filter((url) => url.origin === self.location.origin);
-      await Promise.all(assets.map(async (url) => {
-        try {
-          const asset = await fetch(url.toString());
-          if (asset.ok) await cache.put(url.toString(), asset);
-        } catch {
-          // La instalación sigue aunque un recurso secundario falle.
+      try {
+        const manifestUrl = new URL('pwa-precache.json', SCOPE_URL);
+        const manifestResponse = await fetch(manifestUrl.toString(), { cache: 'reload' });
+        if (manifestResponse.ok) {
+          const assets = await manifestResponse.json();
+          const urls = assets.map((asset) => new URL(asset, SCOPE_URL)).filter((url) => url.origin === self.location.origin);
+          const concurrency = 5;
+          for (let index = 0; index < urls.length; index += concurrency) {
+            await Promise.all(urls.slice(index, index + concurrency).map(async (url) => {
+              try {
+                const asset = await fetch(url.toString(), { cache: 'reload' });
+                if (asset.ok) await cache.put(url.toString(), asset);
+              } catch {
+                // Un recurso secundario no impide abrir la app ni consultar otros recursos guardados.
+              }
+            }));
+          }
         }
-      }));
+      } catch {
+        // Mantiene la instalación básica si falla la precarga extendida.
+      }
     }
   })());
 });
@@ -54,15 +64,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.pathname.includes('/assets/') || url.pathname.includes('/brand/') || url.pathname.includes('/images/') || url.pathname.endsWith('.webmanifest') || url.pathname.endsWith('.png') || url.pathname.endsWith('.svg')) {
-    event.respondWith(caches.match(request).then(async (cached) => {
-      if (cached) return cached;
-      const response = await fetch(request);
+  const isHashedBuildAsset = url.pathname.includes('/assets/');
+  const isCacheablePublicAsset = url.pathname.includes('/brand/') || url.pathname.includes('/images/') || url.pathname.endsWith('.webmanifest') || url.pathname.endsWith('.png') || url.pathname.endsWith('.svg');
+  if (isHashedBuildAsset) {
+    event.respondWith(caches.match(request).then((cached) => cached || fetch(request).then(async (response) => {
       if (response.ok) {
         const cache = await caches.open(CACHE_NAME);
         await cache.put(request, response.clone());
       }
       return response;
+    })));
+  } else if (isCacheablePublicAsset) {
+    event.respondWith(fetch(request).then(async (response) => {
+      if (response.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, response.clone());
+      }
+      return response;
+    }).catch(async () => {
+      const cached = await caches.match(request);
+      return cached || Response.error();
     }));
   }
 });

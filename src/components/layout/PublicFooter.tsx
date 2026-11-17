@@ -90,16 +90,30 @@ export function PublicFooter() {
   useEffect(() => {
     if (!canUpdateApp) return;
     let active = true;
+    let observedRegistration: ServiceWorkerRegistration | null = null;
+    const onUpdateFound = () => {
+      const worker = observedRegistration?.installing;
+      if (!worker) return;
+      worker.addEventListener('statechange', () => {
+        if (active && worker.state === 'installed' && navigator.serviceWorker.controller) {
+          toast('Hay una actualización lista', { description: 'Puedes aplicarla desde “Actualizar app” al final de la página.' });
+        }
+      });
+    };
     const onControllerChange = () => {
       if (shouldReloadRef.current) window.location.reload();
     };
     void navigator.serviceWorker.ready.then((registration) => {
       if (!active) return;
       registrationRef.current = registration;
+      observedRegistration = registration;
+      if (registration.waiting) toast('Hay una actualización lista', { description: 'Puedes aplicarla desde “Actualizar app” al final de la página.' });
+      registration.addEventListener('updatefound', onUpdateFound);
     });
     navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
     return () => {
       active = false;
+      observedRegistration?.removeEventListener('updatefound', onUpdateFound);
       navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
     };
   }, [canUpdateApp]);

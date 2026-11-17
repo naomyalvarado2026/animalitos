@@ -12,6 +12,7 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { PublicAppAccessGate } from '@/components/pwa/PublicAppAccessGate';
 
 const CampaignsPage = lazy(() => import('@/components/public/CampaignsPage').then(m => ({ default: m.CampaignsPage })));
 const CampaignManagement = lazy(() => import('@/components/admin/CampaignManagement').then(m => ({ default: m.CampaignManagement })));
@@ -105,6 +106,7 @@ export default function App() {
                 <Suspense fallback={<LoadingScreen />}>
                   <Routes>
                     {/* ── Public routes ── */}
+                    <Route element={<PublicAppAccessGate />}>
                     <Route element={<PublicLayout />}>
                       <Route path="/" element={<HomePage />} />
                       <Route path="/adopta" element={<AdoptionGalleryPage />} />
@@ -138,6 +140,7 @@ export default function App() {
                       <Route path="/contacto/quiero-apoyar" element={<SupportPage />} />
                       <Route path="/privacidad" element={<PrivacyPage />} />
                       <Route path="*" element={<NotFoundPage />} />
+                    </Route>
                     </Route>
 
                     {/* ── Admin login (no layout) ── */}
