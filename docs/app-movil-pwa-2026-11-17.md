@@ -1,7 +1,7 @@
 # AdoptaME móvil instalable — PWA
 
 Fecha: 17 de noviembre de 2026
-Estado: la versión anterior está publicada en https://naomyalvarado2026.github.io/animalitos/. Este refuerzo PWA está implementado y verificado localmente; todavía no está publicado. Google OAuth y las pruebas en teléfonos reales siguen pendientes.
+Estado: PWA publicada y verificada en https://naomyalvarado2026.github.io/animalitos/. Google OAuth y las pruebas en teléfonos reales siguen pendientes.
 
 ## Decisión de arquitectura
 
@@ -55,7 +55,7 @@ No guardar credenciales OAuth en este repositorio ni en variables `VITE_*`. El s
 ## Actualizaciones
 
 - **Contenido y datos de Supabase:** se actualizan al conectar con la web/backend; los datos disponibles sin conexión pueden quedar viejos.
-- **Interfaz y código de la PWA:** al publicar estos cambios, el sitio servirá el frontend nuevo; el service worker precargará los recursos públicos de ese build y ofrecerá aplicar la nueva versión.
+- **Interfaz y código de la PWA:** el sitio sirve el frontend nuevo; el service worker precarga los recursos públicos de ese build y ofrece aplicar la nueva versión.
 - **Tiendas:** no aplica a esta entrega. Si más adelante se empaqueta el bundle en Capacitor o se publica una app nativa, los cambios de código nativo/embebido necesitarán una nueva compilación y el proceso de distribución de cada tienda. No se debe descargar y ejecutar código remoto para eludir esas revisiones.
 
 ## Pruebas de aceptación
@@ -68,6 +68,7 @@ Comprobaciones locales tras la implementación:
 - `npm run build`
 - Verificar que `dist/pwa-precache.json` contiene los recursos requeridos, las fotos opcionales de `images/refugio/` y `offline.html`; `dist/public-routes.json` solo las rutas públicas; `dist/sw.js` sin el marcador `__PWA_CACHE_VERSION__`; y el `start_url` compilado `./?app=1`.
 - Resultado local: typecheck, lint, 32 pruebas y build pasan. La simulación móvil sin conexión abrió el perfil de Blanquita desde caché y mostró el aviso offline. El aviso también detectó la desconexión aunque `navigator.onLine` siguiera en `true`.
+- Despliegue público verificado: GitHub Actions completó la publicación del commit `e35e92f` con éxito. La web entrega `offline.html`, `public-routes.json` y `pwa-precache.json` con HTTP 200; la lista contiene 38 rutas públicas, 0 rutas administrativas, y la precarga tiene 95 recursos requeridos y 24 fotos opcionales sin bundles administrativos.
 - Lighthouse móvil local: accesibilidad 100 y mejores prácticas 100. Observó un canonical no válido en la vista previa local (SEO 92) y CLS 0.078 (Agentic Browsing 98); estas puntuaciones no son mediciones de producción.
 - Servir `dist` y comprobar el fallback offline cuando falta una ruta pública cacheada, además de confirmar que formularios fallen con mensaje útil y no creen una falsa confirmación.
 - Volver online, comprobar que el aviso desaparece, visitar la web actualizada y confirmar detección del service worker nuevo. La verificación del perfil sin conexión ya se hizo localmente; el fallback sin shell, formularios offline y transición de actualización quedan pendientes.
