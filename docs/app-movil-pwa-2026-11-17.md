@@ -1,7 +1,7 @@
 # AdoptaME móvil instalable — PWA
 
 Fecha: 17 de noviembre de 2026
-Estado: publicada en https://naomyalvarado2026.github.io/animalitos/. Google OAuth y las pruebas en teléfonos reales siguen pendientes.
+Estado: la versión anterior está publicada en https://naomyalvarado2026.github.io/animalitos/. Este refuerzo PWA está implementado y verificado localmente; todavía no está publicado. Google OAuth y las pruebas en teléfonos reales siguen pendientes.
 
 ## Decisión de arquitectura
 
@@ -9,16 +9,28 @@ La web ya usa React, Vite, Tailwind y Supabase, y tenía manifest, iconos, botó
 
 No se incorpora Capacitor ni se inicia una publicación en tiendas: no hay una función nativa que lo requiera hoy, y una versión empaquetada necesitaría compilación, revisión y distribución para cambios de código. La PWA no equivale a una app publicada en Google Play o App Store.
 
+### Comparación de alternativas
+
+| Alternativa | Encaje para AdoptaME | Actualizaciones | Carga de mantenimiento |
+| --- | --- | --- | --- |
+| PWA existente (recomendada) | Android y iPhone desde el mismo sitio; ya hay manifest, iconos, instalación y service worker. No requiere funciones nativas específicas. | El contenido conectado llega desde el sitio/backend. La interfaz llega al actualizar o reabrir y el service worker prepara la nueva versión; no depende de que una tienda revise cada cambio. | Menor: conserva React/Vite, GitHub Pages y un único código. |
+| Capacitor | Añadiría puentes para APIs nativas si fueran necesarias; hoy no se identificó una necesidad concreta. | Los recursos de una versión empaquetada y el código nativo requieren compilar y distribuir una nueva versión. | Mayor: añade proyecto nativo, dependencias y ciclos de compilación para Android/iOS. |
+| Nativa por plataforma | Puede cubrir integraciones específicas del sistema, pero duplicaría el recorrido actual sin beneficio identificado. | Publicación y revisión por plataforma para cambios de la app. | Mayor: dos implementaciones y procesos separados. |
+
+La PWA se sirve desde el alojamiento web actual; instalarla no requiere publicarla en una tienda. Mantener la web evita crear dos binarios, aunque no reemplaza las pruebas en equipos reales.
+
 ## Qué incorpora este cambio local
 
 - El `start_url` del manifest abre el modo app (`?app=1`). Al arrancar en modo instalado, la pantalla inicial pide Google. La web abierta en un navegador normal conserva su acceso público.
 - El login usa Supabase OAuth y solicita elegir una cuenta de Google. No crea perfiles administrativos ni modifica los roles actuales.
 - La PWA muestra el correo de la sesión y ofrece cierre de sesión; el acceso a datos administrativos continúa determinado por los perfiles y políticas existentes.
 - El acceso inicial necesita internet. La sesión persiste con la configuración existente de Supabase; una sesión iniciada permite abrir la app sin conexión si el dispositivo conserva sus datos locales.
-- El service worker precarga los módulos JavaScript/CSS compilados, los iconos y las fotos locales del directorio `public/images/refugio/` (24 archivos; aproximadamente 3.7 MB en este checkout). El contenido editorial de los 12 perfiles locales permite consultar sus historias guardadas.
-- La precarga se genera a partir del manifest de Vite en cada build. Un identificador derivado de ese manifest cambia la versión del caché y permite al service worker preparar los recursos nuevos antes de activar esa versión.
+- El service worker precarga el shell, las dependencias públicas que descubre desde las entradas públicas de Vite, los iconos y la página offline. Las fotos locales del directorio `public/images/refugio/` se precargan como recursos opcionales (24 archivos; aproximadamente 3.7 MB en este checkout), para que una foto ausente no impida instalar la app.
+- La precarga se genera a partir del manifest de Vite en cada build. Un identificador derivado de ese manifest cambia la versión del caché y permite al service worker preparar los recursos necesarios antes de activar esa versión. Los módulos administrativos no se agregan por defecto a la precarga pública.
 - Los recursos visuales se buscan primero en la red y quedan guardados como respaldo. Los módulos con hash se sirven desde caché para evitar descargas repetidas.
-- Cuando no hay conexión, se avisa que los perfiles guardados pueden estar desactualizados y que formularios, solicitudes, donaciones y pedidos requieren conexión. No se encolan ni se declaran completadas acciones sin respuesta del servidor.
+- Las navegaciones públicas sin parámetros se guardan bajo su propia ruta, no sobre el shell genérico. Las URLs con parámetros no se persisten, para no guardar códigos OAuth, filtros o valores de formularios. Si falta la ruta y el shell no está disponible, el service worker puede mostrar la página offline independiente.
+- Solo se almacenan rutas públicas emitidas en `public-routes.json`; las rutas administrativas o desconocidas no se agregan a la caché de páginas. Las copias de página vencen a los 7 días; el shell y los recursos compilados conservan su versión hasta que se activa otra versión del service worker, que elimina la caché anterior.
+- Cuando no hay conexión, se avisa que los perfiles guardados pueden estar desactualizados y que formularios, solicitudes, donaciones y pedidos requieren conexión. El estado combina eventos del navegador con una comprobación ligera de conectividad; esto detecta casos donde `navigator.onLine` permanece en `true` durante una desconexión. No se encolan ni se declaran completadas acciones sin respuesta del servidor.
 - Si se detecta una versión nueva, la app avisa y permite aplicarla desde «Actualizar app». La persona confirma antes del reinicio para no perder un formulario abierto.
 
 ## Límites que siguen vigentes
@@ -43,7 +55,7 @@ No guardar credenciales OAuth en este repositorio ni en variables `VITE_*`. El s
 ## Actualizaciones
 
 - **Contenido y datos de Supabase:** se actualizan al conectar con la web/backend; los datos disponibles sin conexión pueden quedar viejos.
-- **Interfaz y código de la PWA:** el flujo de publicación actual sirve el frontend nuevo; el service worker precarga el conjunto de recursos del build y ofrece aplicar la nueva versión.
+- **Interfaz y código de la PWA:** al publicar estos cambios, el sitio servirá el frontend nuevo; el service worker precargará los recursos públicos de ese build y ofrecerá aplicar la nueva versión.
 - **Tiendas:** no aplica a esta entrega. Si más adelante se empaqueta el bundle en Capacitor o se publica una app nativa, los cambios de código nativo/embebido necesitarán una nueva compilación y el proceso de distribución de cada tienda. No se debe descargar y ejecutar código remoto para eludir esas revisiones.
 
 ## Pruebas de aceptación
@@ -54,14 +66,17 @@ Comprobaciones locales tras la implementación:
 - `npm run lint`
 - `npm test`
 - `npm run build`
-- Verificar que `dist/pwa-precache.json` contiene recursos `assets/` y las fotos de `images/refugio/`, que `dist/sw.js` no conserve el marcador `__PWA_CACHE_VERSION__`, y que el `start_url` compilado sea `./?app=1`.
-- Servir `dist` y simular desconexión: abrir `/animalitos/`, revisar perfiles/fotos guardados, y confirmar el aviso offline. Confirmar que formularios fallen con mensaje útil y no creen una falsa confirmación.
-- Volver online, comprobar que el aviso desaparece, visitar la web actualizada y confirmar detección del service worker nuevo.
+- Verificar que `dist/pwa-precache.json` contiene los recursos requeridos, las fotos opcionales de `images/refugio/` y `offline.html`; `dist/public-routes.json` solo las rutas públicas; `dist/sw.js` sin el marcador `__PWA_CACHE_VERSION__`; y el `start_url` compilado `./?app=1`.
+- Resultado local: typecheck, lint, 32 pruebas y build pasan. La simulación móvil sin conexión abrió el perfil de Blanquita desde caché y mostró el aviso offline. El aviso también detectó la desconexión aunque `navigator.onLine` siguiera en `true`.
+- Lighthouse móvil local: accesibilidad 100 y mejores prácticas 100. Observó un canonical no válido en la vista previa local (SEO 92) y CLS 0.078 (Agentic Browsing 98); estas puntuaciones no son mediciones de producción.
+- Servir `dist` y comprobar el fallback offline cuando falta una ruta pública cacheada, además de confirmar que formularios fallen con mensaje útil y no creen una falsa confirmación.
+- Volver online, comprobar que el aviso desaparece, visitar la web actualizada y confirmar detección del service worker nuevo. La verificación del perfil sin conexión ya se hizo localmente; el fallback sin shell, formularios offline y transición de actualización quedan pendientes.
 - En Android Chrome e iPhone Safari: instalar desde el navegador, iniciar sesión con Google, cerrar/abrir la app, probar OAuth/retorno, desactivar red y validar las rutas anteriores. Estos casos requieren teléfonos y configuración real del proveedor.
 
 ## Fuentes de plataforma consultadas
 
 - Chrome, instalación PWA: https://developer.chrome.com/docs/modern-web-guidance/guides/pwa/install-web-app
+- MDN, instalación y compatibilidad de PWA: https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable
 - Apple Support, añadir sitio web a Inicio en iPhone: https://support.apple.com/en-az/guide/iphone/iphea86e5236/26/ios/26
 - Supabase, Google social login y deep links: https://supabase.com/docs/guides/auth/native-mobile-deep-linking
 - Google, OAuth para apps nativas: https://developers.google.com/identity/protocols/oauth2/native-app

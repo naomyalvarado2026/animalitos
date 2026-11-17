@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { PawPrint, WifiOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { assetUrl } from '@/lib/assets';
 import { Button } from '@/components/ui/button';
+import { useOnlineStatus } from './useOnlineStatus';
 
 function isAppLaunch() {
   if (typeof window === 'undefined') return false;
@@ -18,20 +19,9 @@ function GoogleMark() {
 
 function AppSignIn() {
   const { loading, signInWithGoogle } = useAuth();
-  const [online, setOnline] = useState(() => navigator.onLine);
+  const online = useOnlineStatus();
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
-  useEffect(() => {
-    const onOnline = () => setOnline(true);
-    const onOffline = () => setOnline(false);
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-    return () => {
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
-    };
-  });
 
   async function handleGoogleSignIn() {
     setPending(true);

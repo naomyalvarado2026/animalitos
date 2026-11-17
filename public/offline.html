@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#3c096c" />
+    <meta name="color-scheme" content="light" />
+    <title>Sin conexión | AdoptaME</title>
+    <style>
+      :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #fffdf9; color: #17022b; }
+      * { box-sizing: border-box; }
+      body { min-height: 100svh; margin: 0; display: grid; place-items: center; padding: 1.25rem; }
+      main { width: min(100%, 28rem); padding: clamp(1.5rem, 6vw, 2.5rem); border: 1px solid #e8dff0; border-radius: 1.75rem; background: white; box-shadow: 0 1.25rem 3.5rem #17022b16; text-align: center; }
+      .paw { width: 3.75rem; height: 3.75rem; margin: 0 auto 1rem; display: grid; place-items: center; border-radius: 1.25rem; background: #3c096c; color: white; font-size: 2rem; }
+      h1 { margin: 0; font-size: clamp(1.65rem, 7vw, 2.25rem); line-height: 1.1; letter-spacing: -.035em; }
+      p { margin: 1rem 0 0; color: #5d5269; line-height: 1.65; }
+      button { width: 100%; min-height: 3rem; margin-top: 1.5rem; border: 0; border-radius: .9rem; background: #3c096c; color: white; font: inherit; font-weight: 700; cursor: pointer; }
+      button:focus-visible { outline: 3px solid #ff8069; outline-offset: 3px; }
+      .status { margin-top: 1rem; font-size: .875rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="paw" aria-hidden="true">🐾</div>
+      <h1>Tu conexión se tomó un descanso</h1>
+      <p>AdoptaME necesita internet para cargar esta página. Si ya habías abierto la app, vuelve al inicio para consultar los perfiles y recursos guardados.</p>
+      <button type="button" onclick="location.reload()">Intentar de nuevo</button>
+      <p class="status" role="status" aria-live="polite" id="connection-status">Sin conexión a internet</p>
+    </main>
+    <script>
+      const status = document.getElementById('connection-status');
+      window.addEventListener('online', () => { status.textContent = 'Conexión recuperada. Puedes volver a intentarlo.'; });
+      window.addEventListener('offline', () => { status.textContent = 'Sin conexión a internet'; });
+    </script>
+  </body>
+</html>

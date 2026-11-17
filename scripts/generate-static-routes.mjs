@@ -37,6 +37,7 @@ const staticRoutes = [
   { path: '/contacto/quiero-apoyar', title: 'Quiero apoyar | AdoptaME', description: 'Encuentra una forma de contribuir al cuidado de los perros rescatados.' },
   { path: '/privacidad', title: 'Privacidad y métricas | AdoptaME', description: 'Conoce cómo protegemos tus datos y cómo usamos métricas anónimas en AdoptaME.' },
 ];
+const publicRoutePaths = staticRoutes.map(({ path: routePath }) => routePath);
 
 function escapeHtml(value) {
   return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
@@ -113,7 +114,10 @@ try {
       about: { '@type': 'Thing', name: 'Adopción responsable de perros' },
     });
     routesForSitemap.push(canonical);
+    publicRoutePaths.push(`/adopta/${dog.adoption_slug}`);
   }
+
+  await writeFile(path.join(dist, 'public-routes.json'), `${JSON.stringify(publicRoutePaths.sort(), null, 2)}\n`, 'utf8');
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routesForSitemap.map((url) => `  <url><loc>${escapeHtml(url)}</loc></url>`).join('\n')}\n</urlset>\n`;
   await writeFile(path.join(dist, 'sitemap.xml'), sitemap, 'utf8');

@@ -240,7 +240,7 @@ export function PublicFooter() {
           </a>
           <Link
             to="/admin/login"
-            aria-label="Entrar al panel administrativo"
+              aria-label="Admin: entrar al panel administrativo"
             className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 text-xs hover:bg-[var(--color-accent)] hover:text-[var(--color-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] transition-colors"
           >
             <LockKeyhole className="h-3.5 w-3.5" aria-hidden="true" />

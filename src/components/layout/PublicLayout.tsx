@@ -112,7 +112,7 @@ export function PublicLayout() {
             <p className="text-xs leading-relaxed text-[var(--color-muted-foreground)]">¿Nos permites contar visitas y solicitudes por perfil para mejorar la adopción? No incluimos tus datos de contacto. <Link to="/privacidad" className="font-semibold text-[var(--color-primary)] underline">Privacidad</Link></p>
             <div className="flex shrink-0 gap-2">
               <button type="button" onClick={() => setAnalyticsConsent(false)} className="min-h-10 rounded-xl border border-[var(--color-border)] px-3 text-xs font-semibold hover:bg-[var(--color-muted)]"><X className="mr-1 inline h-3.5 w-3.5" />Ahora no</button>
-              <button type="button" onClick={() => setAnalyticsConsent(true)} className="min-h-10 rounded-xl bg-[var(--color-primary)] px-3 text-xs font-semibold text-white hover:opacity-90"><Check className="mr-1 inline h-3.5 w-3.5" />Aceptar métricas</button>
+              <button type="button" onClick={() => setAnalyticsConsent(true)} className="min-h-10 rounded-xl bg-[var(--color-primary)] px-3 text-xs font-semibold text-[#17022b] hover:opacity-90"><Check className="mr-1 inline h-3.5 w-3.5" />Aceptar métricas</button>
             </div>
           </div>
         </div>}
