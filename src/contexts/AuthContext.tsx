@@ -9,7 +9,6 @@ interface AuthContextValue {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isSuperAdmin: boolean;
@@ -108,21 +107,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function signInWithGoogle() {
-    if (!navigator.onLine) return { error: new Error('Conéctate a internet para iniciar sesión con Google.') };
-    try {
-      const redirectUrl = new URL(import.meta.env.BASE_URL, window.location.origin);
-      redirectUrl.searchParams.set('app', '1');
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: redirectUrl.toString(), queryParams: { prompt: 'select_account' } },
-      });
-      return { error: error as Error | null };
-    } catch {
-      return { error: new Error('No pudimos iniciar el acceso con Google. Revisa tu conexión e inténtalo otra vez.') };
-    }
-  }
-
   async function signOut() {
     localStorage.removeItem('animalitos_demo_session');
     try {
@@ -157,7 +141,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loading,
       signIn,
-      signInWithGoogle,
       signOut,
       isAdmin,
       isSuperAdmin,

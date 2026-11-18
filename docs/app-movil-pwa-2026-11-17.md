@@ -1,7 +1,7 @@
 # AdoptaME móvil instalable — PWA
 
 Fecha: 17 de noviembre de 2026
-Estado: PWA publicada y verificada en https://naomyalvarado2026.github.io/animalitos/. Google OAuth y las pruebas en teléfonos reales siguen pendientes.
+Estado: PWA publicada en https://naomyalvarado2026.github.io/animalitos/. El acceso a páginas públicas funciona sin cuenta; falta verificar la instalación en teléfonos reales.
 
 ## Decisión de arquitectura
 
@@ -21,10 +21,9 @@ La PWA se sirve desde el alojamiento web actual; instalarla no requiere publicar
 
 ## Qué incorpora este cambio local
 
-- El `start_url` del manifest abre el modo app (`?app=1`). Al arrancar en modo instalado, la pantalla inicial pide Google. La web abierta en un navegador normal conserva su acceso público.
-- El login usa Supabase OAuth y solicita elegir una cuenta de Google. No crea perfiles administrativos ni modifica los roles actuales.
-- La PWA muestra el correo de la sesión y ofrece cierre de sesión; el acceso a datos administrativos continúa determinado por los perfiles y políticas existentes.
-- El acceso inicial necesita internet. La sesión persiste con la configuración existente de Supabase; una sesión iniciada permite abrir la app sin conexión si el dispositivo conserva sus datos locales.
+- El `start_url` del manifest abre el modo app (`?app=1`), pero ese parámetro no cambia quién puede leer el contenido público. La app abre perfiles y páginas de adopción sin pedir una cuenta.
+- No se exige Google ni se crea una sesión solo para navegar: adopción, perfiles, tienda y demás contenido público no tienen una necesidad de cuenta que justifique bloquear la entrada. Esto también permite usar la PWA mientras OAuth no esté configurado.
+- El acceso administrativo continúa separado y protegido por el inicio existente, perfiles autorizados y políticas RLS. Autenticarse con Google no concede permisos administrativos.
 - El service worker precarga el shell, las dependencias públicas que descubre desde las entradas públicas de Vite, los iconos y la página offline. Las fotos locales del directorio `public/images/refugio/` se precargan como recursos opcionales (24 archivos; aproximadamente 3.7 MB en este checkout), para que una foto ausente no impida instalar la app.
 - La precarga se genera a partir del manifest de Vite en cada build. Un identificador derivado de ese manifest cambia la versión del caché y permite al service worker preparar los recursos necesarios antes de activar esa versión. Los módulos administrativos no se agregan por defecto a la precarga pública.
 - Los recursos visuales se buscan primero en la red y quedan guardados como respaldo. Los módulos con hash se sirven desde caché para evitar descargas repetidas.
@@ -35,22 +34,18 @@ La PWA se sirve desde el alojamiento web actual; instalarla no requiere publicar
 
 ## Límites que siguen vigentes
 
-- La sesión inicial y OAuth no pueden completarse offline.
+- Las funciones públicas no necesitan sesión. Si más adelante se añade un beneficio personal que sí requiera cuenta, el acceso OAuth debe configurarse y probarse antes de hacerlo obligatorio.
 - Historias, disponibilidad, ajustes, productos y otros datos que solo llegan de Supabase no se garantizan sin conexión; el modo offline usa contenido estático local cuando corresponde. La app no afirma que esos datos sean actuales.
 - Se conservan perfiles públicos sin obligar a iniciar sesión al visitar la web en el navegador.
 - No se implementan notificaciones push, pagos nativos ni envío diferido de formularios.
-- El código prepara el flujo de Google, pero el proveedor debe habilitarse en el panel de Supabase y en Google Cloud. Esa configuración no se ha hecho desde el repositorio.
-- No se ha comprobado todavía la instalación, OAuth, modo offline o actualización en un dispositivo físico Android/iPhone.
+- No se habilitó Google OAuth porque el contenido público no necesita cuenta y no existe una función personal que requiera iniciar sesión en esta app. No se guardaron ni solicitaron credenciales.
+- No se ha comprobado todavía la instalación ni la actualización en un dispositivo físico Android/iPhone.
 
-## Configuración externa de Google OAuth
+## Cuentas y Google OAuth
 
-1. En Supabase → Authentication → Providers → Google, habilitar Google e ingresar el OAuth Client ID y Secret de Google Cloud.
-2. En Google Cloud, configurar el URI de retorno que muestra el panel de Supabase (normalmente `https://<proyecto>.supabase.co/auth/v1/callback`) y los orígenes autorizados que correspondan.
-3. En Supabase → Authentication → URL Configuration, permitir el URL de retorno de la app publicada: `https://naomyalvarado2026.github.io/animalitos/`. Añadir también la URL local de desarrollo durante pruebas.
-4. Iniciar sesión desde la PWA en Chrome Android y Safari/iPhone, revisar consentimiento, retorno a la pantalla app, refresco de sesión, expiración, cierre y reapertura sin conexión.
-5. Confirmar que una cuenta Google nueva no recibe fila ni rol administrativo en `profiles`. Mantener intactas las políticas RLS existentes.
+Las páginas públicas y la navegación instalada son accesibles sin cuenta. Las rutas de administración conservan el inicio de sesión y las comprobaciones de perfil/rol ya existentes. Google no se habilita solo por instalar la PWA: se configurará cuando exista una función personal concreta que lo requiera, con retorno aprobado en Supabase y Google Cloud y pruebas de sesión/logout. Una cuenta Google nunca debe recibir un rol administrativo automáticamente.
 
-No guardar credenciales OAuth en este repositorio ni en variables `VITE_*`. El secreto del cliente Google pertenece únicamente a la configuración del proveedor en Supabase.
+No guardar credenciales OAuth en el repositorio ni en variables `VITE_*`. Si se añade este flujo en el futuro, el secreto del cliente Google pertenece únicamente a la configuración privada del proveedor en Supabase.
 
 ## Actualizaciones
 
@@ -67,12 +62,15 @@ Comprobaciones locales tras la implementación:
 - `npm test`
 - `npm run build`
 - Verificar que `dist/pwa-precache.json` contiene los recursos requeridos, las fotos opcionales de `images/refugio/` y `offline.html`; `dist/public-routes.json` solo las rutas públicas; `dist/sw.js` sin el marcador `__PWA_CACHE_VERSION__`; y el `start_url` compilado `./?app=1`.
-- Resultado local: typecheck, lint, 32 pruebas y build pasan. La simulación móvil sin conexión abrió el perfil de Blanquita desde caché y mostró el aviso offline. El aviso también detectó la desconexión aunque `navigator.onLine` siguiera en `true`.
+- Resultado local: typecheck, lint, 36 pruebas y build pasan. La precarga compilada contiene 95 recursos requeridos, 24 fotos opcionales y 38 rutas públicas.
+- Vista previa local con `?app=1`: el inicio público aparece sin pedir Google ni ocultar los controles de navegación.
 - Despliegue público verificado: GitHub Actions completó la publicación del commit `e35e92f` con éxito. La web entrega `offline.html`, `public-routes.json` y `pwa-precache.json` con HTTP 200; la lista contiene 38 rutas públicas, 0 rutas administrativas, y la precarga tiene 95 recursos requeridos y 24 fotos opcionales sin bundles administrativos.
 - Lighthouse móvil local: accesibilidad 100 y mejores prácticas 100. Observó un canonical no válido en la vista previa local (SEO 92) y CLS 0.078 (Agentic Browsing 98); estas puntuaciones no son mediciones de producción.
-- Servir `dist` y comprobar el fallback offline cuando falta una ruta pública cacheada, además de confirmar que formularios fallen con mensaje útil y no creen una falsa confirmación.
-- Volver online, comprobar que el aviso desaparece, visitar la web actualizada y confirmar detección del service worker nuevo. La verificación del perfil sin conexión ya se hizo localmente; el fallback sin shell, formularios offline y transición de actualización quedan pendientes.
-- En Android Chrome e iPhone Safari: instalar desde el navegador, iniciar sesión con Google, cerrar/abrir la app, probar OAuth/retorno, desactivar red y validar las rutas anteriores. Estos casos requieren teléfonos y configuración real del proveedor.
+- Producción, Playwright en contexto aislado: se visitó Blanquita con conexión para completar la caché (120 recursos iniciales; 123 tras guardar la ficha y fotos) y luego se desconectó realmente la red con `context.setOffline(true)`. La ruta abrió el título, la historia y el aviso de contenido guardado potencialmente desactualizado.
+- Producción, Playwright: al vaciar la caché del shell y abrir una ruta sin copia, apareció la página independiente «Sin conexión | AdoptaME» con opción para reintentar.
+- Las pruebas automatizadas del service worker comprueban ruta fresca offline, descarte a los 7 días, respaldo del shell, página offline independiente y no persistencia de rutas administrativas ni URLs con parámetros.
+- Aún falta verificar que formularios fallen con mensaje útil y no creen una falsa confirmación, la transición visual de actualización y la recuperación tras volver a conectarse.
+- En Android Chrome e iPhone Safari: instalar desde el navegador, abrir contenido público, desactivar red, validar la caché y comprobar actualización al regresar en línea. La app no requiere OAuth para estas pruebas; aún hace falta probarlas en teléfonos físicos.
 
 ## Fuentes de plataforma consultadas
 
