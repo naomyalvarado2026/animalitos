@@ -34,6 +34,10 @@ La PWA se sirve desde el alojamiento web actual; instalarla no requiere publicar
 - La barra de sesión de la PWA ya no muestra el correo; ofrece cerrar sesión en dispositivos compartidos.
 - Si se detecta una versión nueva, la app avisa y permite aplicarla desde «Actualizar app». La persona confirma antes del reinicio para no perder un formulario abierto.
 
+## Compartir e instalar en otro teléfono
+
+Comparte este enlace público desde WhatsApp, correo o cualquier mensajería: https://naomyalvarado2026.github.io/animalitos/ . En Android, abre el enlace en Chrome y usa «Instalar app» o «Añadir a pantalla de inicio» desde el menú del navegador. En iPhone, abre el enlace en Safari, toca Compartir, elige «Añadir a pantalla de inicio» y confirma. El botón «Instalar» de la web también muestra las instrucciones disponibles para el dispositivo. No se comparte un APK: cada persona instala la PWA desde el enlace HTTPS.
+
 ## Límites que siguen vigentes
 
 - Las funciones públicas no necesitan sesión. Si más adelante se añade un beneficio personal que sí requiera cuenta, el acceso OAuth debe configurarse y probarse antes de hacerlo obligatorio.
@@ -71,7 +75,7 @@ Comprobaciones locales tras la implementación:
 - Producción, Playwright en contexto aislado: se visitó Blanquita con conexión para completar la caché (120 recursos iniciales; 123 tras guardar la ficha y fotos) y luego se desconectó realmente la red con `context.setOffline(true)`. La ruta abrió el título, la historia y el aviso de contenido guardado potencialmente desactualizado.
 - Producción, Playwright: al vaciar la caché del shell y abrir una ruta sin copia, apareció la página independiente «Sin conexión | AdoptaME» con opción para reintentar.
 - Las pruebas automatizadas del service worker comprueban ruta fresca offline, descarte a los 7 días, respaldo del shell, página offline independiente, no persistencia de rutas administrativas ni URLs con parámetros, limpieza por TTL de recursos y límite de 80 entradas, y tolerancia a fallos de escritura por cuota.
-- Pruebas manuales de producción en contextos Playwright aislados y con datos sintéticos: contacto con interés precargado en un producto, voluntariado y apadrinamiento. Al desconectar la red antes de enviar, ninguno muestra una confirmación de éxito ni persiste la solicitud en almacenamiento local; los formularios conservan sus campos. El aviso offline explica que formularios, solicitudes, donaciones y pedidos necesitan conexión. No se enviaron datos al backend. Quedan pendientes los flujos de solicitud de adopción y donación, además del pedido de tienda si se activa ese flujo de compra.
+- Pruebas manuales de producción en contextos Playwright aislados y con datos sintéticos: contacto con interés precargado en un producto, voluntariado, apadrinamiento y solicitud de adopción. Al desconectar la red antes de enviar, no se muestra una confirmación de éxito ni se guarda una solicitud o recibo en almacenamiento local. Los formularios mantienen el estado para reintentar; los valores no se ponen en URLs. No se enviaron datos al backend. La página de donaciones ofrece una calculadora de impacto y coordinación con el equipo, no procesa pagos ni presenta un formulario de cobro. Los productos de la tienda dirigen el interés al formulario de contacto y no crean un pedido en línea.
 - La acción «Actualizar app» ahora diferencia una instalación de service worker fallida o detenida por timeout de una app realmente al día; si no puede confirmar una versión lista, comunica el error en vez de mostrar éxito.
 - La transición visual de actualización del service worker y la instalación/actualización en teléfonos físicos siguen pendientes.
 - En Android Chrome e iPhone Safari: instalar desde el navegador, abrir contenido público, desactivar red, validar la caché y comprobar actualización al regresar en línea. La app no requiere OAuth para estas pruebas; aún hace falta probarlas en teléfonos físicos.
@@ -85,5 +89,6 @@ Comprobaciones locales tras la implementación:
 - Google, OAuth para apps nativas: https://developers.google.com/identity/protocols/oauth2/native-app
 - Apple, App Review Guidelines (2.5.2, 4.2 y 4.8): https://developer.apple.com/app-store/review/guidelines/
 - Android, riesgos de carga dinámica de código: https://developer.android.com/privacy-and-security/risks/dynamic-code-loading
+
 
 
