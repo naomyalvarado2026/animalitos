@@ -61,13 +61,13 @@ const SOCIAL_LINKS = [
   },
 ];
 
-async function waitForWorker(worker: ServiceWorker) {
-  if (worker.state === 'installed' || worker.state === 'activated' || worker.state === 'redundant') return;
-  await new Promise<void>((resolve) => {
+async function waitForWorker(worker: ServiceWorker): Promise<'installed' | 'activated' | 'redundant' | 'timeout'> {
+  if (worker.state === 'installed' || worker.state === 'activated' || worker.state === 'redundant') return worker.state;
+  return await new Promise((resolve) => {
     const finish = () => {
       window.clearTimeout(timeout);
       worker.removeEventListener('statechange', onStateChange);
-      resolve();
+      resolve(worker.state === 'installed' || worker.state === 'activated' || worker.state === 'redundant' ? worker.state : 'timeout');
     };
     const onStateChange = () => {
       if (worker.state === 'installed' || worker.state === 'activated' || worker.state === 'redundant') finish();
@@ -125,8 +125,12 @@ export function PublicFooter() {
       const registration = registrationRef.current ?? await navigator.serviceWorker.ready;
       registrationRef.current = registration;
       await registration.update();
-      if (!registration.waiting && registration.installing) await waitForWorker(registration.installing);
+      if (!registration.waiting && registration.installing) {
+        const state = await waitForWorker(registration.installing);
+        if (state === 'redundant' || state === 'timeout') throw new Error('La instalación de la actualización no terminó.');
+      }
       if (!registration.waiting) {
+        if (registration.installing) throw new Error('La actualización sigue en preparación.');
         toast.success('La app ya está actualizada.');
         return;
       }

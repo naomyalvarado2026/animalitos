@@ -71,7 +71,8 @@ Comprobaciones locales tras la implementación:
 - Producción, Playwright en contexto aislado: se visitó Blanquita con conexión para completar la caché (120 recursos iniciales; 123 tras guardar la ficha y fotos) y luego se desconectó realmente la red con `context.setOffline(true)`. La ruta abrió el título, la historia y el aviso de contenido guardado potencialmente desactualizado.
 - Producción, Playwright: al vaciar la caché del shell y abrir una ruta sin copia, apareció la página independiente «Sin conexión | AdoptaME» con opción para reintentar.
 - Las pruebas automatizadas del service worker comprueban ruta fresca offline, descarte a los 7 días, respaldo del shell, página offline independiente, no persistencia de rutas administrativas ni URLs con parámetros, limpieza por TTL de recursos y límite de 80 entradas, y tolerancia a fallos de escritura por cuota.
-- Prueba manual local de contacto offline: con datos sintéticos y el navegador desconectado, el formulario muestra «Error al enviar. Intenta nuevamente.», conserva el formulario, no muestra éxito y no deja datos en localStorage/sessionStorage; al reconectar desaparece el aviso offline. No se envió al backend. Falta repetir la prueba en cada formulario público.
+- Pruebas manuales de producción en contextos Playwright aislados y con datos sintéticos: contacto con interés precargado en un producto, voluntariado y apadrinamiento. Al desconectar la red antes de enviar, ninguno muestra una confirmación de éxito ni persiste la solicitud en almacenamiento local; los formularios conservan sus campos. El aviso offline explica que formularios, solicitudes, donaciones y pedidos necesitan conexión. No se enviaron datos al backend. Quedan pendientes los flujos de solicitud de adopción y donación, además del pedido de tienda si se activa ese flujo de compra.
+- La acción «Actualizar app» ahora diferencia una instalación de service worker fallida o detenida por timeout de una app realmente al día; si no puede confirmar una versión lista, comunica el error en vez de mostrar éxito.
 - La transición visual de actualización del service worker y la instalación/actualización en teléfonos físicos siguen pendientes.
 - En Android Chrome e iPhone Safari: instalar desde el navegador, abrir contenido público, desactivar red, validar la caché y comprobar actualización al regresar en línea. La app no requiere OAuth para estas pruebas; aún hace falta probarlas en teléfonos físicos.
 
@@ -84,4 +85,5 @@ Comprobaciones locales tras la implementación:
 - Google, OAuth para apps nativas: https://developers.google.com/identity/protocols/oauth2/native-app
 - Apple, App Review Guidelines (2.5.2, 4.2 y 4.8): https://developer.apple.com/app-store/review/guidelines/
 - Android, riesgos de carga dinámica de código: https://developer.android.com/privacy-and-security/risks/dynamic-code-loading
+
 
