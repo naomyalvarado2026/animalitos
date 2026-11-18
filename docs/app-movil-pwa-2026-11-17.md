@@ -19,17 +19,19 @@ No se incorpora Capacitor ni se inicia una publicación en tiendas: no hay una f
 
 La PWA se sirve desde el alojamiento web actual; instalarla no requiere publicarla en una tienda. Mantener la web evita crear dos binarios, aunque no reemplaza las pruebas en equipos reales.
 
-## Qué incorpora este cambio local
+## Cómo funciona la PWA actual
 
 - El `start_url` del manifest abre el modo app (`?app=1`), pero ese parámetro no cambia quién puede leer el contenido público. La app abre perfiles y páginas de adopción sin pedir una cuenta.
 - No se exige Google ni se crea una sesión solo para navegar: adopción, perfiles, tienda y demás contenido público no tienen una necesidad de cuenta que justifique bloquear la entrada. Esto también permite usar la PWA mientras OAuth no esté configurado.
 - El acceso administrativo continúa separado y protegido por el inicio existente, perfiles autorizados y políticas RLS. Autenticarse con Google no concede permisos administrativos.
 - El service worker precarga el shell, las dependencias públicas que descubre desde las entradas públicas de Vite, los iconos y la página offline. Las fotos locales del directorio `public/images/refugio/` se precargan como recursos opcionales (24 archivos; aproximadamente 3.7 MB en este checkout), para que una foto ausente no impida instalar la app.
 - La precarga se genera a partir del manifest de Vite en cada build. Un identificador derivado de ese manifest cambia la versión del caché y permite al service worker preparar los recursos necesarios antes de activar esa versión. Los módulos administrativos no se agregan por defecto a la precarga pública.
-- Los recursos visuales se buscan primero en la red y quedan guardados como respaldo. Los módulos con hash se sirven desde caché para evitar descargas repetidas.
+- Los recursos visuales y módulos con hash se buscan primero en la red. Un caché dinámico separado elimina recursos tras 30 días, conserva como máximo 80 y los repone desde la precarga cuando corresponde. Las URLs con parámetros o fuera de `/animalitos/` no se guardan. Si el almacenamiento falla, la respuesta de red sigue funcionando.
 - Las navegaciones públicas sin parámetros se guardan bajo su propia ruta, no sobre el shell genérico. Las URLs con parámetros no se persisten, para no guardar códigos OAuth, filtros o valores de formularios. Si falta la ruta y el shell no está disponible, el service worker puede mostrar la página offline independiente.
 - Solo se almacenan rutas públicas emitidas en `public-routes.json`; las rutas administrativas o desconocidas no se agregan a la caché de páginas. Las copias de página vencen a los 7 días; el shell y los recursos compilados conservan su versión hasta que se activa otra versión del service worker, que elimina la caché anterior.
 - Cuando no hay conexión, se avisa que los perfiles guardados pueden estar desactualizados y que formularios, solicitudes, donaciones y pedidos requieren conexión. El estado combina eventos del navegador con una comprobación ligera de conectividad; esto detecta casos donde `navigator.onLine` permanece en `true` durante una desconexión. No se encolan ni se declaran completadas acciones sin respuesta del servidor.
+- El botón «Instalar» aparece en Android/iPhone o cuando el navegador expone una instalación directa. En Android/iPhone abre instrucciones propias de ese dispositivo; en escritorio sin instalación compatible no ocupa espacio.
+- La barra de sesión de la PWA ya no muestra el correo; ofrece cerrar sesión en dispositivos compartidos.
 - Si se detecta una versión nueva, la app avisa y permite aplicarla desde «Actualizar app». La persona confirma antes del reinicio para no perder un formulario abierto.
 
 ## Límites que siguen vigentes
@@ -62,14 +64,15 @@ Comprobaciones locales tras la implementación:
 - `npm test`
 - `npm run build`
 - Verificar que `dist/pwa-precache.json` contiene los recursos requeridos, las fotos opcionales de `images/refugio/` y `offline.html`; `dist/public-routes.json` solo las rutas públicas; `dist/sw.js` sin el marcador `__PWA_CACHE_VERSION__`; y el `start_url` compilado `./?app=1`.
-- Resultado local: typecheck, lint, 36 pruebas y build pasan. La precarga compilada contiene 95 recursos requeridos, 24 fotos opcionales y 38 rutas públicas.
+- Resultado local: typecheck, lint, 40 pruebas y build pasan. La precarga compilada contiene 95 recursos requeridos, 24 fotos opcionales y 38 rutas públicas. El bundle principal aún supera 500 kB minificado; el build lo advierte y queda como oportunidad de rendimiento.
 - Vista previa local con `?app=1`: el inicio público aparece sin pedir Google ni ocultar los controles de navegación.
 - Despliegue público verificado: GitHub Actions completó la publicación del commit `e35e92f` con éxito. La web entrega `offline.html`, `public-routes.json` y `pwa-precache.json` con HTTP 200; la lista contiene 38 rutas públicas, 0 rutas administrativas, y la precarga tiene 95 recursos requeridos y 24 fotos opcionales sin bundles administrativos.
 - Lighthouse móvil local: accesibilidad 100 y mejores prácticas 100. Observó un canonical no válido en la vista previa local (SEO 92) y CLS 0.078 (Agentic Browsing 98); estas puntuaciones no son mediciones de producción.
 - Producción, Playwright en contexto aislado: se visitó Blanquita con conexión para completar la caché (120 recursos iniciales; 123 tras guardar la ficha y fotos) y luego se desconectó realmente la red con `context.setOffline(true)`. La ruta abrió el título, la historia y el aviso de contenido guardado potencialmente desactualizado.
 - Producción, Playwright: al vaciar la caché del shell y abrir una ruta sin copia, apareció la página independiente «Sin conexión | AdoptaME» con opción para reintentar.
-- Las pruebas automatizadas del service worker comprueban ruta fresca offline, descarte a los 7 días, respaldo del shell, página offline independiente y no persistencia de rutas administrativas ni URLs con parámetros.
-- Aún falta verificar que formularios fallen con mensaje útil y no creen una falsa confirmación, la transición visual de actualización y la recuperación tras volver a conectarse.
+- Las pruebas automatizadas del service worker comprueban ruta fresca offline, descarte a los 7 días, respaldo del shell, página offline independiente, no persistencia de rutas administrativas ni URLs con parámetros, limpieza por TTL de recursos y límite de 80 entradas, y tolerancia a fallos de escritura por cuota.
+- Prueba manual local de contacto offline: con datos sintéticos y el navegador desconectado, el formulario muestra «Error al enviar. Intenta nuevamente.», conserva el formulario, no muestra éxito y no deja datos en localStorage/sessionStorage; al reconectar desaparece el aviso offline. No se envió al backend. Falta repetir la prueba en cada formulario público.
+- La transición visual de actualización del service worker y la instalación/actualización en teléfonos físicos siguen pendientes.
 - En Android Chrome e iPhone Safari: instalar desde el navegador, abrir contenido público, desactivar red, validar la caché y comprobar actualización al regresar en línea. La app no requiere OAuth para estas pruebas; aún hace falta probarlas en teléfonos físicos.
 
 ## Fuentes de plataforma consultadas
@@ -81,3 +84,4 @@ Comprobaciones locales tras la implementación:
 - Google, OAuth para apps nativas: https://developers.google.com/identity/protocols/oauth2/native-app
 - Apple, App Review Guidelines (2.5.2, 4.2 y 4.8): https://developer.apple.com/app-store/review/guidelines/
 - Android, riesgos de carga dinámica de código: https://developer.android.com/privacy-and-security/risks/dynamic-code-loading
+

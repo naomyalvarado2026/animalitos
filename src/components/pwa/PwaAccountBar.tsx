@@ -22,7 +22,7 @@ export function PwaAccountBar() {
   return (
     <div className="border-b border-[var(--color-border)] bg-[var(--color-card)] px-4 py-2.5 text-[var(--color-foreground)]">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-xs text-[var(--color-muted-foreground)]">Sesión iniciada como <span className="font-semibold text-[var(--color-foreground)]">{user.email || 'cuenta Google'}</span></p>
+        <p className="min-w-0 truncate text-xs text-[var(--color-muted-foreground)]">Hay una sesión iniciada en este dispositivo.</p>
         <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => void handleSignOut()} disabled={signingOut}>
           <LogOut aria-hidden="true" className="h-4 w-4" />
           {signingOut ? 'Cerrando…' : 'Cerrar sesión'}
@@ -31,3 +31,4 @@ export function PwaAccountBar() {
     </div>
   );
 }
+

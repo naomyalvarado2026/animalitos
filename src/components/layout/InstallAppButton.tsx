@@ -6,15 +6,26 @@ import { Button } from '@/components/ui/button';
 type InstallChoice = { outcome: 'accepted' | 'dismissed'; platform?: string };
 type InstallPrompt = Event & { prompt: () => Promise<void>; userChoice: Promise<InstallChoice> };
 
+function isIOSDevice() {
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isAndroidDevice() {
+  return /Android/i.test(navigator.userAgent);
+}
+
 export function InstallAppButton() {
   const [promptEvent, setPromptEvent] = useState<InstallPrompt | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const installed = window.matchMedia('(display-mode: standalone)').matches
       || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-    if (installed) setVisible(false);
+    if (installed) return;
+    setVisible(isIOSDevice() || isAndroidDevice());
+
     const onBeforeInstall = (event: Event) => {
       event.preventDefault();
       setPromptEvent(event as InstallPrompt);
@@ -34,12 +45,18 @@ export function InstallAppButton() {
 
   async function handleInstall() {
     if (promptEvent) {
-      await promptEvent.prompt();
-      const choice = await promptEvent.userChoice;
-      setPromptEvent(null);
-      if (choice.outcome === 'accepted') {
-        setVisible(false);
+      try {
+        await promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
+        setPromptEvent(null);
+        if (choice.outcome === 'accepted') {
+          setVisible(false);
+          return;
+        }
+        setHelpOpen(true);
         return;
+      } catch {
+        setPromptEvent(null);
       }
     }
     setHelpOpen(true);
@@ -53,16 +70,17 @@ export function InstallAppButton() {
     <AccessibleDialog open={helpOpen} onClose={() => setHelpOpen(false)} title="Instala AdoptaME">
       <div className="space-y-4 px-5 py-5 text-sm leading-relaxed sm:px-7">
         <p>Agrega AdoptaME a tu pantalla de inicio para abrirlo como una app.</p>
-        <div className="rounded-2xl bg-[var(--color-background)] p-4">
+        {isIOSDevice() && <div className="rounded-2xl bg-[var(--color-background)] p-4">
           <p className="font-bold">En iPhone o iPad</p>
           <p className="mt-1">Abre esta página en Safari, toca Compartir, elige “Añadir a pantalla de inicio” y activa “Abrir como app”.</p>
-        </div>
-        <div className="rounded-2xl bg-[var(--color-background)] p-4">
+        </div>}
+        {isAndroidDevice() && <div className="rounded-2xl bg-[var(--color-background)] p-4">
           <p className="font-bold">En Android</p>
           <p className="mt-1">En Chrome, abre el menú ⋮ y toca “Instalar app” o “Añadir a pantalla de inicio”.</p>
-        </div>
+        </div>}
         <Button type="button" variant="warm" onClick={() => setHelpOpen(false)} data-dialog-autofocus>Cerrar</Button>
       </div>
     </AccessibleDialog>
   </>;
 }
+
