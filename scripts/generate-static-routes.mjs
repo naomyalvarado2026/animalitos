@@ -11,6 +11,7 @@ const siteOrigin = (process.env.VITE_SITE_ORIGIN ?? 'https://naomyalvarado2026.g
 
 const staticRoutes = [
   { path: '/', title: 'AdoptaME — Cada perro merece una historia feliz', description: 'Conoce perros rescatados, adopta responsablemente y apoya su recuperación con AdoptaME.' },
+  { path: '/inicio-clasico', title: 'Inicio clásico | AdoptaME', description: 'Versión clásica de la página de inicio de AdoptaME.' },
   { path: '/adopta', title: 'Adopta un perro | AdoptaME', description: 'Conoce perros rescatados y encuentra el compañero que encaja contigo.' },
   { path: '/apadrina', title: 'Apadrina un perro rescatado | AdoptaME', description: 'Acompaña el cuidado de un integrante de la manada mientras llega su familia.' },
   { path: '/como-funciona', title: 'Cómo funciona la adopción | AdoptaME', description: 'Conoce el proceso responsable para adoptar un perro rescatado.' },

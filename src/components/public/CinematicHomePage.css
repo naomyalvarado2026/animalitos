@@ -1,0 +1,884 @@
+/* ── Cinematic 10K Websites Scrub Hero & Page Styles ── */
+
+.cin-root {
+  --cin-bg: #17022b;
+  --cin-bg-deep: #110120;
+  --cin-coral: #ff8069;
+  --cin-lavender: #e0beff;
+  --cin-rose: #f7b6cb;
+  --cin-ink: #fdf9f5;
+  --cin-muted: rgba(253, 249, 245, 0.8);
+  --cin-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --cin-tshadow:
+    0 1px 2px rgba(14, 2, 26, 0.96),
+    0 4px 16px rgba(14, 2, 26, 0.8),
+    0 14px 48px rgba(14, 2, 26, 0.84);
+
+  background-color: var(--cin-bg);
+  color: var(--cin-ink);
+  overflow-x: hidden;
+  overflow-x: clip;
+  position: relative;
+}
+
+/* Subtle continuous environment ambient layer */
+.cin-env-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.36;
+  background:
+    radial-gradient(ellipse 60% 45% at 15% 20%, rgba(255, 128, 105, 0.14), transparent 70%),
+    radial-gradient(ellipse 55% 45% at 85% 80%, rgba(224, 190, 255, 0.12), transparent 70%);
+  animation: cinEnvDrift 65s ease-in-out infinite alternate;
+  animation-delay: -18s;
+}
+
+@keyframes cinEnvDrift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(-2%, 2%, 0) scale(1.06);
+  }
+}
+
+/* Pause ambient animations when tab is hidden */
+body.cin-paused *,
+body.cin-paused *::before,
+body.cin-paused *::after {
+  animation-play-state: paused !important;
+}
+
+/* ── Pinned Scrub Hero (Desktop 16:9 default) ── */
+.cin-scrub-hero {
+  position: relative;
+  height: 460vh;
+  z-index: 1;
+  background-color: var(--cin-bg);
+}
+
+.cin-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--cin-bg);
+  isolation: isolate;
+}
+
+.cin-poster-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+  transform: translateZ(0);
+}
+
+.cin-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 420ms var(--cin-ease);
+  will-change: transform;
+  transform: translateZ(0);
+  pointer-events: none;
+}
+
+.cin-stage.video-ready .cin-video {
+  opacity: 1;
+}
+
+.cin-stage.video-failed .cin-video {
+  display: none;
+}
+
+/* Global base scrim (soft vignette, keeps center & puppy luminous) */
+.cin-global-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 125% 95% at 55% 48%,
+    rgba(17, 1, 32, 0) 44%,
+    rgba(17, 1, 32, 0.54) 100%
+  );
+}
+
+/* Top edge gentle fade for sticky header legibility */
+.cin-top-scrim {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 112px;
+  z-index: 4;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(17, 1, 32, 0.72), rgba(17, 1, 32, 0));
+}
+
+/* Bottom subtle blend into PackMosaic */
+.cin-bottom-fade {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 88px;
+  z-index: 4;
+  pointer-events: none;
+  background: linear-gradient(to top, #17022b 0%, rgba(23, 2, 43, 0) 100%);
+}
+
+/* ── Minimalist Scroll Cue & Loading Ring ── */
+.cin-hud {
+  position: absolute;
+  left: clamp(1.5rem, 5.5vw, 5rem);
+  bottom: clamp(1.75rem, 5vh, 3.25rem);
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  pointer-events: none;
+  transition: opacity 380ms var(--cin-ease), transform 380ms var(--cin-ease);
+}
+
+.cin-hud.is-hidden {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.cin-ring {
+  width: 34px;
+  height: 34px;
+  color: var(--cin-coral);
+  transform: rotate(-90deg);
+  flex-shrink: 0;
+}
+
+.cin-ring-track {
+  stroke: rgba(255, 255, 255, 0.16);
+}
+
+.cin-ring-fill {
+  stroke: currentColor;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 120ms linear;
+}
+
+.cin-scroll-line {
+  position: relative;
+  width: 1.5px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cin-scroll-line::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 45%;
+  background: linear-gradient(to bottom, var(--cin-lavender), var(--cin-coral));
+  animation: cinScrollDrop 2.1s var(--cin-ease) infinite;
+}
+
+@keyframes cinScrollDrop {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(230%);
+    opacity: 0;
+  }
+}
+
+.cin-hud-label {
+  font-size: clamp(0.7rem, 0.85vw, 0.82rem);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(253, 249, 245, 0.82);
+  text-shadow: 0 1px 6px rgba(10, 2, 18, 0.9);
+}
+
+.cin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.42rem 0.95rem;
+  border-radius: 999px;
+  background: rgba(17, 1, 32, 0.56);
+  border: 1px solid rgba(224, 190, 255, 0.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--cin-lavender);
+  font-size: clamp(0.68rem, 0.82vw, 0.78rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(10, 2, 18, 0.85);
+}
+
+/* Right-side chapter rail + hairline progress */
+.cin-rail {
+  position: absolute;
+  right: clamp(1.25rem, 3.2vw, 2.75rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  pointer-events: none;
+}
+
+.cin-rail-dots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.cin-rail-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  transition: transform 320ms var(--cin-ease), background-color 320ms var(--cin-ease), box-shadow 320ms var(--cin-ease);
+}
+
+.cin-rail-dot.is-current {
+  background: var(--cin-coral);
+  transform: scale(1.45);
+  box-shadow: 0 0 12px rgba(255, 128, 105, 0.85);
+}
+
+.cin-progress-bar {
+  width: 2px;
+  height: 86px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.cin-progress-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--cin-lavender), var(--cin-coral));
+  transform-origin: top center;
+  transform: scaleY(var(--p, 0));
+  will-change: transform;
+}
+
+/* ── Caption Bands (Positioned strictly in negative space) ── */
+.cin-bands {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.cin-band {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  text-shadow: var(--cin-tshadow);
+  will-change: opacity;
+  pointer-events: none;
+}
+
+.cin-band.is-active {
+  pointer-events: auto;
+}
+
+.cin-band .cin-btn,
+.cin-band .cin-proof-pill {
+  text-shadow: none;
+}
+
+/* Per-band local scrims: dim ONLY behind text, leave puppy & waves bright */
+.cin-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: calc(0.25 + 0.75 * var(--k, 1));
+}
+
+/* Band 1 (Desktop 0.00 - 0.26): Top-left above the AdoptaME logo */
+.cin-band--opening::before {
+  background: radial-gradient(
+    ellipse 52% 40% at 24% 22%,
+    rgba(15, 2, 28, 0.68) 0%,
+    rgba(15, 2, 28, 0.34) 52%,
+    rgba(15, 2, 28, 0) 78%
+  );
+}
+
+.cin-band--opening .cin-band-inner {
+  position: absolute;
+  z-index: 1;
+  top: clamp(5.5rem, 13.5vh, 9rem);
+  left: clamp(1.75rem, 5.8vw, 5.25rem);
+  max-width: min(560px, 44vw);
+}
+
+/* Band 2 (Desktop 0.42 - 0.70): Mid-left AFTER AdoptaME logo has completely faded */
+.cin-band--journey::before {
+  background: radial-gradient(
+    ellipse 54% 58% at 26% 50%,
+    rgba(15, 2, 28, 0.72) 0%,
+    rgba(15, 2, 28, 0.42) 48%,
+    rgba(15, 2, 28, 0) 76%
+  );
+}
+
+.cin-band--journey .cin-band-inner {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: clamp(1.75rem, 5.8vw, 5.25rem);
+  transform: translateY(-52%);
+  max-width: min(640px, 48vw);
+}
+
+/* Band 3 (Desktop 0.74 - 1.00): Centered in the golden heart of the serene ending frame */
+.cin-band--settle::before {
+  background: radial-gradient(
+    ellipse 66% 58% at 50% 46%,
+    rgba(15, 2, 28, 0.64) 0%,
+    rgba(15, 2, 28, 0.34) 52%,
+    rgba(15, 2, 28, 0) 78%
+  );
+}
+
+.cin-band--settle .cin-band-inner {
+  position: absolute;
+  z-index: 1;
+  top: 46%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(820px, 86vw);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Editorial accent divider that draws horizontally with --k */
+.cin-accent-rule {
+  display: block;
+  width: 68px;
+  height: 2px;
+  margin-top: 1.15rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--cin-coral), var(--cin-lavender));
+  transform-origin: left center;
+  transform: scaleX(clamp(0, (var(--k, 0) - 0.3) * 2.2, 1));
+  opacity: clamp(0, (var(--k, 0) - 0.25) * 2.4, 1);
+}
+
+/* Typography sized in ch on the text element itself */
+.cin-headline {
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: var(--cin-ink);
+  margin: 0;
+  padding-bottom: 0.14em; /* descender room for g, y, p */
+}
+
+.cin-headline--opening {
+  font-size: clamp(2.2rem, 3.8vw, 3.85rem);
+  max-width: 15ch;
+}
+
+.cin-headline--journey {
+  font-size: clamp(2.6rem, 4.6vw, 4.7rem);
+  max-width: 14ch;
+}
+
+.cin-headline--settle {
+  font-size: clamp(3rem, 5.2vw, 5.3rem);
+  max-width: 15ch;
+}
+
+.cin-accent {
+  display: inline-block;
+  color: #ff8a73;
+  background: linear-gradient(115deg, #ff8069 0%, #ffad96 55%, #e5c6ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+.cin-sub {
+  margin-top: 1.1rem;
+  font-size: clamp(1.05rem, 1.35vw, 1.32rem);
+  line-height: 1.55;
+  color: var(--cin-muted);
+  max-width: 38ch;
+  font-weight: 400;
+}
+
+/* ── Choreography 1: Word-by-word rise (Opening & Settle) ── */
+.cin-word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.18em;
+  margin-bottom: -0.18em;
+  margin-right: 0.26em;
+}
+
+.cin-word-rise {
+  display: inline-block;
+  --kc: clamp(0, (var(--k, 0) - var(--th, 0)) * 2.8, 1);
+  opacity: var(--kc);
+  transform: translate3d(0, calc((1 - var(--kc)) * 28px), 0);
+  will-change: transform, opacity;
+}
+
+/* ── Choreography 2: Kinetic glide from left (echoes puppy sprinting right) ── */
+.cin-word-glide {
+  display: inline-block;
+  margin-right: 0.26em;
+  --kc: clamp(0, (var(--k, 0) - var(--th, 0)) * 2.7, 1);
+  opacity: var(--kc);
+  transform: translate3d(calc((1 - var(--kc)) * -36px), calc((1 - var(--kc)) * 6px), 0);
+  will-change: transform, opacity;
+}
+
+/* ── Staged Settle Subline, CTA & Real-Pack Proof Pill ── */
+.cin-stage-sub {
+  --ks: clamp(0, (var(--k, 0) - 0.5) * 3.2, 1);
+  opacity: var(--ks);
+  transform: translate3d(0, calc((1 - var(--ks)) * 18px), 0);
+}
+
+.cin-stage-cta {
+  --kb: clamp(0, (var(--k, 0) - 0.64) * 3.8, 1);
+  opacity: var(--kb);
+  transform: translate3d(0, calc((1 - var(--kb)) * 18px), 0);
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9rem;
+}
+
+.cin-btn-primary {
+  background: linear-gradient(135deg, #ff8069 0%, #f0644a 100%) !important;
+  color: #17022b !important;
+  font-weight: 800 !important;
+  box-shadow: 0 12px 34px -8px rgba(255, 128, 105, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.22) inset;
+}
+
+.cin-btn-primary:hover {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+}
+
+.cin-btn-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.24) !important;
+  background: rgba(23, 2, 43, 0.52) !important;
+  color: #fdf9f5 !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.cin-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(224, 190, 255, 0.5) !important;
+  transform: translateY(-2px);
+}
+
+/* Real-dog avatar proof strip connecting the abstract ending to the live refuge pack */
+.cin-proof-pill {
+  --kp: clamp(0, (var(--k, 0) - 0.76) * 4.4, 1);
+  opacity: var(--kp);
+  transform: translate3d(0, calc((1 - var(--kp)) * 16px), 0);
+  margin-top: 2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.55rem 1.15rem 0.55rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(23, 2, 43, 0.64);
+  border: 1px solid rgba(224, 190, 255, 0.22);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: rgba(253, 249, 245, 0.9);
+  transition: border-color 260ms var(--cin-ease), background-color 260ms var(--cin-ease), transform 260ms var(--cin-ease);
+}
+
+.cin-proof-pill:hover {
+  border-color: rgba(255, 128, 105, 0.58);
+  background: rgba(23, 2, 43, 0.82);
+}
+
+.cin-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.cin-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid #17022b;
+  margin-left: -10px;
+  background: #2b0a4d;
+}
+
+.cin-avatar:first-child {
+  margin-left: 0;
+}
+
+.cin-proof-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.cin-proof-text strong {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+/* ── Portrait / Mobile Scrub Layout (dedicated 9:16 vertical video) ──
+   Matches ANY portrait viewport (375x812, 390x844, 768x1024, 1080x2400) or <= 720px wide.
+   Must match JS PORTRAIT_GATES character-for-character. */
+@media
+  (orientation: portrait),
+  (max-width: 720px) {
+  .cin-scrub-hero {
+    height: 400vh;
+  }
+
+  .cin-hud {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: clamp(4.75rem, 7svh, 7rem);
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .cin-hud.is-hidden {
+    transform: translate(-50%, 8px);
+  }
+
+  .cin-hud-label {
+    font-size: clamp(0.66rem, 2.2vw, 1.05rem);
+  }
+
+  .cin-scroll-line {
+    height: clamp(24px, 3.2svh, 44px);
+  }
+
+  .cin-rail {
+    right: clamp(0.85rem, 2.8vw, 2rem);
+  }
+
+  .cin-chip {
+    padding: clamp(0.32rem, 1vw, 0.6rem) clamp(0.8rem, 2.6vw, 1.45rem);
+    font-size: clamp(0.62rem, 2.1vw, 1.05rem);
+  }
+
+  /* Band 1 (0.00 - 0.26): Centered cleanly in the plum corridor BETWEEN logo (16-27%) and puppy (43-78%) */
+  .cin-band--opening::before {
+    background: radial-gradient(
+      ellipse 92% 24% at 50% 34.5%,
+      rgba(15, 2, 28, 0.72) 0%,
+      rgba(15, 2, 28, 0.36) 54%,
+      rgba(15, 2, 28, 0) 80%
+    );
+  }
+
+  .cin-band--opening .cin-band-inner {
+    top: 34.5%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 88vw;
+    max-width: 860px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .cin-band--opening .cin-chip {
+    margin-bottom: clamp(0.45rem, 1.1svh, 0.9rem);
+  }
+
+  .cin-headline--opening {
+    font-size: clamp(1.65rem, 6.8vw, 4.35rem);
+    max-width: 17ch;
+  }
+
+  /* Band 2 (0.42 - 0.70): Starts AFTER logo fades out; centered in upper-middle canvas */
+  .cin-band--journey::before {
+    background: radial-gradient(
+      ellipse 94% 46% at 50% 38%,
+      rgba(15, 2, 28, 0.74) 0%,
+      rgba(15, 2, 28, 0.42) 52%,
+      rgba(15, 2, 28, 0) 80%
+    );
+  }
+
+  .cin-band--journey .cin-band-inner {
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 88vw;
+    max-width: 880px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .cin-accent-rule {
+    transform-origin: center center;
+    width: clamp(56px, 14vw, 120px);
+    margin-top: clamp(0.9rem, 2svh, 1.75rem);
+  }
+
+  .cin-headline--journey {
+    font-size: clamp(2.1rem, 8.4vw, 5.3rem);
+    max-width: 14ch;
+  }
+
+  .cin-sub {
+    margin-top: clamp(0.8rem, 1.8svh, 1.75rem);
+    font-size: clamp(0.98rem, 3.4vw, 1.95rem);
+    max-width: 30ch;
+  }
+
+  /* Band 3 (0.74 - 1.00): Vertically centered in the serene canvas right above the glass waves */
+  .cin-band--settle::before {
+    background: radial-gradient(
+      ellipse 96% 56% at 50% 44%,
+      rgba(15, 2, 28, 0.68) 0%,
+      rgba(15, 2, 28, 0.36) 54%,
+      rgba(15, 2, 28, 0) 82%
+    );
+  }
+
+  .cin-band--settle .cin-band-inner {
+    top: 44%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 88vw;
+    max-width: 880px;
+  }
+
+  .cin-headline--settle {
+    font-size: clamp(2.35rem, 9vw, 5.65rem);
+    max-width: 13ch;
+  }
+
+  .cin-stage-cta {
+    margin-top: clamp(1.35rem, 3svh, 2.75rem);
+    width: min(100%, clamp(310px, 74vw, 560px));
+    flex-direction: column;
+    align-items: stretch;
+    gap: clamp(0.7rem, 1.5svh, 1.2rem);
+  }
+
+  .cin-stage-cta .cin-btn {
+    min-height: clamp(48px, 6.2svh, 76px);
+    font-size: clamp(0.95rem, 3vw, 1.55rem);
+    border-radius: 999px;
+  }
+
+  .cin-proof-pill {
+    margin-top: clamp(1.25rem, 2.8svh, 2.5rem);
+    padding: clamp(0.45rem, 1.2vw, 0.85rem) clamp(1rem, 3vw, 1.75rem) clamp(0.45rem, 1.2vw, 0.85rem) clamp(0.55rem, 1.5vw, 1rem);
+  }
+
+  .cin-avatar {
+    width: clamp(30px, 6.5vw, 52px);
+    height: clamp(30px, 6.5vw, 52px);
+  }
+
+  .cin-proof-text {
+    font-size: clamp(0.76rem, 2.5vw, 1.3rem);
+  }
+}
+
+/* ── Static Hero (Reduced Motion & Short Landscape Phones) ── */
+.cin-static-hero {
+  display: none;
+  position: relative;
+  min-height: min(88vh, 760px);
+  padding: 6.5rem 1.25rem 3.5rem;
+  background-color: var(--cin-bg);
+  background-size: cover;
+  background-position: center;
+  isolation: isolate;
+  z-index: 1;
+}
+
+.cin-static-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(23, 2, 43, 0.76) 0%,
+    rgba(23, 2, 43, 0.62) 45%,
+    rgba(23, 2, 43, 0.94) 100%
+  );
+}
+
+/* Exact Static-Hero Gates — must match JS STATIC_GATES character-for-character */
+@media
+  (orientation: landscape) and (pointer: coarse) and (max-height: 560px),
+  (prefers-reduced-motion: reduce) {
+  .cin-scrub-hero {
+    display: none;
+  }
+  .cin-static-hero {
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* Short desktop windows keep scrub, hide HUD/rail that lack vertical room */
+@media (max-height: 560px) {
+  .cin-hud,
+  .cin-rail {
+    display: none;
+  }
+}
+
+/* Coarse pointer touch target floor */
+@media (pointer: coarse) {
+  .cin-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ── Press-and-Hold Interactive Moment ── */
+.cin-hold-section {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--cin-bg-deep);
+  background-size: cover;
+  background-position: center bottom;
+  isolation: isolate;
+}
+
+.cin-hold-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    #17022b 0%,
+    rgba(23, 2, 43, 0.84) 35%,
+    rgba(23, 2, 43, 0.82) 72%,
+    #17022b 100%
+  );
+}
+
+.cin-hold-ring-btn {
+  position: relative;
+  width: 152px;
+  height: 152px;
+  border-radius: 999px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 128, 105, 0.35);
+  color: var(--cin-ink);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: transform 240ms var(--cin-ease), background-color 240ms var(--cin-ease), border-color 240ms var(--cin-ease);
+}
+
+.cin-hold-ring-btn:hover {
+  background: rgba(255, 128, 105, 0.1);
+  border-color: rgba(255, 128, 105, 0.7);
+}
+
+.cin-hold-ring-btn:active,
+.cin-hold-ring-btn.is-holding {
+  transform: scale(0.96);
+}
+
+.cin-hold-ring-btn.is-complete {
+  background: rgba(255, 128, 105, 0.18);
+  border-color: var(--cin-coral);
+}
+
+.cin-hold-svg {
+  position: absolute;
+  inset: -6px;
+  width: calc(100% + 12px);
+  height: calc(100% + 12px);
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.cin-milestone {
+  opacity: 0.34;
+  transform: translateY(14px);
+  transition: opacity 520ms var(--cin-ease), transform 520ms var(--cin-ease), border-color 420ms var(--cin-ease);
+}
+
+.cin-milestone.is-lit {
+  opacity: 1;
+  transform: translateY(0);
+  border-color: rgba(255, 128, 105, 0.5);
+}
+
+/* Reduced motion honors final state immediately */
+@media (prefers-reduced-motion: reduce) {
+  .cin-env-glow,
+  .cin-scroll-line::after {
+    animation: none !important;
+  }
+  .cin-word-rise,
+  .cin-word-glide,
+  .cin-stage-sub,
+  .cin-stage-cta,
+  .cin-proof-pill,
+  .cin-accent-rule,
+  .cin-milestone {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

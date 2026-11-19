@@ -16,6 +16,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 const CampaignsPage = lazy(() => import('@/components/public/CampaignsPage').then(m => ({ default: m.CampaignsPage })));
 const CampaignManagement = lazy(() => import('@/components/admin/CampaignManagement').then(m => ({ default: m.CampaignManagement })));
 // Lazy-loaded Public pages
+const CinematicHomePage = lazy(() => import('@/components/public/CinematicHomePage').then(m => ({ default: m.CinematicHomePage })));
 const HomePage = lazy(() => import('@/components/public/HomePage').then(m => ({ default: m.HomePage })));
 const AboutPage = lazy(() => import('@/components/public/AboutPage').then(m => ({ default: m.AboutPage })));
 const HistoryPage = lazy(() => import('@/components/public/HistoryPage').then(m => ({ default: m.HistoryPage })));
@@ -106,7 +107,8 @@ export default function App() {
                   <Routes>
                     {/* ── Public routes ── */}
                     <Route element={<PublicLayout />}>
-                      <Route path="/" element={<HomePage />} />
+                      <Route path="/" element={<CinematicHomePage />} />
+                      <Route path="/inicio-clasico" element={<HomePage />} />
                       <Route path="/adopta" element={<AdoptionGalleryPage />} />
                       <Route path="/comunidad" element={<CommunityAdoptionPage />} />
                       <Route path="/comunidad/:slug" element={<CommunityAdoptionPage />} />
