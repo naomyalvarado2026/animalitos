@@ -13,6 +13,7 @@ import './CinematicHomePage.css';
 
 const DESKTOP_VIDEO_BYTES = 6967872;
 const MOBILE_VIDEO_BYTES = 6126002;
+const SCROLL_DISTANCE_PX = 1500;
 const RING_CIRCUMFERENCE = 126;
 
 // Portrait / mobile vertical video selector — must match CinematicHomePage.css @media
@@ -252,7 +253,8 @@ export function CinematicHomePage() {
 
     const heroProgress = () => {
       const rect = heroEl.getBoundingClientRect();
-      const scrollRange = Math.max(1, heroEl.offsetHeight - window.innerHeight);
+      const availableScroll = Math.max(1, heroEl.offsetHeight - window.innerHeight);
+      const scrollRange = Math.min(SCROLL_DISTANCE_PX, availableScroll);
       return clamp(-rect.top / scrollRange, 0, 1);
     };
 

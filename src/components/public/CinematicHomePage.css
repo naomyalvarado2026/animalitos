@@ -54,7 +54,9 @@ body.cin-paused *::after {
 /* ── Pinned Scrub Hero (Desktop 16:9 default) ── */
 .cin-scrub-hero {
   position: relative;
-  height: 460vh;
+  --cin-scroll-distance: 1500px;
+  height: calc(100vh + var(--cin-scroll-distance));
+  height: calc(100svh + var(--cin-scroll-distance));
   z-index: 1;
   background-color: var(--cin-bg);
 }
@@ -574,7 +576,8 @@ body.cin-paused *::after {
   (orientation: portrait),
   (max-width: 720px) {
   .cin-scrub-hero {
-    height: 400vh;
+    height: calc(100vh + var(--cin-scroll-distance));
+    height: calc(100svh + var(--cin-scroll-distance));
   }
 
   .cin-hud {
