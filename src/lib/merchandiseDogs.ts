@@ -11,9 +11,15 @@ export function dogProductUrl(dogSlug: string, productSlug?: string) {
   return `/tienda?${params.toString()}`;
 }
 
-export function productInquiryUrl(productName: string, dogSlugs: string[] = []) {
+export function productInquiryUrl(
+  productName: string,
+  dogSlugs: string[] = [],
+  options: { color?: string | null; size?: string | null } = {},
+) {
   const params = new URLSearchParams({ producto: productName.slice(0, 100) });
   const dogs = dogSlugs.map(merchandiseDogName).join(', ');
   if (dogs) params.set('perrito', dogs.slice(0, 160));
+  if (options.color?.trim()) params.set('color', options.color.trim().slice(0, 60));
+  if (options.size?.trim()) params.set('talla', options.size.trim().slice(0, 30));
   return `/contacto?${params.toString()}`;
 }

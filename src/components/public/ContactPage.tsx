@@ -31,6 +31,8 @@ export function ContactPage() {
   const campaignName = searchParams.get('campana')?.trim().slice(0, 100) || '';
   const dogName = searchParams.get('perrito')?.trim().slice(0, 160) || '';
   const productName = searchParams.get('producto')?.trim().slice(0, 100) || '';
+  const productColor = searchParams.get('color')?.trim().slice(0, 60) || '';
+  const productSize = searchParams.get('talla')?.trim().slice(0, 30) || '';
   const sponsorName = searchParams.get('apadrina')?.trim() || '';
   const queryType = searchParams.get('tipo')?.trim() || '';
   const donationMonto = searchParams.get('monto')?.trim() || '';
@@ -66,7 +68,7 @@ export function ContactPage() {
 
   const initialMessage =
     (productName
-      ? `Hola, me interesa el diseño «${productName}»${dogName ? `, asociado a ${dogName}` : ''}. ¿Podrían confirmarme disponibilidad, precio final, materiales, medidas, opciones y envío antes de decidir?`
+      ? `Hola, me interesa el diseño «${productName}»${dogName ? `, asociado a ${dogName}` : ''}${productColor || productSize ? `. Como preferencia, me gustaría ${[productColor && `el color ${productColor}`, productSize && `la talla ${productSize}`].filter(Boolean).join(' y ')} (por confirmar)` : ''}. ¿Podrían confirmarme disponibilidad, precio final, materiales, medidas, opciones y envío antes de decidir?`
       : '') ||
     (campaignName
       ? `Hola, quisiera conocer las opciones para participar en la campaña ${campaignName}. ¿Podemos coordinar los insumos y la logística?`

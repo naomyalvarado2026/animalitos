@@ -79,6 +79,24 @@ export function getColorOptions(variants: readonly MerchandiseVariantOption[]): 
   return [...options.values()];
 }
 
+export function getSuggestedSizeOptions(details: readonly string[]) {
+  const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+  const range = details
+    .map((detail) => normalizeCatalogSearch(detail).match(/\btallas?\s+(xs|s|m|l|xl|xxl|xxxl)\s+a\s+(xs|s|m|l|xl|xxl|xxxl)\b/i))
+    .find((match) => match !== null);
+  if (range) {
+    const first = sizeOrder.indexOf(range[1].toUpperCase());
+    const last = sizeOrder.indexOf(range[2].toUpperCase());
+    if (first >= 0 && last >= first) return sizeOrder.slice(first, last + 1);
+  }
+
+  const line = details.find((detail) => normalizeCatalogSearch(detail).startsWith('tallas propuestas:'));
+  if (!line) return [];
+
+  const values = line.slice(line.indexOf(':') + 1);
+  return [...new Set(values.split(/,|;|\s+y\s+/i).map((value) => value.trim().replace(/[.]$/, '')).filter(Boolean))];
+}
+
 export function buildVariantLabel(colorName: string, sizeLabel: string) {
   return [colorName.trim(), sizeLabel.trim()].filter(Boolean).join(' · ');
 }

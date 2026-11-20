@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import { ResilientImage } from '@/components/ui/ResilientImage';
 import { supabase } from '@/lib/supabase';
 import { assetUrl } from '@/lib/assets';
-import { getColorOptions, normalizeCatalogSearch, splitVariantLabel, type MerchandiseProduct, type MerchandiseVariantOption } from '@/lib/merchandise';
+import { getColorOptions, getSuggestedSizeOptions, getVariantColorKey, normalizeCatalogSearch, splitVariantLabel, type MerchandiseColorOption, type MerchandiseProduct, type MerchandiseVariantOption } from '@/lib/merchandise';
 import { motionDistance, motionDuration, motionEaseOut } from '@/lib/motionTokens';
 import { ContextualFaq } from './ContextualFaq';
 import { ProductDetailDialog } from './ProductDetailDialog';
@@ -35,6 +35,13 @@ type Product = MerchandiseProduct & {
   featured: boolean;
   selectedVariantId?: string;
   selectedVariantLabel?: string;
+};
+
+type StoreCatalogItem = {
+  key: string;
+  product: Product;
+  designs?: Product[];
+  orderIndex: number;
 };
 
 const productBackground = {
@@ -77,6 +84,8 @@ export function StorePage() {
   const [added, setAdded] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [detailProduct, setDetailProduct] = useState<Product | null>(null);
+  const [selectedDesignSlug, setSelectedDesignSlug] = useState<string | null>(null);
+  const [proposedSize, setProposedSize] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'recent' | 'name' | 'price-low' | 'price-high'>('recent');
   const [activeCategory, setActiveCategory] = useState('Todo');
@@ -90,6 +99,33 @@ export function StorePage() {
   const selectedDog = searchParams.get('perrito') || '';
   const linkedProductSlug = searchParams.get('producto') || '';
   const openedProductSlug = useRef('');
+  const shirtModel = catalog.find((product) => product.slug === 'camiseta-adoptame') ?? null;
+  const shirtDesigns = catalog
+    .filter((product) => product.slug.startsWith('camiseta-') && product.slug !== 'camiseta-adoptame' && product.dogSlugs.length > 0)
+    .sort((a, b) => merchandiseDogName(a.dogSlugs[0]).localeCompare(merchandiseDogName(b.dogSlugs[0]), 'es'));
+  const shirtDesignSlugs = new Set(shirtDesigns.map((product) => product.slug));
+  const shirtDesignForFilter = shirtDesigns.find((product) => product.dogSlugs.includes(selectedDog));
+  const shirtCardBase = shirtModel ?? shirtDesigns[0] ?? null;
+  const shirtCardProduct: Product | null = shirtDesigns.length && shirtCardBase ? {
+    ...shirtCardBase,
+    name: 'Camiseta AdoptaME',
+    description: 'Elige la ilustración de un perrito, indica el color y la talla que prefieres. El equipo confirmará los detalles antes de producir.',
+    image: shirtDesignForFilter?.image ?? shirtModel?.image ?? shirtDesigns[0].image,
+    galleryImages: shirtDesignForFilter
+      ? [shirtDesignForFilter.image, ...shirtCardBase.galleryImages].filter((image, index, all) => all.indexOf(image) === index)
+      : shirtCardBase.galleryImages,
+    dogSlugs: [...new Set(shirtDesigns.flatMap((product) => product.dogSlugs))],
+  } : null;
+  const groupedShirtSlugs = new Set([
+    ...(shirtModel ? [shirtModel.slug] : []),
+    ...shirtDesigns.map((product) => product.slug),
+  ]);
+  const catalogItems: StoreCatalogItem[] = catalog
+    .filter((product) => !groupedShirtSlugs.has(product.slug))
+    .map((product) => ({ key: product.slug, product, orderIndex: catalog.indexOf(product) }));
+  if (shirtCardProduct) {
+    catalogItems.push({ key: 'camiseta-adoptame-family', product: shirtCardProduct, designs: shirtDesigns, orderIndex: catalog.findIndex((product) => groupedShirtSlugs.has(product.slug)) });
+  }
   const dogOptions = [...new Set(catalog.flatMap((product) => product.dogSlugs))]
     .sort((a, b) => merchandiseDogName(a).localeCompare(merchandiseDogName(b), 'es'));
 
@@ -99,30 +135,83 @@ export function StorePage() {
     const product = productsQuery.data?.find((item) => item.slug === linkedProductSlug);
     if (product) {
       setDetailProduct({ ...product, color: 'cream', featured: false });
+      setSelectedDesignSlug(shirtDesignSlugs.has(product.slug) ? product.slug : null);
+      setProposedSize(null);
       openedProductSlug.current = linkedProductSlug;
     }
-  }, [linkedProductSlug, productsQuery.data]);
+  }, [linkedProductSlug, productsQuery.data, shirtDesignSlugs]);
 
   const closeDetails = () => {
     setDetailProduct(null);
+    setSelectedDesignSlug(null);
+    setProposedSize(null);
     if (searchParams.has('producto')) {
       const params = new URLSearchParams(searchParams);
       params.delete('producto');
       setSearchParams(params, { replace: true });
     }
   };
-  const categories = Array.from(new Set(['Todo', ...catalog.map((product) => product.category)]));
+  const openProductDetails = (product: Product) => {
+    setDetailProduct(product);
+    setSelectedDesignSlug(shirtDesignSlugs.has(product.slug) ? product.slug : null);
+    setProposedSize(null);
+  };
+  const openShirtConfigurator = () => {
+    const linkedDesign = shirtDesignForFilter ?? null;
+    const targetProduct = linkedDesign ?? shirtModel ?? shirtDesigns[0] ?? null;
+    if (!targetProduct) return;
+    const targetDesign = linkedDesign ?? (shirtModel ? null : targetProduct);
+    setDetailProduct(targetProduct);
+    setSelectedDesignSlug(targetDesign?.slug ?? null);
+    setProposedSize(null);
+    if (shirtModel) setChosenVariants((current) => {
+      const next = { ...current };
+      delete next[shirtModel.slug];
+      return next;
+    });
+    const params = new URLSearchParams(searchParams);
+    params.set('producto', targetProduct.slug);
+    if (targetDesign?.dogSlugs[0]) params.set('perrito', targetDesign.dogSlugs[0]);
+    setSearchParams(params, { preventScrollReset: true });
+    openedProductSlug.current = targetProduct.slug;
+  };
+  const chooseShirtDesign = (design: MerchandiseProduct) => {
+    const selected = { ...design, color: 'cream' as const, featured: false };
+    setDetailProduct(selected);
+    setSelectedDesignSlug(design.slug);
+    setProposedSize(null);
+    setChosenVariants((current) => {
+      const next = { ...current };
+      if (shirtModel) delete next[shirtModel.slug];
+      delete next[design.slug];
+      return next;
+    });
+    const params = new URLSearchParams(searchParams);
+    params.set('producto', design.slug);
+    if (design.dogSlugs[0]) params.set('perrito', design.dogSlugs[0]);
+    setSearchParams(params, { replace: true, preventScrollReset: true });
+    openedProductSlug.current = design.slug;
+  };
+  const categories = Array.from(new Set(['Todo', ...catalogItems.map((item) => item.product.category)]));
   const normalizedSearch = normalizeCatalogSearch(search);
-  const matchingProducts = catalog.filter((product) => {
+  const matchingProducts = catalogItems.filter((item) => {
+    const product = item.product;
     const matchesCategory = activeCategory === 'Todo' || product.category === activeCategory;
-    const searchable = normalizeCatalogSearch([product.name, product.description, product.category, ...product.details, ...product.variants.map((variant) => variant.name), ...product.dogSlugs.map(merchandiseDogName)].join(' '));
-    return matchesCategory && (!selectedDog || product.dogSlugs.includes(selectedDog)) && (!normalizedSearch || searchable.includes(normalizedSearch));
+    const associatedProducts = item.designs ?? [product];
+    const dogs = [...new Set(associatedProducts.flatMap((design) => design.dogSlugs))];
+    const searchable = normalizeCatalogSearch([
+      product.name, product.description, product.category, ...product.details,
+      ...product.variants.map((variant) => variant.name),
+      ...dogs.map(merchandiseDogName),
+      ...associatedProducts.flatMap((design) => [design.name, design.description, ...design.details]),
+    ].join(' '));
+    return matchesCategory && (!selectedDog || dogs.includes(selectedDog)) && (!normalizedSearch || searchable.includes(normalizedSearch));
   });
   const products = [...matchingProducts].sort((a, b) => {
-    if (sort === 'name') return a.name.localeCompare(b.name, 'es');
-    if (sort === 'price-low') return a.priceCents - b.priceCents;
-    if (sort === 'price-high') return b.priceCents - a.priceCents;
-    return catalog.indexOf(a) - catalog.indexOf(b);
+    if (sort === 'name') return a.product.name.localeCompare(b.product.name, 'es');
+    if (sort === 'price-low') return a.product.priceCents - b.product.priceCents;
+    if (sort === 'price-high') return b.product.priceCents - a.product.priceCents;
+    return a.orderIndex - b.orderIndex;
   });
 
   const addProduct = (product: Product, variant: MerchandiseVariantOption | null) => {
@@ -175,6 +264,24 @@ export function StorePage() {
     setForm({ name: '', email: '', phone: '' });
     } catch { toast.error('No pudimos conectar. Puedes volver a intentar el mismo pedido.'); } finally { setSubmitting(false); }
   };
+
+  const detailUsesShirtConfigurator = Boolean(detailProduct && (detailProduct.slug === 'camiseta-adoptame' || shirtDesignSlugs.has(detailProduct.slug)));
+  const detailDesignOptions = detailUsesShirtConfigurator ? shirtDesigns : [];
+  const detailColorSource = detailProduct
+    ? detailUsesShirtConfigurator && !detailProduct.variants.length ? shirtModel ?? detailProduct : detailProduct
+    : null;
+  const detailVariant = detailColorSource
+    ? detailColorSource.variants.find((variant) => variant.id === chosenVariants[detailColorSource.slug])
+      ?? (detailUsesShirtConfigurator ? null : detailColorSource.variants[0] ?? null)
+    : null;
+  const detailHasVariantSizes = Boolean(detailColorSource?.variants.some((variant) => splitVariantLabel(variant).sizeLabel));
+  const detailSizeOptions = detailUsesShirtConfigurator && !detailHasVariantSizes
+    ? getSuggestedSizeOptions(shirtModel?.details ?? detailProduct?.details ?? [])
+    : undefined;
+  const currentDetailSize = detailSizeOptions
+    ? proposedSize
+    : splitVariantLabel(detailVariant ?? { name: '', sizeLabel: null }).sizeLabel;
+  const currentDetailColorKey = detailVariant ? getVariantColorKey(detailVariant) : '';
 
   return (
     <div className="overflow-hidden bg-[#fffdf9] pt-16 text-[#17022b]">
@@ -298,16 +405,19 @@ export function StorePage() {
         )}
         <div className="mt-10 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
           <AnimatePresence initial={false} mode="popLayout">
-          {products.map((product, index) => {
+          {products.map((item, index) => {
+            const product = item.product;
+            const designs = item.designs;
             const chosen = product.variants.find((item) => item.id === chosenVariants[product.slug]) ?? product.variants[0] ?? null;
-            const image = chosen?.image || product.image;
-            const hoverImage = product.galleryImages.find((url) => url !== image);
+            const image = designs ? product.image : chosen?.image || product.image;
+            const hoverImage = designs ? undefined : product.galleryImages.find((url) => url !== image);
             const stock = chosen?.inventory ?? product.inventory;
             const cents = (product.priceCents ?? 0) + (chosen?.priceDelta ?? 0);
             const colorOptions = getColorOptions(product.variants);
+            const proposedSizes = designs ? getSuggestedSizeOptions(product.details) : [];
             return (
             <motion.article
-              key={product.slug}
+              key={item.key}
               layout={!shouldReduceMotion}
               initial={{ opacity: 0, y: shouldReduceMotion ? 0 : motionDistance.subtle }}
               animate={{ opacity: 1, y: 0 }}
@@ -319,18 +429,38 @@ export function StorePage() {
               }}
               className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-[#17022b]/10 bg-white shadow-[0_12px_35px_rgba(23,23,23,.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(23,23,23,.12)]"
             >
-              <button type="button" onClick={() => setDetailProduct(product)} className={`group/image relative block aspect-[4/3] w-full overflow-hidden text-left ${productBackground[product.color]} focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-[-4px] focus-visible:outline-[#3c096c]`} aria-label={`Ver ficha completa de ${product.name}`}>
+              <button type="button" onClick={() => designs ? openShirtConfigurator() : openProductDetails(product)} className={`group/image relative block aspect-[4/3] w-full overflow-hidden text-left ${productBackground[product.color]} focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-[-4px] focus-visible:outline-[#3c096c]`} aria-label={designs ? 'Elegir el diseño, color y talla de la camiseta AdoptaME' : `Ver ficha completa de ${product.name}`}>
                 {image ? (
                   <ProductCardImage image={image} preview={hoverImage} name={product.name} isLive={product.isLive} />
                 ) : <div className="flex h-full items-center justify-center text-[#3c096c]/45"><PackageCheck aria-hidden="true" className="h-12 w-12" /></div>}
-                {product.galleryImages.length > 1 && <span className="absolute bottom-4 right-4 rounded-full bg-[#17022b]/85 px-3 py-1 text-xs font-bold text-white">{product.galleryImages.length} fotos</span>}
+                {designs
+                  ? <span className="absolute bottom-4 right-4 rounded-full bg-[#17022b]/90 px-3 py-1.5 text-xs font-bold text-white">{designs.length} diseños</span>
+                  : product.galleryImages.length > 1 && <span className="absolute bottom-4 right-4 rounded-full bg-[#17022b]/85 px-3 py-1 text-xs font-bold text-white">{product.galleryImages.length} fotos</span>}
                 
                 <div className="absolute left-4 top-4 flex gap-2">
                   <span className="rounded-full bg-[#fffdf9] px-3 py-1 text-xs font-bold text-[#17022b]">{product.category}</span>
                   {!product.isLive && <span className="rounded-full bg-[#17022b] px-3 py-1 text-xs font-bold text-white">Propuesta</span>}
                 </div>
-                <span className="sr-only">Abrir ficha del producto</span>
+                <span className="sr-only">{designs ? 'Abrir personalizador de camiseta' : 'Abrir ficha del producto'}</span>
               </button>
+              {designs ? (
+                <div className="flex flex-1 flex-col p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <h3 className="font-heading text-2xl font-extrabold tracking-[-.04em]">Camiseta AdoptaME</h3>
+                    <Heart className="mt-1 h-5 w-5 shrink-0 text-[#ff8069]" aria-hidden="true" />
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-[#65566f]">Una sola prenda para elegir el retrato que te conecta con la manada. Escoge un perrito y luego indica la talla y el color que prefieres.</p>
+                  <div className="mt-5 flex flex-wrap gap-2" aria-label="Opciones disponibles para consultar">
+                    <span className="rounded-full bg-[#f1e2ff] px-3 py-1.5 text-xs font-bold text-[#3c096c]">{designs.length} diseños de perritos</span>
+                    {colorOptions.length > 0 && <span className="rounded-full bg-[#f1e2ff] px-3 py-1.5 text-xs font-bold text-[#3c096c]">{colorOptions.length} colores de referencia</span>}
+                    {proposedSizes.length > 0 && <span className="rounded-full bg-[#f1e2ff] px-3 py-1.5 text-xs font-bold text-[#3c096c]">Tallas {proposedSizes.join(' · ')}</span>}
+                  </div>
+                  <p className="mt-5 text-xs font-bold uppercase tracking-[.12em] text-[#65566f]">Precio de referencia</p>
+                  <p className="mt-1 font-heading text-lg font-extrabold text-[#3c096c]">${(product.priceCents / 100).toFixed(2)} USD</p>
+                  <p className="mt-2 text-xs leading-relaxed text-[#65566f]">Diseño y opciones sujetos a confirmación. Esta consulta no es una compra ni reserva existencias.</p>
+                  <Button onClick={openShirtConfigurator} className="mt-5 min-h-12 w-full bg-[#17022b] text-white hover:bg-[#3c096c]">Elegir diseño, color y talla</Button>
+                </div>
+              ) : (
               <div className="flex flex-1 flex-col p-6">
                 <div className="flex items-start justify-between gap-4">
                   <h3 className="font-heading text-2xl font-extrabold tracking-[-.04em]">{product.name}</h3>
@@ -348,7 +478,7 @@ export function StorePage() {
                   <p className="text-xs font-bold uppercase tracking-[.12em] text-[#65566f]">{product.isLive ? 'Valor' : 'Precio de referencia'}</p>
                   <p className="mt-1 font-heading text-lg font-extrabold text-[#3c096c]">{`$${(cents / 100).toFixed(2)} USD`}</p>
                 </div>
-                <Button variant="outline" onClick={() => setDetailProduct(product)} className="mt-4 w-full border-[#3c096c]/20 text-[#3c096c] hover:bg-[#f1e2ff]"><Eye aria-hidden="true" /> Ver ficha completa</Button>
+                <Button variant="outline" onClick={() => openProductDetails(product)} className="mt-4 w-full border-[#3c096c]/20 text-[#3c096c] hover:bg-[#f1e2ff]"><Eye aria-hidden="true" /> Ver ficha completa</Button>
                 {product.isLive ? (
                   <Button disabled={stock < 1} onClick={() => addProduct(product, chosen)} className="mt-3 w-full bg-[#17022b] text-white hover:bg-[#38332f]">
                     {stock < 1 ? 'Sin existencias' : added.includes(product.name) ? <><Check /> Pedido recibido</> : <><ShoppingBag /> Lo quiero</>}
@@ -357,6 +487,7 @@ export function StorePage() {
                   <Button asChild className="mt-5 w-full bg-[#17022b] text-white hover:bg-[#38332f]"><Link to={productInquiryUrl(product.name, product.dogSlugs)}><ShoppingBag /> Me interesa este diseño</Link></Button>
                 )}
               </div>
+              )}
             </motion.article>
           ); })}
           </AnimatePresence>
@@ -390,10 +521,35 @@ export function StorePage() {
 
       <ProductDetailDialog
         product={detailProduct}
-        variant={detailProduct ? detailProduct.variants.find((variant) => variant.id === chosenVariants[detailProduct.slug]) ?? detailProduct.variants[0] ?? null : null}
+        modelProduct={detailUsesShirtConfigurator ? shirtModel : null}
+        designOptions={detailDesignOptions}
+        selectedDesignSlug={selectedDesignSlug}
+        variant={detailVariant}
+        selectedSize={currentDetailSize}
+        sizeOptions={detailSizeOptions}
         onClose={closeDetails}
+        onSelectDesign={chooseShirtDesign}
         onSelectVariant={(variant) => {
-          if (detailProduct) setChosenVariants((current) => ({ ...current, [detailProduct.slug]: variant.id }));
+          if (detailColorSource) setChosenVariants((current) => ({ ...current, [detailColorSource.slug]: variant.id }));
+        }}
+        onSelectColor={(option: MerchandiseColorOption) => {
+          if (!detailColorSource) return;
+          const matching = option.variants.find((variant) => splitVariantLabel(variant).sizeLabel === currentDetailSize) ?? option.variants[0];
+          if (matching) setChosenVariants((current) => ({ ...current, [detailColorSource.slug]: matching.id }));
+        }}
+        onSelectSize={(size) => {
+          const variantsHaveSize = detailColorSource?.variants.some((variant) => splitVariantLabel(variant).sizeLabel);
+          if (variantsHaveSize && detailColorSource) {
+            const selectedColor = detailColorSource.variants.find((variant) => variant.id === chosenVariants[detailColorSource.slug])
+              ?? detailColorSource.variants[0];
+            const colorKey = selectedColor ? getVariantColorKey(selectedColor) : currentDetailColorKey;
+            const matching = getColorOptions(detailColorSource.variants)
+              .find((option) => option.key === colorKey)?.variants
+              .find((variant) => splitVariantLabel(variant).sizeLabel === size);
+            if (matching) setChosenVariants((current) => ({ ...current, [detailColorSource.slug]: matching.id }));
+          } else {
+            setProposedSize(size);
+          }
         }}
         onOrder={() => {
           if (detailProduct) addProduct(detailProduct, detailProduct.variants.find((variant) => variant.id === chosenVariants[detailProduct.slug]) ?? detailProduct.variants[0] ?? null);
