@@ -4,20 +4,43 @@ import { Check, ChevronLeft, ChevronRight, Package, ShoppingBag } from 'lucide-r
 import { AccessibleDialog } from '@/components/ui/AccessibleDialog';
 import { Button } from '@/components/ui/button';
 import { ResilientImage } from '@/components/ui/ResilientImage';
-import { getColorOptions, getVariantColorKey, splitVariantLabel, type MerchandiseProduct, type MerchandiseVariantOption } from '@/lib/merchandise';
+import { getColorOptions, getVariantColorKey, splitVariantLabel, type MerchandiseColorOption, type MerchandiseProduct, type MerchandiseVariantOption } from '@/lib/merchandise';
 import { motionDuration, motionEaseOut } from '@/lib/motionTokens';
 import { Link } from 'react-router-dom';
 import { merchandiseDogName, productInquiryUrl } from '@/lib/merchandiseDogs';
+import { ProductConfigurator } from './ProductConfigurator';
 
 type ProductDetailDialogProps = {
   product: MerchandiseProduct | null;
+  modelProduct?: MerchandiseProduct | null;
+  designOptions?: readonly MerchandiseProduct[];
+  selectedDesignSlug?: string | null;
   variant: MerchandiseVariantOption | null;
+  selectedSize?: string | null;
+  sizeOptions?: readonly string[];
   onClose: () => void;
+  onSelectDesign?: (design: MerchandiseProduct) => void;
   onSelectVariant: (variant: MerchandiseVariantOption) => void;
+  onSelectColor?: (option: MerchandiseColorOption) => void;
+  onSelectSize?: (size: string) => void;
   onOrder: () => void;
 };
 
-export function ProductDetailDialog({ product, variant, onClose, onSelectVariant, onOrder }: ProductDetailDialogProps) {
+export function ProductDetailDialog({
+  product,
+  modelProduct = null,
+  designOptions = [],
+  selectedDesignSlug = null,
+  variant,
+  selectedSize = null,
+  sizeOptions,
+  onClose,
+  onSelectDesign,
+  onSelectVariant,
+  onSelectColor,
+  onSelectSize,
+  onOrder,
+}: ProductDetailDialogProps) {
   const shouldReduceMotion = useReducedMotion();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
@@ -27,16 +50,36 @@ export function ProductDetailDialog({ product, variant, onClose, onSelectVariant
 
   if (!product) return null;
 
-  const images = [...new Set([variant?.image, ...product.galleryImages, product.image].filter((image): image is string => Boolean(image)))];
+  const images = [...new Set([...(designOptions.length ? [] : [variant?.image]), ...product.galleryImages, product.image].filter((image): image is string => Boolean(image)))];
   const activeImage = images[Math.min(activeImageIndex, Math.max(images.length - 1, 0))] ?? '';
-  const colorOptions = getColorOptions(product.variants);
+  const colorSource = product.variants.length ? product : modelProduct ?? product;
+  const colorOptions = getColorOptions(colorSource.variants);
   const activeColorKey = variant ? getVariantColorKey(variant) : '';
-  const selectedColor = colorOptions.find((option) => option.key === activeColorKey) ?? colorOptions[0];
-  const sizeOptions = selectedColor?.variants.filter((item) => splitVariantLabel(item).sizeLabel) ?? [];
-  const selectedSize = variant ? splitVariantLabel(variant).sizeLabel : null;
-  const currentVariant = variant ?? selectedColor?.variants[0] ?? null;
+  const selectedColor = colorOptions.find((option) => option.key === activeColorKey);
+  const visibleSizeOptions = sizeOptions ?? [...new Set((selectedColor?.variants ?? colorSource.variants)
+    .map((item) => splitVariantLabel(item).sizeLabel)
+    .filter((size): size is string => Boolean(size)))];
+  const selectedSizeLabel = selectedSize ?? splitVariantLabel(variant ?? { name: '', sizeLabel: null }).sizeLabel;
+  const currentVariant = variant;
   const stock = currentVariant?.inventory ?? product.inventory;
   const priceCents = product.priceCents + (currentVariant?.priceDelta ?? 0);
+  const selectedDesign = designOptions.find((design) => design.slug === selectedDesignSlug) ?? null;
+  const productToInquire = selectedDesign ?? product;
+  const requiresDesign = designOptions.length > 0;
+  const hasSelection = (!requiresDesign || Boolean(selectedDesign))
+    && (!colorOptions.length || Boolean(selectedColor))
+    && (!visibleSizeOptions.length || Boolean(selectedSizeLabel));
+  const missingSelectionLabel = requiresDesign && !selectedDesign
+    ? 'Elige un perrito'
+    : visibleSizeOptions.length > 0 && !selectedSizeLabel
+      ? 'Elige la talla'
+      : colorOptions.length > 0 && !selectedColor
+        ? 'Elige el color'
+        : 'Elige tus opciones';
+  const inquiryUrl = productInquiryUrl(productToInquire.name, productToInquire.dogSlugs, {
+    color: selectedColor?.name,
+    size: selectedSizeLabel,
+  });
 
   return (
     <AccessibleDialog open onClose={onClose} title={`Ficha de ${product.name}`}>
@@ -104,42 +147,32 @@ export function ProductDetailDialog({ product, variant, onClose, onSelectVariant
               <p className="mt-3 leading-relaxed text-[#65566f]">{product.description || 'Un artículo solidario de la colección AdoptaME.'}</p>
             </div>
 
-            {colorOptions.length > 0 && (
-              <fieldset>
-                <legend className="text-sm font-bold">{product.isLive ? 'Color' : 'Color de referencia'}: {selectedColor?.name}</legend>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {colorOptions.map((option) => (
-                    <button key={option.key} type="button" aria-label={`Elegir color ${option.name}`} aria-pressed={activeColorKey === option.key} onClick={() => onSelectVariant(option.variants[0])} className={`relative flex min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3c096c] ${activeColorKey === option.key ? 'border-[#3c096c] bg-[#f1e2ff]' : 'border-[#17022b]/15 bg-white hover:border-[#ff8069]'}`}>
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full border border-black/20" style={{ backgroundColor: option.hex }}>
-                      <AnimatePresence initial={false}>
-                        {activeColorKey === option.key && <motion.span key="selected" initial={{ scale: shouldReduceMotion ? 1 : 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: shouldReduceMotion ? 1 : 0.6, opacity: 0 }} transition={{ duration: motionDuration.quick, ease: motionEaseOut }}><Check aria-hidden="true" className={`h-3 w-3 ${option.hex.toLowerCase() === '#3c096c' ? 'text-white' : 'text-[#17022b]'}`} /></motion.span>}
-                      </AnimatePresence>
-                      </span>
-                      {option.name}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-            )}
-
-            {sizeOptions.length > 0 && (
-              <fieldset>
-                <legend className="text-sm font-bold">Talla{selectedSize ? `: ${selectedSize}` : ''}</legend>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {sizeOptions.map((item) => {
-                    const size = splitVariantLabel(item).sizeLabel;
-                    return (
-                      <button key={item.id} type="button" aria-pressed={variant?.id === item.id} onClick={() => onSelectVariant(item)} className={`relative min-h-11 min-w-12 rounded-xl border px-4 py-2 text-sm font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3c096c] ${variant?.id === item.id ? 'border-[#3c096c] text-white' : 'border-[#17022b]/15 bg-white hover:border-[#ff8069]'}`}>
-                        {variant?.id === item.id && (shouldReduceMotion
-                          ? <span className="absolute inset-0 rounded-[0.65rem] bg-[#3c096c]" />
-                          : <motion.span layoutId={`product-size-${product.slug}`} className="absolute inset-0 rounded-[0.65rem] bg-[#3c096c]" transition={{ duration: motionDuration.quick, ease: motionEaseOut }} />)}
-                        <span className="relative">{size}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            )}
+            <ProductConfigurator
+              designs={designOptions}
+              selectedDesignSlug={selectedDesignSlug}
+              onSelectDesign={onSelectDesign}
+              colorOptions={colorOptions}
+              selectedColorKey={activeColorKey}
+              onSelectColor={(option) => {
+                if (onSelectColor) onSelectColor(option);
+                else {
+                  const currentSize = selectedSizeLabel;
+                  const matching = option.variants.find((item) => splitVariantLabel(item).sizeLabel === currentSize) ?? option.variants[0];
+                  if (matching) onSelectVariant(matching);
+                }
+              }}
+              sizeOptions={visibleSizeOptions}
+              selectedSize={selectedSizeLabel}
+              onSelectSize={(size) => {
+                if (onSelectSize) onSelectSize(size);
+                else {
+                  const matching = selectedColor?.variants.find((item) => splitVariantLabel(item).sizeLabel === size);
+                  if (matching) onSelectVariant(matching);
+                }
+              }}
+              colorCaption={productToInquire.isLive ? undefined : 'Color de referencia; disponibilidad y tono final por confirmar.'}
+              sizeCaption={visibleSizeOptions.length && !productToInquire.isLive ? 'Talla de referencia; medidas y disponibilidad por confirmar.' : undefined}
+            />
 
             <section aria-label="Detalles del producto" className="rounded-2xl bg-white p-4">
               <h4 className="text-sm font-bold">Características</h4>
@@ -166,14 +199,20 @@ export function ProductDetailDialog({ product, variant, onClose, onSelectVariant
               </AnimatePresence>
             </div>
 
-            {product.isLive ? (
-              <Button disabled={stock < 1} onClick={onOrder} className="min-h-12 w-full bg-[#17022b] text-white hover:bg-[#38332f] disabled:cursor-not-allowed disabled:opacity-50">
+            {productToInquire.isLive ? (
+              <Button disabled={!hasSelection || stock < 1} onClick={onOrder} className="min-h-12 w-full bg-[#17022b] text-white hover:bg-[#38332f] disabled:cursor-not-allowed disabled:opacity-50">
                 <ShoppingBag aria-hidden="true" /> {stock < 1 ? 'Sin existencias' : 'Solicitar este producto'}
               </Button>
             ) : (
-              <Button asChild className="min-h-12 w-full bg-[#17022b] text-white hover:bg-[#38332f]">
-                <Link to={productInquiryUrl(product.name, product.dogSlugs)}><ShoppingBag aria-hidden="true" /> Consultar por este diseño</Link>
-              </Button>
+              hasSelection ? (
+                <Button asChild className="min-h-12 w-full bg-[#17022b] text-white hover:bg-[#38332f]">
+                  <Link to={inquiryUrl}><ShoppingBag aria-hidden="true" /> Consultar esta propuesta</Link>
+                </Button>
+              ) : (
+                <Button disabled className="min-h-12 w-full bg-[#17022b] text-white opacity-60">
+                  <ShoppingBag aria-hidden="true" /> {missingSelectionLabel}
+                </Button>
+              )
             )}
             <p className="text-xs leading-relaxed text-[#65566f]">El envío y el pago se coordinan contigo antes de confirmar el pedido. Esta solicitud no realiza cobros.</p>
           </div>

@@ -25,7 +25,7 @@ export function DogProductsSection({ dogSlug, dogName }: { dogSlug: string; dogN
           <div className="max-w-2xl">
             <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.17em] text-[#3c096c]"><PawPrint aria-hidden="true" className="h-4 w-4" /> Su huella también se lleva</p>
             <h2 id="dog-products-title" className="mt-4 font-heading text-4xl font-extrabold tracking-[-.055em] sm:text-5xl">La colección de {dogName}.</h2>
-            <p className="mt-4 leading-relaxed text-[var(--color-muted-foreground)]">Diseños inspirados en {dogName} para que su historia te acompañe. Abre cada ficha para conocer la propuesta y consultar sus detalles.</p>
+            <p className="mt-4 leading-relaxed text-[var(--color-muted-foreground)]">Cada artículo vinculado a {dogName} abre su diseño preseleccionado. En la camiseta puedes indicar la talla y el color que prefieres; el equipo confirmará las opciones disponibles.</p>
           </div>
           <Button asChild variant="outline" className="shrink-0 border-[#3c096c]/25 text-[#3c096c]"><Link to={dogProductUrl(dogSlug)}>Ver su colección <ArrowRight aria-hidden="true" /></Link></Button>
         </div>
@@ -41,7 +41,7 @@ export function DogProductsSection({ dogSlug, dogName }: { dogSlug: string; dogN
                 <p className="mt-3 text-sm leading-relaxed text-[#65566f]">{product.description}</p>
                 <p className="mt-5 text-xs font-bold text-[#65566f]">{product.isLive ? 'Valor' : 'Precio de referencia'}</p>
                 <p className="mt-1 font-heading text-lg font-extrabold text-[#3c096c]">{product.price}</p>
-                <Button asChild className="mt-5 w-full bg-[#17022b] text-white hover:bg-[#38332f]"><Link to={dogProductUrl(dogSlug, product.slug)}>Conocer este diseño <ArrowRight aria-hidden="true" /></Link></Button>
+                <Button asChild className="mt-5 w-full bg-[#17022b] text-white hover:bg-[#38332f]"><Link to={dogProductUrl(dogSlug, product.slug)}>{product.slug.startsWith('camiseta-') ? 'Elegir talla y color' : 'Ver opciones'} <ArrowRight aria-hidden="true" /></Link></Button>
               </div>
             </article>
           ))}
