@@ -82,11 +82,11 @@ export function ProductDetailDialog({
   });
 
   return (
-    <AccessibleDialog open onClose={onClose} title={`Ficha de ${product.name}`}>
-      <div className="max-h-[calc(100dvh-4rem)] overflow-y-auto bg-[#fffdf9] text-[#17022b]">
-        <div className="grid gap-0 lg:grid-cols-[1.05fr_.95fr]">
-          <div className="space-y-3 p-4 sm:p-7">
-            <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-[1.5rem] bg-[#f1e2ff] sm:rounded-[2rem]">
+    <AccessibleDialog open onClose={onClose} title={`Ficha de ${product.name}`} size="wide">
+      <div className="product-detail-scroll max-h-[calc(100dvh-7rem)] overflow-y-auto bg-[#fffdf9] text-[#17022b]">
+        <div className="product-detail-layout grid gap-0">
+          <div className="product-detail-media space-y-3 p-4 sm:p-7">
+            <div className="product-detail-stage relative flex items-center justify-center overflow-hidden rounded-[1.5rem] bg-[#f1e2ff] sm:rounded-[2rem]">
               <AnimatePresence initial={false} mode="wait">
                 {activeImage ? (
                   <motion.div
@@ -136,7 +136,7 @@ export function ProductDetailDialog({
             )}
           </div>
 
-          <div className="space-y-5 p-5 pt-1 sm:p-7 lg:pt-8">
+          <div className="product-detail-info space-y-5 p-5 pt-1 sm:p-7">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-[#f1e2ff] px-3 py-1 text-xs font-bold uppercase tracking-[.1em] text-[#3c096c]">{product.category}</span>

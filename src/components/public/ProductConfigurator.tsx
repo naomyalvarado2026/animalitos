@@ -46,7 +46,7 @@ function DesignPicker({
     <fieldset className="space-y-3">
       <StepHeading number={step}>Elige el perrito{selectedDogName ? ` · ${selectedDogName}` : ''}</StepHeading>
       <p className="text-xs leading-relaxed text-[#65566f]">Cada opción muestra la ilustración asociada a su ficha.</p>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
+      <div className="product-design-grid">
         {designs.map((design) => {
           const dogSlug = design.dogSlugs[0];
           const dogName = dogSlug ? merchandiseDogName(dogSlug) : design.name;
@@ -62,7 +62,7 @@ function DesignPicker({
                 checked={selected}
                 onChange={() => onSelectDesign(design)}
               />
-              <span className={`relative block overflow-hidden rounded-2xl border-2 bg-white transition-colors peer-checked:border-[#3c096c] ${selected ? 'border-[#3c096c]' : 'border-[#17022b]/10 group-hover:border-[#e0beff]'}`}>
+              <span className={`relative block overflow-hidden rounded-2xl border-2 bg-white transition-colors ${selected ? 'border-[#3c096c]' : 'border-[#17022b]/10 group-hover:border-[#e0beff]'}`}>
                 <span className="relative block aspect-square overflow-hidden bg-[#f1e2ff]">
                   <ResilientImage
                     src={design.image}
@@ -73,11 +73,11 @@ function DesignPicker({
                     decoding="async"
                     className="h-full w-full object-contain"
                   />
-                  <span className={`absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full shadow-sm ${selected ? 'bg-[#3c096c] text-white' : 'bg-white/95 text-transparent'}`}>
+                  {selected && <span className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-[#3c096c] text-white shadow-sm">
                     <Check aria-hidden="true" className="h-4 w-4" />
-                  </span>
+                  </span>}
                 </span>
-                <span className="block truncate px-2 py-2 text-center text-xs font-bold text-[#17022b] sm:text-sm">{dogName}</span>
+                <span className="flex min-h-10 items-center justify-center px-1.5 py-2 text-center text-xs font-bold leading-tight text-[#17022b] [overflow-wrap:anywhere] sm:text-sm">{dogName}</span>
               </span>
             </label>
           );
