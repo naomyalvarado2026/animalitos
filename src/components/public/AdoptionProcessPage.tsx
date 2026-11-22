@@ -219,8 +219,8 @@ export function AdoptionProcessPage() {
         <div className="mx-auto grid max-w-[1320px] overflow-hidden rounded-[2rem] bg-[var(--color-card)] shadow-[var(--surface-shadow)] lg:grid-cols-2">
           <div className="relative min-h-[280px] overflow-hidden sm:min-h-[360px]">
             <ResilientImage
-              src={assetUrl('/images/shelter_hero_1785817115197.jpg')}
-              alt="Una familia comparte tiempo con su perro en casa"
+              src={assetUrl('/images/refugio/perros-refugio-grupal-2026-11.jpg')}
+              alt="Representación generada de los doce perros del refugio reunidos en el patio"
               className="absolute inset-0 h-full w-full object-cover"
             />
           </div>
