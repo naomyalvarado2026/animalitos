@@ -26,6 +26,8 @@ on:
   push:
     tags:
       - 'android-v*'
+    branches:
+      - 'release/android-v*'
   pull_request:
     paths:
       - 'android/**'
@@ -109,6 +111,9 @@ jobs:
             VCODE="${{ inputs.version_code }}"
           else
             TAG="${GITHUB_REF_NAME}"
+            if [ "${GITHUB_REF_TYPE}" = "branch" ]; then
+              TAG="${TAG#release/}"
+            fi
             VNAME="${TAG#android-v}"
             VCODE="${{ github.run_number }}"
           fi
