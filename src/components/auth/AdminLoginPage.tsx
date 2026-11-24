@@ -3,8 +3,9 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Lock } from 'lucide-react';
+import { Eye, EyeOff, Lock, WifiOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOnlineStatus } from '@/components/pwa/useOnlineStatus';
 import { PawIcon } from '@/components/layout/PawBackground';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ type FormData = z.infer<typeof schema>;
 
 export function AdminLoginPage() {
   const { user, profile, loading, signIn, hasAccessLevel } = useAuth();
+  const online = useOnlineStatus();
   const navigate = useNavigate();
   const [showPwd, setShowPwd] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -38,6 +40,10 @@ export function AdminLoginPage() {
   }
 
   async function onSubmit(data: FormData) {
+    if (!online) {
+      setAuthError('Necesitas conexión a internet para iniciar sesión en el panel Admin.');
+      return;
+    }
     setAuthError(null);
     setIsSigningIn(true);
     const { error } = await signIn(data.email, data.password);
@@ -51,12 +57,18 @@ export function AdminLoginPage() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)] p-4 relative">
+    <div className="admin-shell min-h-screen flex items-center justify-center bg-[var(--color-background)] p-4 relative">
       {/* Subtle paw background */}
       <div className="absolute inset-0 paw-pattern opacity-30 pointer-events-none" />
 
-      {/* Theme toggle top-right */}
-      <div className="absolute top-4 right-4">
+      {/* Top navigation & theme toggle */}
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+        <Link
+          to="/"
+          className="inline-flex min-h-10 items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 text-xs font-semibold text-[var(--color-foreground)] hover:text-[var(--color-primary)]"
+        >
+          ← Volver a la app
+        </Link>
         <ThemeToggle />
       </div>
 
@@ -84,6 +96,12 @@ export function AdminLoginPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {!online && (
+              <div role="status" className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-100">
+                <WifiOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Estás sin conexión. Conéctate a internet para iniciar sesión y usar las herramientas del panel.</span>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="admin-email">Email</Label>
               <Input
@@ -129,7 +147,7 @@ export function AdminLoginPage() {
               variant="warm"
               size="lg"
               type="submit"
-              disabled={isSigningIn}
+              disabled={!online || isSigningIn}
               className="w-full mt-2"
             >
               {isSigningIn ? 'Iniciando sesión...' : 'Iniciar sesión'}

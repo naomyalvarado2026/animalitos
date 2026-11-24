@@ -12,6 +12,8 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { AppAutoUpdater } from '@/components/pwa/AppAutoUpdater';
+import { AppStartupAuthGate } from '@/components/pwa/AppStartupAuthGate';
 
 const CampaignsPage = lazy(() => import('@/components/public/CampaignsPage').then(m => ({ default: m.CampaignsPage })));
 const CampaignManagement = lazy(() => import('@/components/admin/CampaignManagement').then(m => ({ default: m.CampaignManagement })));
@@ -101,9 +103,11 @@ export default function App() {
     <ErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
+          <AppAutoUpdater />
           <AuthProvider>
             <CurrencyProvider>
               <BrowserRouter basename={import.meta.env.BASE_URL}>
+                <AppStartupAuthGate />
                 <Suspense fallback={<LoadingScreen />}>
                   <Routes>
                     {/* ── Public routes ── */}

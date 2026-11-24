@@ -32,8 +32,8 @@ android {
     applicationId = "org.adoptame.animalitos"
     minSdk = 24
     targetSdk = 35
-    versionCode = (project.findProperty("appVersionCode") as String?)?.toIntOrNull() ?: 1
-    versionName = (project.findProperty("appVersionName") as String?)?.ifBlank { null } ?: "1.0.0"
+    versionCode = (project.findProperty("appVersionCode") as String?)?.toIntOrNull() ?: 2
+    versionName = (project.findProperty("appVersionName") as String?)?.ifBlank { null } ?: "1.1.0"
   }
 
   signingConfigs {

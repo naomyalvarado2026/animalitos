@@ -1,10 +1,13 @@
 import { BrandLogo } from './BrandLogo';
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { BookOpen, ChevronDown, HeartHandshake, PawPrint, Sparkles } from 'lucide-react';
+import { BookOpen, ChevronDown, HeartHandshake, LockKeyhole, PawPrint, ShieldCheck, Sparkles, WifiOff } from 'lucide-react';
+import { toast } from 'sonner';
 import { ThemeToggle } from './ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useMobile } from '@/hooks/useMobile';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOnlineStatus } from '@/components/pwa/useOnlineStatus';
 import { cn } from '@/lib/utils';
 import { SiteSearchTrigger } from './SiteSearch';
 import { InstallAppButton } from './InstallAppButton';
@@ -79,6 +82,9 @@ export function PublicHeader() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const isMobile = useMobile(1024);
+  const online = useOnlineStatus();
+  const { user, profile, hasAccessLevel } = useAuth();
+  const isAuthenticatedStaff = Boolean(user && profile?.is_active && hasAccessLevel(1));
   const location = useLocation();
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -250,9 +256,38 @@ export function PublicHeader() {
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <SiteSearchTrigger />
             <InstallAppButton />
+            {online ? (
+              <Button size="sm" variant={isAuthenticatedStaff ? 'default' : 'outline'} asChild className="px-2 sm:px-3">
+                {isAuthenticatedStaff ? (
+                  <Link to="/admin" aria-label="Abrir Panel Admin">
+                    <ShieldCheck className="h-4 w-4 sm:mr-1.5" aria-hidden="true" />
+                    <span className="hidden sm:inline">Panel Admin</span>
+                  </Link>
+                ) : (
+                  <Link to="/admin/login" aria-label="Iniciar sesión en Admin">
+                    <LockKeyhole className="h-4 w-4 sm:mr-1.5" aria-hidden="true" />
+                    <span className="hidden sm:inline">Admin</span>
+                  </Link>
+                )}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                aria-label="Panel Admin (requiere conexión a internet)"
+                onClick={() => toast('El panel Admin necesita conexión a internet', {
+                  description: 'Se activará automáticamente cuando el teléfono vuelva a conectarse.',
+                })}
+                className="px-2 sm:px-3 opacity-60"
+              >
+                <WifiOff className="h-4 w-4 sm:mr-1.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Admin</span>
+              </Button>
+            )}
             <ThemeToggle />
             {!isMobile && (
               <Button

@@ -546,7 +546,7 @@ export function ProductManagement() {
                   <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-bold ${product.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-[var(--color-muted)] text-[var(--color-muted-foreground)]'}`}>{!product.is_active ? 'Oculto' : product.is_proposal ? 'Propuesta' : 'Publicado'}</span>
                 </div>
                 <p className="line-clamp-2 text-sm text-[var(--color-muted-foreground)]">{product.description || 'Sin descripción'}</p>
-                <div className="flex items-center justify-between gap-3 border-t border-[var(--color-border)] pt-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] pt-3 text-sm">
                   <span className="font-bold text-[var(--color-primary)]">${((product.price_cents ?? 0) / 100).toFixed(2)} USD</span>
                   <span className={`text-right font-semibold ${(product.inventory ?? 0) === 0 && !product.is_proposal ? 'text-rose-600' : (product.inventory ?? 0) <= LOW_STOCK_LIMIT && !product.is_proposal ? 'text-amber-600' : 'text-[var(--color-muted-foreground)]'}`}>{product.is_proposal ? 'En preparación' : product.inventory === 0 ? 'Sin stock' : product.inventory <= LOW_STOCK_LIMIT ? `Stock bajo · ${product.inventory}` : `${product.inventory} disponibles`}</span>
                 </div>

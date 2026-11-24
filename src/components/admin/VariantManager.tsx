@@ -170,7 +170,7 @@ export function VariantManager({
         )}
 
         <form onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }} className="space-y-4 rounded-2xl border border-[var(--color-border)] p-4 sm:p-5">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="font-heading text-lg font-bold">{editingId ? 'Editar combinación' : 'Nueva combinación'}</h3>
             {editingId && <Button type="button" variant="outline" size="sm" onClick={resetForm}><Plus aria-hidden="true" className="mr-1 h-4 w-4" />Nueva</Button>}
           </div>

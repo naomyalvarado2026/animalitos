@@ -9,7 +9,8 @@
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "test": "node --test tests/*.test.mjs",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "android:sync-bundle": "npm run build && node scripts/sync-android-offline-bundle.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.5.3",

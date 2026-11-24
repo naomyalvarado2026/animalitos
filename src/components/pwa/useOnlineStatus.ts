@@ -44,6 +44,8 @@ export function useOnlineStatus() {
 
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
+    window.addEventListener('adoptame:network-restored', onOnline);
+    window.addEventListener('adoptame:network-lost', onOffline);
     document.addEventListener('visibilitychange', onVisibilityChange);
     const interval = window.setInterval(() => {
       if (document.visibilityState === 'visible') void checkConnection();
@@ -56,6 +58,8 @@ export function useOnlineStatus() {
       window.clearInterval(interval);
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
+      window.removeEventListener('adoptame:network-restored', onOnline);
+      window.removeEventListener('adoptame:network-lost', onOffline);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, []);

@@ -28,9 +28,15 @@ import {
   ClipboardCheck,
   HeartHandshake,
   Images,
+  RefreshCw,
+  Wifi,
+  WifiOff,
   X,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOnlineStatus } from '@/components/pwa/useOnlineStatus';
 import { AccessibleDialog } from '@/components/ui/AccessibleDialog';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { PawIcon } from '@/components/layout/PawBackground';
@@ -87,12 +93,29 @@ const ROLE_LABELS: Record<string, { label: string; color: string }> = {
 
 export function AdminLayout() {
   const { profile, signOut, hasAccessLevel } = useAuth();
+  const online = useOnlineStatus();
+  const queryClient = useQueryClient();
   const [navSearch, setNavSearch] = useState('');
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isMobile = useMobile();
+  const [syncing, setSyncing] = useState(false);
+  const isMobile = useMobile(1024);
   const navigate = useNavigate();
+
+  async function handleSyncAdmin() {
+    if (!online) {
+      toast('Estás sin conexión', { description: 'Conéctate a internet para sincronizar datos con Supabase.' });
+      return;
+    }
+    setSyncing(true);
+    try {
+      await queryClient.invalidateQueries();
+      toast.success('Datos del panel actualizados.');
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   async function handleSignOut() {
     await signOut();
@@ -102,6 +125,9 @@ export function AdminLayout() {
   const roleMeta = ROLE_LABELS[profile?.role ?? 'viewer'] ?? { label: 'Admin', color: 'warm' };
   const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const visibleItems = NAV_ITEMS.filter(item => hasAccessLevel(item.minLevel) && normalize(item.label).includes(normalize(navSearch)));
+  const quickMobileItems = NAV_ITEMS.filter(
+    item => ['/admin', '/admin/animales', '/admin/solicitudes', '/admin/finanzas'].includes(item.href) && hasAccessLevel(item.minLevel),
+  );
   const sectionTitle = NAV_ITEMS.find(item => item.href === location.pathname)?.label ?? 'Administración';
   const groups = [
     { title: 'Resumen', paths: ['/admin', '/admin/reportes'] },
@@ -212,25 +238,48 @@ export function AdminLayout() {
         </aside>
       )}
 
-      {isMobile && <AccessibleDialog open={mobileOpen} onClose={() => setMobileOpen(false)} title="Herramientas del panel"><div className="h-[70vh]">{renderSidebar()}</div></AccessibleDialog>}
+      {isMobile && <AccessibleDialog open={mobileOpen} onClose={() => setMobileOpen(false)} title="Herramientas del panel"><div className="flex h-[75dvh] max-h-[75dvh] flex-col">{renderSidebar()}</div></AccessibleDialog>}
 
       {/* Main area */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top header */}
-        <header className="h-14 border-b border-[var(--color-border)] bg-[var(--color-card)] flex items-center justify-between px-4 shrink-0">
-          <div className="flex items-center gap-3">
+        <header className="h-14 border-b border-[var(--color-border)] bg-[var(--color-card)] flex items-center justify-between gap-2 px-3 sm:px-4 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {isMobile && (
-              <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Abrir menú">
+              <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Abrir menú de herramientas">
                 <Menu className="h-5 w-5" />
               </Button>
             )}
-            <Link to="/" className="text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] transition-colors">
+            <Link to="/" className="truncate text-xs font-medium text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] transition-colors">
               ← Ver sitio público
             </Link>
           </div>
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2 shrink-0">
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold',
+                online
+                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
+              )}
+              title={online ? 'Conectado a Supabase' : 'Sin conexión a internet'}
+            >
+              {online ? <Wifi className="h-3.5 w-3.5" aria-hidden="true" /> : <WifiOff className="h-3.5 w-3.5" aria-hidden="true" />}
+              <span className="hidden sm:inline">{online ? 'En línea' : 'Sin red'}</span>
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => void handleSyncAdmin()}
+              disabled={syncing}
+              aria-label="Sincronizar datos del panel"
+              title="Sincronizar datos del panel"
+            >
+              <RefreshCw className={cn('h-4 w-4', syncing && 'animate-spin')} />
+            </Button>
             {!isMobile && profile && (
-              <span className="text-xs text-[var(--color-muted-foreground)]">
+              <span className="truncate max-w-[180px] text-xs text-[var(--color-muted-foreground)]">
                 {profile.full_name ?? profile.email}
               </span>
             )}
@@ -238,11 +287,62 @@ export function AdminLayout() {
           </div>
         </header>
 
+        {!online && (
+          <div role="status" aria-live="polite" className="border-b border-amber-300 bg-amber-50 px-4 py-2.5 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100 shrink-0">
+            <div className="mx-auto flex max-w-[1440px] items-center gap-2">
+              <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Sin conexión a internet: puedes revisar pantallas en caché, pero guardar o actualizar registros requiere reconexión.</span>
+            </div>
+          </div>
+        )}
+
         {/* Content */}
-        <main id="admin-content" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8"><div className="mx-auto max-w-[1440px]"><p className="mb-5 text-xs text-[var(--color-muted-foreground)]">Panel / <span className="font-semibold text-[var(--color-foreground)]">{sectionTitle}</span></p>
+        <main id="admin-content" className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 lg:pb-8"><div className="mx-auto max-w-[1440px]"><p className="mb-5 text-xs text-[var(--color-muted-foreground)]">Panel / <span className="font-semibold text-[var(--color-foreground)]">{sectionTitle}</span></p>
           <RouteTransition />
         </div></main>
       </div>
+
+      {/* Barra adaptativa móvil/tablet para acceso directo al panel */}
+      {isMobile && (
+        <nav
+          aria-label="Accesos rápidos administrativos"
+          className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--color-border)] bg-[var(--color-card)]/95 shadow-[0_-8px_24px_rgba(23,2,43,0.1)] backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
+        >
+          <div
+            className="mx-auto grid h-16 max-w-xl"
+            style={{ gridTemplateColumns: `repeat(${quickMobileItems.length + 1}, minmax(0, 1fr))` }}
+          >
+            {quickMobileItems.map((item) => {
+              const active = item.href === '/admin'
+                ? location.pathname === '/admin'
+                : location.pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'flex min-h-[44px] flex-col items-center justify-center gap-1 px-1 text-[11px] font-semibold transition-colors',
+                    active ? 'text-[var(--color-primary)]' : 'text-[var(--color-muted-foreground)]'
+                  )}
+                >
+                  <item.icon className="h-4 w-4" aria-hidden="true" />
+                  <span className="truncate max-w-full">{item.label}</span>
+                </Link>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setMobileOpen(true)}
+              className="flex min-h-[44px] flex-col items-center justify-center gap-1 px-1 text-[11px] font-semibold text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)]"
+              aria-label="Abrir todas las herramientas administrativas"
+            >
+              <Menu className="h-4 w-4" aria-hidden="true" />
+              <span>Herramientas</span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
     </MotionConfig>
   );

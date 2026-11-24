@@ -73,21 +73,21 @@ const INSTALL_STEPS = [
 
 const APP_BENEFITS = [
   {
-    title: 'Acceso directo en 1 toque',
+    title: '100% funcional sin internet',
     description:
-      'Abre los perfiles de perritos, campañas y tienda solidaria sin buscar enlaces en el navegador.',
+      'Incluye los perfiles, tienda y guías desde el primer arranque aunque no tengas conexión en ese momento.',
     icon: Smartphone,
   },
   {
-    title: 'Siempre actualizada',
+    title: 'Se actualiza automáticamente',
     description:
-      'Los nuevos rescatados, historias y actividades del refugio llegan al instante sin reinstalar la app.',
+      'Cada cambio publicado en la web y nuevas versiones del APK se sincronizan al instante cuando te conectas.',
     icon: RefreshCw,
   },
   {
-    title: 'Ligera y respetuosa',
+    title: 'Panel Admin y acceso del equipo',
     description:
-      'Ocupa pocos megabytes y solo solicita acceso a internet; no pide contactos, ubicación ni cámara.',
+      'Al iniciar sesión con conexión puedes abrir el panel Admin adaptado a móvil, o navegar como invitado offline.',
     icon: Sparkles,
   },
   {
@@ -102,7 +102,7 @@ const APP_FAQS = [
   {
     question: '¿Es seguro descargar e instalar este APK?',
     answer:
-      'Sí. El archivo está firmado y alojado únicamente en GitHub Releases del repositorio oficial de AdoptaME, y no solicita permisos invasivos en tu dispositivo (únicamente conexión a internet).',
+      'Sí. El archivo está firmado y alojado únicamente en GitHub Releases del repositorio oficial de AdoptaME, y no solicita permisos invasivos de tus datos personales.',
   },
   {
     question: '¿Por qué Chrome dice «Es posible que el archivo sea dañino» o Android pide permiso?',
@@ -110,14 +110,14 @@ const APP_FAQS = [
       'Android y Chrome muestran ese aviso estándar con cualquier aplicación descargada fuera de Google Play Store. Solo toca «Descargar de todos modos» y habilita temporalmente la instalación desde tu navegador.',
   },
   {
-    question: '¿Tengo que volver a descargar el APK cuando llegan perritos nuevos?',
+    question: '¿Tengo que volver a descargar el APK cuando actualizan la página web?',
     answer:
-      'No. La app se conecta directamente con la plataforma actualizada de AdoptaME, así que ves los rescates, adopciones, voluntariado y novedades al instante.',
+      'No. La app descarga y aplica automáticamente cualquier mejora publicada en la web al conectarse a internet, y si lanzamos una nueva versión del APK te avisará para actualizarla en un toque.',
   },
   {
-    question: '¿Qué hago si tengo iPhone o prefiero no descargar un APK?',
+    question: '¿Puedo usarla sin iniciar sesión o sin internet?',
     answer:
-      'Puedes instalar AdoptaME como app web (PWA): en Safari (iPhone/iPad) toca Compartir y «Añadir a pantalla de inicio»; en Chrome (Android) abre el menú ⋮ y elige «Instalar app».',
+      'Sí. Al abrir la app te invitará a iniciar sesión (necesario para herramientas administrativas en línea), pero puedes elegir «Continuar sin iniciar sesión» y usar todo el catálogo y guías incluso sin internet.',
   },
 ];
 

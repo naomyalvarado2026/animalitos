@@ -4,19 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Tag de la Release (ej. android-v1.0.0)'
+        description: 'Tag de la Release (ej. android-v1.1.0)'
         required: true
-        default: 'android-v1.0.0'
+        default: 'android-v1.1.0'
         type: string
       version_name:
-        description: 'Versión visible de la app (ej. 1.0.0)'
+        description: 'Versión visible de la app (ej. 1.1.0)'
         required: true
-        default: '1.0.0'
+        default: '1.1.0'
         type: string
       version_code:
-        description: 'Código numérico incremental (ej. 1)'
+        description: 'Código numérico incremental (ej. 2)'
         required: true
-        default: '1'
+        default: '2'
         type: string
       publish_release:
         description: 'Publicar en GitHub Releases como última versión'
@@ -29,6 +29,9 @@ on:
   pull_request:
     paths:
       - 'android/**'
+      - 'src/**'
+      - 'public/**'
+      - 'scripts/sync-android-offline-bundle.mjs'
       - '.github/workflows/android-apk.yml'
 
 permissions:
@@ -39,6 +42,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run android:sync-bundle
+        env:
+          VITE_SUPABASE_URL: https://uxktqlmffongcagaxgtr.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_S5TIxJBh496EsYvNyyV1-Q_2B6JT8qr
+          VITE_SITE_ORIGIN: https://naomyalvarado2026.github.io
 
       - uses: actions/setup-java@v4
         with:

@@ -189,7 +189,7 @@ export function AdminDashboard() {
 
       <div className="rounded-2xl border border-[var(--color-border)] p-4 text-sm"><p className="font-semibold">Aprende el flujo sin alterar tus cifras reales</p><p className="mt-1 text-[var(--color-muted-foreground)]">Finanzas y Pedidos incluyen una vista «Ejemplos de práctica». Sus importes y clientes ficticios no se cuentan en este resumen.</p><Link to="/admin/campanas" className="mt-3 inline-block font-semibold text-[var(--color-primary)]">Gestionar campañas de temporada →</Link></div>
       <section aria-labelledby="action-center-title" className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 id="action-center-title" className="font-heading text-lg font-bold">Centro operativo</h2>
             <p className="text-sm text-[var(--color-muted-foreground)]">Lo que puede necesitar atención hoy.</p>

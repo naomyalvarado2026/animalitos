@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, Home, Menu, PawPrint, ShoppingBag, X } from 'lucide-react';
+import { Heart, Home, LockKeyhole, Menu, PawPrint, ShieldCheck, ShoppingBag, WifiOff, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOnlineStatus } from '@/components/pwa/useOnlineStatus';
 import { cn } from '@/lib/utils';
 
 const PRIMARY_ITEMS = [
@@ -32,6 +35,9 @@ export function PublicMobileNav() {
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const moreDialogRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const online = useOnlineStatus();
+  const { user, profile, hasAccessLevel } = useAuth();
+  const isAuthenticatedStaff = Boolean(user && profile?.is_active && hasAccessLevel(1));
   const isActive = (href: string) => href === '/'
     ? location.pathname === '/'
     : location.pathname.startsWith(href);
@@ -65,6 +71,46 @@ export function PublicMobileNav() {
           <div className="absolute inset-0 bg-black/35" />
           <div ref={moreDialogRef} id="more-menu" className="absolute left-3 right-3 bottom-[calc(4.9rem+env(safe-area-inset-bottom))] max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-3xl border border-[var(--color-border)] bg-[var(--color-card)] p-3 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="more-menu-title" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between px-3 py-2"><p id="more-menu-title" className="font-heading font-bold">Más de AdoptaME</p><button type="button" onClick={() => closeMore()} className="mobile-touch-target rounded-xl" aria-label="Cerrar más opciones"><X className="h-5 w-5 mx-auto" /></button></div>
+            {online ? (
+              <Link
+                to={isAuthenticatedStaff ? '/admin' : '/admin/login'}
+                onClick={() => closeMore(false)}
+                className="mt-2 flex items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-accent)] px-4 py-3 text-left transition-colors hover:opacity-95"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {isAuthenticatedStaff ? (
+                    <ShieldCheck className="h-5 w-5 shrink-0 text-[var(--color-primary)]" aria-hidden="true" />
+                  ) : (
+                    <LockKeyhole className="h-5 w-5 shrink-0 text-[var(--color-primary)]" aria-hidden="true" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-[var(--color-foreground)]">Panel Administrativo</p>
+                    <p className="text-xs text-[var(--color-muted-foreground)]">
+                      {isAuthenticatedStaff ? 'Conectado · Entrar al panel' : 'En línea · Iniciar sesión'}
+                    </p>
+                  </div>
+                </div>
+                <span className="shrink-0 rounded-full bg-[var(--color-primary)] px-2.5 py-1 text-[11px] font-bold text-[var(--color-primary-foreground)]">
+                  Abrir
+                </span>
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => toast('El panel Admin requiere internet para sincronizar.', {
+                  description: 'Se activará automáticamente cuando recuperes la conexión.',
+                })}
+                className="mt-2 flex w-full items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] px-4 py-3 text-left opacity-75"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <WifiOff className="h-5 w-5 shrink-0 text-[var(--color-muted-foreground)]" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-[var(--color-foreground)]">Panel Administrativo</p>
+                    <p className="text-xs text-[var(--color-muted-foreground)]">Requiere conexión a internet</p>
+                  </div>
+                </div>
+              </button>
+            )}
             <div className="grid grid-cols-2 gap-2 mt-2">
               {MORE_ITEMS.map((item) => <Link key={item.href} to={item.href} onClick={() => closeMore(false)} className="rounded-2xl bg-[var(--color-background)] px-3 py-3 text-sm font-semibold hover:bg-[var(--color-accent)]">{item.label}</Link>)}
             </div>

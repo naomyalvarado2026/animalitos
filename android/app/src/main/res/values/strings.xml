@@ -2,7 +2,15 @@
 <resources>
     <string name="app_name">AdoptaME</string>
     <string name="offline_title">Sin conexión a internet</string>
-    <string name="offline_description">AdoptaME necesita conexión para cargar los perfiles y campañas del refugio. Verifica tu red e inténtalo otra vez.</string>
+    <string name="offline_description">AdoptaME necesita conexión para sincronizar esta pantalla. Verifica tu red e inténtalo otra vez.</string>
     <string name="offline_retry">Reintentar</string>
     <string name="external_link_error">No se encontró una aplicación disponible para abrir este enlace.</string>
+    <string name="reconnected_syncing">Conexión detectada · Sincronizando AdoptaME…</string>
+    <string name="apk_update_title">Actualización disponible (v%1$s)</string>
+    <string name="apk_update_message">Hay una versión más reciente de la app de AdoptaME en GitHub. ¿Quieres descargarla e instalarla ahora?</string>
+    <string name="apk_update_now">Actualizar ahora</string>
+    <string name="apk_update_later">Más tarde</string>
+    <string name="apk_downloading">Descargando actualización de AdoptaME…</string>
+    <string name="apk_download_error">No pudimos descargar la actualización en este momento. Intenta de nuevo luego.</string>
+    <string name="apk_install_permission_hint">Autoriza instalar aplicaciones desde AdoptaME para completar la actualización.</string>
 </resources>

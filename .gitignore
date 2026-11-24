@@ -47,5 +47,6 @@ android/app/build/
 android/local.properties
 android/keystore.properties
 android/release-out/
+android/app/src/main/assets/www/
 *.jks
 *.keystore
