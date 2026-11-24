@@ -105,8 +105,8 @@ export function AdoptionProcessPage() {
 
           <div className="relative min-h-[280px] overflow-hidden rounded-[2rem] bg-[var(--color-secondary)] sm:min-h-[390px] lg:absolute lg:inset-y-0 lg:right-0 lg:w-[55%] lg:rounded-none">
             <ResilientImage
-              src={assetUrl('/images/refugio/perros-refugio-grupal-jardin-2026-11.jpg')}
-              alt="Representación generada de los doce perros del refugio reunidos en el jardín"
+              src={assetUrl('/images/refugio/perros-refugio-grupal-jardin-2026-11-24.webp')}
+              alt="Representación generada de los doce perros del refugio reunidos en el jardín; Scooby aparece al frente con su pañuelo azul"
               className="absolute inset-0 h-full w-full object-cover object-center"
             />
             <div aria-hidden="true" className="absolute inset-y-0 left-0 hidden w-[28%] bg-gradient-to-r from-[var(--color-background)] via-[var(--color-background)]/55 to-transparent lg:block" />
@@ -219,8 +219,8 @@ export function AdoptionProcessPage() {
         <div className="mx-auto grid max-w-[1320px] overflow-hidden rounded-[2rem] bg-[var(--color-card)] shadow-[var(--surface-shadow)] lg:grid-cols-2">
           <div className="relative min-h-[280px] overflow-hidden sm:min-h-[360px]">
             <ResilientImage
-              src={assetUrl('/images/refugio/perros-refugio-grupal-2026-11.jpg')}
-              alt="Representación generada de los doce perros del refugio reunidos en el patio"
+              src={assetUrl('/images/refugio/perros-refugio-grupal-porche-2026-11-24.webp')}
+              alt="Representación generada de los doce perros del refugio reunidos en el porche; Scooby aparece al frente con su pañuelo azul"
               className="absolute inset-0 h-full w-full object-cover"
             />
           </div>
