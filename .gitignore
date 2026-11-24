@@ -39,3 +39,13 @@ supabase/.temp/
 output/
 
 .vercel
+
+# Android build & local secrets (NEVER commit keystores or local SDK paths)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/keystore.properties
+android/release-out/
+*.jks
+*.keystore

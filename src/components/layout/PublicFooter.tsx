@@ -22,6 +22,7 @@ const QUICK_LINKS = [
   { label: 'Donaciones', href: '/donaciones' },
   { label: 'Apadrinar', href: '/apadrina' },
   { label: 'En memoria de', href: '/en-memoria' },
+  { label: 'App Android (APK)', href: '/app' },
   { label: 'Contacto', href: '/contacto' },
   { label: 'Privacidad y métricas', href: '/privacidad' },
 ];

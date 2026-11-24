@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="adoptame_bg">#FAF7FD</color>
+    <color name="adoptame_card">#FFFFFF</color>
+    <color name="adoptame_ink">#17022B</color>
+    <color name="adoptame_muted">#65566F</color>
+    <color name="adoptame_primary">#3C096C</color>
+    <color name="adoptame_primary_fg">#FFFFFF</color>
+    <color name="adoptame_accent">#FF8069</color>
+    <color name="adoptame_border">#E4D6ED</color>
+    <color name="adoptame_launcher_bg">#F0644A</color>
+</resources>

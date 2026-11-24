@@ -34,6 +34,7 @@ export const PUBLIC_DESTINATIONS: DiscoveryResult[] = [
   { id: 'stories', title: 'Historias de éxito', description: 'Segundas oportunidades que ya encontraron un hogar.', href: '/historias-de-exito', kind: 'page', keywords: 'adoptados testimonios familias' },
   { id: 'about', title: 'Nosotros', description: 'La misión, las personas y la historia de AdoptaME.', href: '/nosotros', kind: 'page', keywords: 'equipo refugio organizacion' },
   { id: 'memory', title: 'En memoria de', description: 'Un espacio para recordar a quienes dejaron huella.', href: '/en-memoria', kind: 'page', keywords: 'memorial recuerdo homenaje' },
+  { id: 'android-app', title: 'App para Android (APK)', description: 'Descarga e instala AdoptaME como app en tu teléfono Android.', href: '/app', kind: 'page', keywords: 'app apk android descargar instalar telefono celular movil github' },
   { id: 'partners', title: 'Alianzas y otras formas de apoyar', description: 'Comparte tu propuesta con el equipo del refugio.', href: '/contacto/quiero-apoyar', kind: 'page', keywords: 'empresa patrocinio aliados donacion especie' },
 ];
 

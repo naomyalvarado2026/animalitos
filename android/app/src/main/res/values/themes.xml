@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.AdoptaME" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/adoptame_primary</item>
+        <item name="colorPrimaryDark">@color/adoptame_ink</item>
+        <item name="colorAccent">@color/adoptame_accent</item>
+        <item name="android:windowBackground">@color/adoptame_bg</item>
+    </style>
+
+    <style name="Theme.AdoptaME.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/adoptame_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
+        <item name="postSplashScreenTheme">@style/Theme.AdoptaME</item>
+    </style>
+</resources>

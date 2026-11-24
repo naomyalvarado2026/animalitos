@@ -945,12 +945,19 @@ export function CinematicHomePage() {
               <Link to="/como-funciona">Ver el proceso</Link>
             </Button>
           </div>
-          <div className="mt-10">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             <Link
               to="/inicio-clasico"
               className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50 underline-offset-4 transition hover:text-[#e0beff] hover:underline"
             >
               Ver versión de inicio clásica
+            </Link>
+            <span className="text-white/25" aria-hidden="true">·</span>
+            <Link
+              to="/app"
+              className="text-xs font-semibold uppercase tracking-[0.14em] text-white/75 underline-offset-4 transition hover:text-[#ff8069] hover:underline"
+            >
+              Descargar app Android (APK)
             </Link>
           </div>
         </div>

@@ -1,86 +1,33 @@
 import { useEffect, useState } from 'react';
-import { Download } from 'lucide-react';
-import { AccessibleDialog } from '@/components/ui/AccessibleDialog';
+import { Link } from 'react-router-dom';
+import { Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-type InstallChoice = { outcome: 'accepted' | 'dismissed'; platform?: string };
-type InstallPrompt = Event & { prompt: () => Promise<void>; userChoice: Promise<InstallChoice> };
-
-function isIOSDevice() {
-  return /iPhone|iPad|iPod/i.test(navigator.userAgent)
-    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-}
-
-function isAndroidDevice() {
-  return /Android/i.test(navigator.userAgent);
-}
+import { isNativeAndroidApp } from '@/lib/androidApp';
 
 export function InstallAppButton() {
-  const [promptEvent, setPromptEvent] = useState<InstallPrompt | null>(null);
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    const installed = window.matchMedia('(display-mode: standalone)').matches
-      || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-    if (installed) return;
-    setVisible(isIOSDevice() || isAndroidDevice());
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+    if (standalone || isNativeAndroidApp()) {
+      setHidden(true);
+    }
 
-    const onBeforeInstall = (event: Event) => {
-      event.preventDefault();
-      setPromptEvent(event as InstallPrompt);
-      setVisible(true);
-    };
-    const onInstalled = () => {
-      setVisible(false);
-      setPromptEvent(null);
-    };
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    const onInstalled = () => setHidden(true);
     window.addEventListener('appinstalled', onInstalled);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
-      window.removeEventListener('appinstalled', onInstalled);
-    };
+    return () => window.removeEventListener('appinstalled', onInstalled);
   }, []);
 
-  async function handleInstall() {
-    if (promptEvent) {
-      try {
-        await promptEvent.prompt();
-        const choice = await promptEvent.userChoice;
-        setPromptEvent(null);
-        if (choice.outcome === 'accepted') {
-          setVisible(false);
-          return;
-        }
-        setHelpOpen(true);
-        return;
-      } catch {
-        setPromptEvent(null);
-      }
-    }
-    setHelpOpen(true);
-  }
+  if (hidden) return null;
 
-  if (!visible) return null;
-  return <>
-    <Button type="button" size="sm" variant="outline" aria-label="Instalar AdoptaME en este dispositivo" onClick={() => void handleInstall()} className="px-2.5 sm:px-3">
-      <Download className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">Instalar</span>
+  return (
+    <Button size="sm" variant="outline" asChild className="px-2.5 sm:px-3">
+      <Link to="/app" aria-label="Descargar app Android de AdoptaME">
+        <Smartphone className="h-4 w-4 sm:mr-1.5" aria-hidden="true" />
+        <span className="hidden sm:inline">App Android</span>
+      </Link>
     </Button>
-    <AccessibleDialog open={helpOpen} onClose={() => setHelpOpen(false)} title="Instala AdoptaME">
-      <div className="space-y-4 px-5 py-5 text-sm leading-relaxed sm:px-7">
-        <p>Agrega AdoptaME a tu pantalla de inicio para abrirlo como una app.</p>
-        {isIOSDevice() && <div className="rounded-2xl bg-[var(--color-background)] p-4">
-          <p className="font-bold">En iPhone o iPad</p>
-          <p className="mt-1">Abre esta página en Safari, toca Compartir, elige “Añadir a pantalla de inicio” y activa “Abrir como app”.</p>
-        </div>}
-        {isAndroidDevice() && <div className="rounded-2xl bg-[var(--color-background)] p-4">
-          <p className="font-bold">En Android</p>
-          <p className="mt-1">En Chrome, abre el menú ⋮ y toca “Instalar app” o “Añadir a pantalla de inicio”.</p>
-        </div>}
-        <Button type="button" variant="warm" onClick={() => setHelpOpen(false)} data-dialog-autofocus>Cerrar</Button>
-      </div>
-    </AccessibleDialog>
-  </>;
+  );
 }
-

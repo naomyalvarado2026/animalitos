@@ -70,6 +70,8 @@ export function PublicLayout() {
                 ? { title: 'En memoria de | AdoptaME', description: 'Honramos a los perros que dejaron una huella en nuestra manada.' }
                 : routePath === '/recursos'
                   ? { title: 'Recursos de tenencia responsable | AdoptaME', description: 'Guías para cuidar, adaptar y convivir mejor con un perro.' }
+                  : routePath === '/app'
+                    ? { title: 'Descargar App Android (APK) | AdoptaME', description: 'Descarga e instala la app oficial de AdoptaME para Android (.apk) desde GitHub o agrégala a tu pantalla de inicio.' }
           : { title: 'AdoptaME | Cada perro merece una historia feliz', description: 'Rescatamos perros, les devolvemos la confianza y encontramos hogares responsables.' };
   useEffect(() => {
     const syncDocumentTitle = () => {

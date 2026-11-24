@@ -68,6 +68,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: 'Transparencia', href: '/transparencia' },
       { label: 'Ingresos y egresos', href: '/transparencia/ingresos' },
       { label: 'Donadores principales', href: '/donaciones/donadores-principales' },
+      { label: 'App Android (APK)', href: '/app' },
       { label: 'Contacto', href: '/contacto' },
       { label: 'Quiero Apoyar', href: '/contacto/quiero-apoyar' },
     ],

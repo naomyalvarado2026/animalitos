@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AdoptaME</string>
+    <string name="offline_title">Sin conexión a internet</string>
+    <string name="offline_description">AdoptaME necesita conexión para cargar los perfiles y campañas del refugio. Verifica tu red e inténtalo otra vez.</string>
+    <string name="offline_retry">Reintentar</string>
+    <string name="external_link_error">No se encontró una aplicación disponible para abrir este enlace.</string>
+</resources>

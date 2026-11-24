@@ -44,6 +44,7 @@ const MemoryPage = lazy(() => import('@/components/public/MemoryPage').then(m =>
 const ResourcesPage = lazy(() => import('@/components/public/ResourcesPage').then(m => ({ default: m.ResourcesPage })));
 const FosterApplicationPage = lazy(() => import('@/components/public/FosterApplicationPage').then(m => ({ default: m.FosterApplicationPage })));
 const CommunitySupportPage = lazy(() => import('@/components/public/CommunitySupportPage').then(m => ({ default: m.CommunitySupportPage })));
+const AppDownloadPage = lazy(() => import('@/components/public/AppDownloadPage').then(m => ({ default: m.AppDownloadPage })));
 const NotFoundPage = lazy(() => import('@/components/public/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 // Lazy-loaded Admin pages
@@ -138,6 +139,7 @@ export default function App() {
                       <Route path="/donaciones/donadores-principales" element={<TopDonorsPage />} />
                       <Route path="/contacto" element={<ContactPage />} />
                       <Route path="/contacto/quiero-apoyar" element={<SupportPage />} />
+                      <Route path="/app" element={<AppDownloadPage />} />
                       <Route path="/privacidad" element={<PrivacyPage />} />
                       <Route path="*" element={<NotFoundPage />} />
                     </Route>

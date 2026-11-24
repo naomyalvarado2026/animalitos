@@ -22,6 +22,7 @@ const MORE_ITEMS = [
   { label: 'Historias de éxito', href: '/historias-de-exito' },
   { label: 'En memoria de', href: '/en-memoria' },
   { label: 'Transparencia', href: '/transparencia' },
+  { label: 'App Android (APK)', href: '/app' },
   { label: 'Contacto', href: '/contacto' },
   { label: 'Recursos educativos', href: '/recursos' },
 ];

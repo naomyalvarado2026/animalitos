@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { isNativeAndroidApp } from '@/lib/androidApp';
 
 function isAppExperience() {
   const standalone = window.matchMedia('(display-mode: standalone)').matches
     || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-  return standalone || new URLSearchParams(window.location.search).get('app') === '1';
+  return standalone || isNativeAndroidApp() || new URLSearchParams(window.location.search).get('app') === '1';
 }
 
 export function PwaAccountBar() {

@@ -36,6 +36,7 @@ const staticRoutes = [
   { path: '/donaciones/donadores-principales', title: 'Personas que apoyan | AdoptaME', description: 'Conoce a quienes contribuyen al bienestar de los perros rescatados.' },
   { path: '/contacto', title: 'Contacto | AdoptaME', description: 'Comunícate con el equipo de AdoptaME.' },
   { path: '/contacto/quiero-apoyar', title: 'Quiero apoyar | AdoptaME', description: 'Encuentra una forma de contribuir al cuidado de los perros rescatados.' },
+  { path: '/app', title: 'Descargar App Android (APK) | AdoptaME', description: 'Descarga e instala la app oficial de AdoptaME para Android (.apk) desde GitHub o agrégala a tu pantalla de inicio.' },
   { path: '/privacidad', title: 'Privacidad y métricas | AdoptaME', description: 'Conoce cómo protegemos tus datos y cómo usamos métricas anónimas en AdoptaME.' },
 ];
 const publicRoutePaths = staticRoutes.map(({ path: routePath }) => routePath);
