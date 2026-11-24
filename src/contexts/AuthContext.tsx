@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { type Session, type User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { supabase, isGoogleSignInEnabled } from '@/lib/supabase';
 import type { Profile } from '@/types';
+import { isNativeAndroidApp } from '@/lib/androidApp';
 
 interface AuthContextValue {
   user: User | null;
@@ -10,6 +11,8 @@ interface AuthContextValue {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
+  authError: string | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
   hasAccessLevel: (level: number) => boolean;
@@ -22,6 +25,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).has('error')
+      ? 'No se completó el acceso con Google. Inténtalo de nuevo.' : null,
+  );
 
   useEffect(() => {
     localStorage.removeItem('animalitos_demo_session');
@@ -70,9 +77,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (!error && data) {
+        if (localStorage.getItem('adoptame_google_pending') === '1') {
+          localStorage.removeItem('adoptame_google_pending');
+          if (!data.is_active) {
+            await signOut();
+            setAuthError('Esta cuenta no tiene acceso activo al equipo. Contacta al administrador.');
+            return null;
+          }
+        }
         setProfile(data as Profile);
         return data as Profile;
       } else {
+        if (localStorage.getItem('adoptame_google_pending') === '1') {
+          localStorage.removeItem('adoptame_google_pending');
+          await signOut();
+          setAuthError('Esta cuenta no tiene un perfil autorizado. Contacta al administrador.');
+        }
         setProfile(null);
         return null;
       }
@@ -85,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signIn(email: string, password: string) {
+    setAuthError(null);
     const cleanEmail = email.trim().toLowerCase();
 
     try {
@@ -104,6 +125,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: null };
     } catch {
       return { error: new Error('Error al conectar con el servidor de autenticación') };
+    }
+  }
+
+  async function signInWithGoogle() {
+    setAuthError(null);
+    try {
+      if (!await isGoogleSignInEnabled()) {
+        throw new Error('El acceso con Google aún no está habilitado. El administrador debe activar Google en la configuración de autenticación.');
+      }
+      localStorage.setItem('adoptame_google_pending', '1');
+      const redirectTo = isNativeAndroidApp()
+        ? 'adoptame://auth/callback'
+        : new URL(`${import.meta.env.BASE_URL}admin/login`, window.location.origin).href;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo, skipBrowserRedirect: true, queryParams: { prompt: 'select_account' } },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error('No se pudo abrir el acceso con Google.');
+      // Android intercepts this external navigation and opens the system browser.
+      window.location.assign(data.url);
+      return { error: null };
+    } catch (error) {
+      localStorage.removeItem('adoptame_google_pending');
+      return { error: error instanceof Error ? error : new Error('No se pudo conectar con Google. Inténtalo de nuevo.') };
     }
   }
 
@@ -141,6 +187,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loading,
       signIn,
+      signInWithGoogle,
+      authError,
       signOut,
       isAdmin,
       isSuperAdmin,

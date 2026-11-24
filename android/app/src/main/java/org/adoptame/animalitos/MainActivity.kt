@@ -1,483 +1,4 @@
-package org.adoptame.animalitos
-
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Intent
-import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Message
-import android.os.SystemClock
-import android.provider.Settings
-import android.view.View
-import android.webkit.CookieManager
-import android.webkit.JsResult
-import android.webkit.ValueCallback
-import android.webkit.WebChromeClient
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.widget.Button
-import android.widget.FrameLayout
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import org.json.JSONObject
-import java.io.ByteArrayInputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.concurrent.Executors
-
-class MainActivity : AppCompatActivity() {
-
-  private lateinit var rootContainer: FrameLayout
-  private lateinit var swipeRefresh: SwipeRefreshLayout
-  private lateinit var webView: WebView
-  private lateinit var progressBar: ProgressBar
-  private lateinit var offlineOverlay: LinearLayout
-  private lateinit var retryButton: Button
-
-  private val backgroundExecutor = Executors.newSingleThreadExecutor()
-  private var networkCallback: ConnectivityManager.NetworkCallback? = null
-  private var isNetworkCallbackRegistered = false
-
-  @Volatile
-  private var useBundledOfflineAssets = false
-  private var offlineFallbackUsedForCurrentLoad = false
-  private var hasCheckedApkUpdateThisSession = false
-  private var pendingApkDownloadUrl: String? = null
-
-  private var initialLoadDone = false
-  private var hasMainFrameError = false
-  private var lastAttemptedUrl = START_URL
-  private var filePathCallback: ValueCallback<Array<Uri>>? = null
-
-  private val fileChooserLauncher = registerForActivityResult(
-    ActivityResultContracts.StartActivityForResult()
-  ) { result ->
-    val callback = filePathCallback
-    filePathCallback = null
-    if (callback != null) {
-      val parsed = WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
-      callback.onReceiveValue(parsed)
-    }
-  }
-
-  private val installPermissionLauncher = registerForActivityResult(
-    ActivityResultContracts.StartActivityForResult()
-  ) {
-    val queuedUrl = pendingApkDownloadUrl
-    if (queuedUrl != null && canInstallUnknownApps()) {
-      pendingApkDownloadUrl = null
-      downloadAndInstallApk(queuedUrl)
-    }
-  }
-
-  override fun onCreate(savedInstanceState: Bundle?) {
-    val splashScreen = installSplashScreen()
-    val startedAt = SystemClock.elapsedRealtime()
-    splashScreen.setKeepOnScreenCondition {
-      !initialLoadDone && (SystemClock.elapsedRealtime() - startedAt) < MAX_SPLASH_MS
-    }
-
-    super.onCreate(savedInstanceState)
-    enableEdgeToEdge()
-    setContentView(R.layout.activity_main)
-
-    rootContainer = findViewById(R.id.rootContainer)
-    swipeRefresh = findViewById(R.id.swipeRefresh)
-    webView = findViewById(R.id.webView)
-    progressBar = findViewById(R.id.progressBar)
-    offlineOverlay = findViewById(R.id.offlineOverlay)
-    retryButton = findViewById(R.id.retryButton)
-
-    applySystemBarAppearance()
-    applyWindowInsets()
-    configureSwipeRefresh()
-    configureWebView()
-    configureBackNavigation()
-
-    retryButton.setOnClickListener {
-      hasMainFrameError = false
-      offlineFallbackUsedForCurrentLoad = false
-      useBundledOfflineAssets = !isNetworkAvailable() && !hasLoadedLiveOriginBefore()
-      offlineOverlay.visibility = View.GONE
-      webView.loadUrl(lastAttemptedUrl)
-    }
-
-    if (savedInstanceState != null) {
-      webView.restoreState(savedInstanceState)
-      initialLoadDone = true
-    } else {
-      val initialUrl = resolveStartUrl(intent)
-      lastAttemptedUrl = initialUrl
-      val onlineNow = isNetworkAvailable()
-      useBundledOfflineAssets = !onlineNow && !hasLoadedLiveOriginBefore()
-      webView.loadUrl(initialUrl)
-      if (onlineNow) {
-        maybeCheckGithubApkUpdate()
-      }
-    }
-  }
-
-  override fun onStart() {
-    super.onStart()
-    registerNetworkObserver()
-    if (isNetworkAvailable()) {
-      handleConnectivityRestored(triggerReloadIfBundled = useBundledOfflineAssets)
-    }
-  }
-
-  override fun onStop() {
-    unregisterNetworkObserver()
-    super.onStop()
-  }
-
-  override fun onNewIntent(intent: Intent) {
-    super.onNewIntent(intent)
-    setIntent(intent)
-    val deepLink = intent.data
-    if (deepLink != null && isInternalAdoptameUrl(deepLink)) {
-      val target = deepLink.toString()
-      lastAttemptedUrl = target
-      hasMainFrameError = false
-      offlineFallbackUsedForCurrentLoad = false
-      useBundledOfflineAssets = !isNetworkAvailable() && !hasLoadedLiveOriginBefore()
-      offlineOverlay.visibility = View.GONE
-      webView.loadUrl(target)
-    }
-  }
-
-  override fun onSaveInstanceState(outState: Bundle) {
-    super.onSaveInstanceState(outState)
-    webView.saveState(outState)
-  }
-
-  override fun onDestroy() {
-    unregisterNetworkObserver()
-    backgroundExecutor.shutdownNow()
-    filePathCallback?.onReceiveValue(null)
-    filePathCallback = null
-    webView.stopLoading()
-    webView.destroy()
-    super.onDestroy()
-  }
-
-  private fun applySystemBarAppearance() {
-    val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-      Configuration.UI_MODE_NIGHT_YES
-    val controller = WindowInsetsControllerCompat(window, window.decorView)
-    controller.isAppearanceLightStatusBars = !isDark
-    controller.isAppearanceLightNavigationBars = !isDark
-  }
-
-  private fun applyWindowInsets() {
-    ViewCompat.setOnApplyWindowInsetsListener(rootContainer) { view, insets ->
-      val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime())
-      view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
-      insets
-    }
-  }
-
-  private fun configureSwipeRefresh() {
-    swipeRefresh.setColorSchemeColors(
-      ContextCompat.getColor(this, R.color.adoptame_primary),
-      ContextCompat.getColor(this, R.color.adoptame_accent)
-    )
-    swipeRefresh.setOnChildScrollUpCallback { _, _ -> webView.scrollY > 0 }
-    swipeRefresh.setOnRefreshListener {
-      if (isNetworkAvailable()) {
-        useBundledOfflineAssets = false
-      }
-      if (offlineOverlay.visibility == View.VISIBLE) {
-        hasMainFrameError = false
-        webView.loadUrl(lastAttemptedUrl)
-      } else {
-        webView.reload()
-      }
-    }
-  }
-
-  @SuppressLint("SetJavaScriptEnabled")
-  private fun configureWebView() {
-    if (BuildConfig.DEBUG) {
-      WebView.setWebContentsDebuggingEnabled(true)
-    }
-
-    CookieManager.getInstance().apply {
-      setAcceptCookie(true)
-      setAcceptThirdPartyCookies(webView, true)
-    }
-
-    webView.settings.apply {
-      javaScriptEnabled = true
-      domStorageEnabled = true
-      cacheMode = WebSettings.LOAD_DEFAULT
-      mediaPlaybackRequiresUserGesture = false
-      loadWithOverviewMode = true
-      useWideViewPort = true
-      setSupportMultipleWindows(true)
-      allowFileAccess = false
-      allowContentAccess = true
-      mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        safeBrowsingEnabled = true
-      }
-      userAgentString = "$userAgentString AdoptaMEAndroid/${BuildConfig.VERSION_NAME}"
-    }
-
-    webView.webViewClient = object : WebViewClient() {
-      override fun shouldInterceptRequest(
-        view: WebView?,
-        request: WebResourceRequest?
-      ): WebResourceResponse? {
-        if (!useBundledOfflineAssets || request == null) {
-          return super.shouldInterceptRequest(view, request)
-        }
-        if (!request.method.equals("GET", ignoreCase = true)) {
-          return super.shouldInterceptRequest(view, request)
-        }
-        val uri = request.url ?: return super.shouldInterceptRequest(view, request)
-        if (!isInternalAdoptameUrl(uri)) {
-          return super.shouldInterceptRequest(view, request)
-        }
-        return resolveBundledAssetResponse(uri) ?: super.shouldInterceptRequest(view, request)
-      }
-
-      override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-        val uri = request?.url ?: return false
-        if (isInternalAdoptameUrl(uri)) {
-          return false
-        }
-        openExternalUri(uri)
-        return true
-      }
-
-      override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-        super.onPageStarted(view, url, favicon)
-        hasMainFrameError = false
-        if (!url.isNullOrBlank()) {
-          lastAttemptedUrl = url
-        }
-        progressBar.visibility = View.VISIBLE
-      }
-
-      override fun onPageFinished(view: WebView?, url: String?) {
-        super.onPageFinished(view, url)
-        initialLoadDone = true
-        swipeRefresh.isRefreshing = false
-        progressBar.visibility = View.GONE
-        if (!hasMainFrameError) {
-          offlineOverlay.visibility = View.GONE
-          offlineFallbackUsedForCurrentLoad = false
-          if (!useBundledOfflineAssets && isNetworkAvailable()) {
-            markLiveOriginLoaded()
-          }
-        }
-      }
-
-      override fun onReceivedError(
-        view: WebView?,
-        request: WebResourceRequest?,
-        error: WebResourceError?
-      ) {
-        super.onReceivedError(view, request, error)
-        if (request?.isForMainFrame != true) return
-
-        val failingUrl = request.url?.toString() ?: lastAttemptedUrl
-        if (!useBundledOfflineAssets && !offlineFallbackUsedForCurrentLoad && hasBundledIndex()) {
-          offlineFallbackUsedForCurrentLoad = true
-          useBundledOfflineAssets = true
-          hasMainFrameError = false
-          lastAttemptedUrl = failingUrl
-          webView.post { webView.loadUrl(failingUrl) }
-          return
-        }
-
-        initialLoadDone = true
-        hasMainFrameError = true
-        swipeRefresh.isRefreshing = false
-        progressBar.visibility = View.GONE
-        lastAttemptedUrl = failingUrl
-        offlineOverlay.visibility = View.VISIBLE
-      }
-    }
-
-    webView.webChromeClient = object : WebChromeClient() {
-      override fun onProgressChanged(view: WebView?, newProgress: Int) {
-        progressBar.progress = newProgress
-        progressBar.visibility = if (newProgress in 1..99) View.VISIBLE else View.GONE
-      }
-
-      override fun onCreateWindow(
-        view: WebView?,
-        isDialog: Boolean,
-        isUserGesture: Boolean,
-        resultMsg: Message?
-      ): Boolean {
-        val transport = resultMsg?.obj as? WebView.WebViewTransport ?: return false
-        val tempWebView = WebView(this@MainActivity)
-        var handled = false
-        tempWebView.webViewClient = object : WebViewClient() {
-          private fun handlePopupUri(uri: Uri?) {
-            if (handled || uri == null) return
-            handled = true
-            if (isInternalAdoptameUrl(uri)) {
-              webView.loadUrl(uri.toString())
-            } else {
-              openExternalUri(uri)
-            }
-            tempWebView.destroy()
-          }
-
-          override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-            handlePopupUri(request?.url)
-            return true
-          }
-
-          override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-            handlePopupUri(url?.let(Uri::parse))
-          }
-        }
-        transport.webView = tempWebView
-        resultMsg.sendToTarget()
-        return true
-      }
-
-      override fun onJsAlert(
-        view: WebView?,
-        url: String?,
-        message: String?,
-        result: JsResult?
-      ): Boolean {
-        AlertDialog.Builder(this@MainActivity)
-          .setMessage(message.orEmpty())
-          .setPositiveButton(android.R.string.ok) { _, _ -> result?.confirm() }
-          .setOnCancelListener { result?.cancel() }
-          .show()
-        return true
-      }
-
-      override fun onJsConfirm(
-        view: WebView?,
-        url: String?,
-        message: String?,
-        result: JsResult?
-      ): Boolean {
-        AlertDialog.Builder(this@MainActivity)
-          .setMessage(message.orEmpty())
-          .setPositiveButton(android.R.string.ok) { _, _ -> result?.confirm() }
-          .setNegativeButton(android.R.string.cancel) { _, _ -> result?.cancel() }
-          .setOnCancelListener { result?.cancel() }
-          .show()
-        return true
-      }
-
-      override fun onShowFileChooser(
-        webView: WebView?,
-        filePathCallback: ValueCallback<Array<Uri>>?,
-        fileChooserParams: FileChooserParams?
-      ): Boolean {
-        this@MainActivity.filePathCallback?.onReceiveValue(null)
-        this@MainActivity.filePathCallback = filePathCallback
-
-        val intent = runCatching { fileChooserParams?.createIntent() }.getOrNull()
-        if (intent == null) {
-          this@MainActivity.filePathCallback?.onReceiveValue(null)
-          this@MainActivity.filePathCallback = null
-          return false
-        }
-
-        val launched = runCatching {
-          fileChooserLauncher.launch(intent)
-        }.isSuccess
-        if (!launched) {
-          this@MainActivity.filePathCallback?.onReceiveValue(null)
-          this@MainActivity.filePathCallback = null
-          return false
-        }
-        return true
-      }
-    }
-
-    webView.setDownloadListener { url, _, _, _, _ ->
-      if (!url.isNullOrBlank()) {
-        openExternalUri(Uri.parse(url))
-      }
-    }
-  }
-
-  private fun configureBackNavigation() {
-    onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-      override fun handleOnBackPressed() {
-        if (webView.canGoBack()) {
-          webView.goBack()
-        } else {
-          isEnabled = false
-          onBackPressedDispatcher.onBackPressed()
-        }
-      }
-    })
-  }
-
-  private fun resolveStartUrl(intent: Intent?): String {
-    val data = intent?.data
-    return if (data != null && isInternalAdoptameUrl(data)) data.toString() else START_URL
-  }
-
-  private fun isInternalAdoptameUrl(uri: Uri): Boolean {
-    if (!uri.scheme.equals("https", ignoreCase = true)) return false
-    if (!uri.host.equals(ALLOWED_HOST, ignoreCase = true)) return false
-    val path = uri.path ?: return false
-    return path == BASE_PATH || path.startsWith("$BASE_PATH/")
-  }
-
-  private fun openExternalUri(uri: Uri) {
-    val scheme = uri.scheme?.lowercase() ?: return
-    if (scheme !in ALLOWED_EXTERNAL_SCHEMES) return
-    val launched = runCatching {
-      startActivity(Intent(Intent.ACTION_VIEW, uri))
-    }.isSuccess
-    if (!launched) {
-      Toast.makeText(this, R.string.external_link_error, Toast.LENGTH_SHORT).show()
-    }
-  }
-
-  private fun prefs() = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-
-  private fun hasLoadedLiveOriginBefore(): Boolean =
-    prefs().getBoolean(KEY_HAS_LOADED_LIVE, false)
-
-  private fun markLiveOriginLoaded() {
-    prefs().edit().putBoolean(KEY_HAS_LOADED_LIVE, true).apply()
-  }
-
-  private fun isNetworkAvailable(): Boolean {
-    val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
-    val activeNetwork = cm.activeNetwork ?: return false
+YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éí÷ŸyN‹Z–‹­¦ëeŠw¬ÕÁ…­…”½Éœ¹…‘½ÁÑ…µ”¹…¹¥µ…±¥Ñ½Ì()¥µÁ½ÉĞ…¹‘É½¥¹…¹¹½Ñ…Ñ¥½¸¹MÕÁÁÉ•ÍÍ1¥¹Ğ)¥µÁ½ÉĞ…¹‘É½¥¹½¹Ñ•¹Ğ¹½¹Ñ•áĞ)¥µÁ½ÉĞ…¹‘É½¥¹½¹Ñ•¹Ğ¹%¹Ñ•¹Ğ)¥µÁ½ÉĞ…¹‘É½¥¹½¹Ñ•¹Ğ¹É•Ì¹½¹™¥ÕÉ…Ñ¥½¸)¥µÁ½ÉĞ…¹‘É½¥¹É…Á¡¥Ì¹	¥Ñµ…À)¥µÁ½ÉĞ…¹‘É½¥¹¹•Ğ¹½¹¹•Ñ¥Ù¥Ñå5…¹…•È)¥µÁ½ÉĞ…¹‘É½¥¹¹•Ğ¹9•Ñİ½É¬)¥µÁ½ÉĞ…¹‘É½¥¹¹•Ğ¹9•Ñİ½É­…Á…‰¥±¥Ñ¥•Ì)¥µÁ½ÉĞ…¹‘É½¥¹¹•Ğ¹UÉ¤)¥µÁ½ÉĞ…¹‘É½¥¹½Ì¹	Õ¥±)¥µÁ½ÉĞ…¹‘É½¥¹½Ì¹	Õ¹‘±”)¥µÁ½ÉĞ…¹‘É½¥¹½Ì¹5•ÍÍ…”)¥µÁ½ÉĞ…¹‘É½¥¹½Ì¹MåÍÑ•µ±½¬)¥µÁ½ÉĞ…¹‘É½¥¹ÁÉ½Ù¥‘•È¹M•ÑÑ¥¹Ì)¥µÁ½ÉĞ…¹‘É½¥¹Ù¥•Ü¹Y¥•Ü)¥µÁ½ÉĞ…¹‘É½¥¹İ•‰­¥Ğ¹½½­¥•5…¹…•È)¥µÁ½ÉĞ…¹‘É½¥¹İ•‰­¥Ğ¹)ÍI•ÍÕ±Ğ)¥µÁ½ÉĞ…¹‘É½¥¹İ•‰­¥Ğ¹Y…±Õ•…±±‰…¬)¥µÁ½ÉĞ…¹‘É½¥¹İ•‰­¥Ğ¹]•‰¡É½µ•±¥•¹Ğ)¥µÁ½ÉĞ…¹‘É½¥¹İ•‰­¥Ğ¹]•‰I•Í½ÕÉ•ÉÉ½È)¥µÁ½ÉĞ…¹‘É½¥¹İ•‰­¥Ğ¹]•‰I•Í½ÕÉ•I•ÅÕ•ÍĞ)¥µÁ½ÉĞ…¹‘É½¥¹İ•‰­¥Ğ¹]•‰I•Í½ÕÉ•I•ÍÁ½¹Í”)¥µÁ½ÉĞ…¹‘É½¥¹İ•‰­¥Ğ¹]•‰M•ÑÑ¥¹Ì)¥µÁ½ÉĞ…¹‘É½¥¹İ•‰­¥Ğ¹]•‰Y¥•Ü)¥µÁ½ÉĞ…¹‘É½¥¹İ•‰­¥Ğ¹]•‰Y¥•İ±¥•¹Ğ)¥µÁ½ÉĞ…¹‘É½¥¹İ¥‘•Ğ¹	ÕÑÑ½¸)¥µÁ½ÉĞ…¹‘É½¥¹İ¥‘•Ğ¹É…µ•1…å½ÕĞ)¥µÁ½ÉĞ…¹‘É½¥¹İ¥‘•Ğ¹1¥¹•…É1…å½ÕĞ)¥µÁ½ÉĞ…¹‘É½¥¹İ¥‘•Ğ¹AÉ½É•ÍÍ	…È)¥µÁ½ÉĞ…¹‘É½¥¹İ¥‘•Ğ¹Q½…ÍĞ)¥µÁ½ÉĞ…¹‘É½¥‘à¹…Ñ¥Ù¥Ñä¹=¹	…­AÉ•ÍÍ•‘…±±‰…¬)¥µÁ½ÉĞ…¹‘É½¥‘à¹…Ñ¥Ù¥Ñä¹•¹…‰±•‘•Q½‘”)¥µÁ½ÉĞ…¹‘É½¥‘à¹…Ñ¥Ù¥Ñä¹É•ÍÕ±Ğ¹½¹ÑÉ…Ğ¹Ñ¥Ù¥ÑåI•ÍÕ±Ñ½¹ÑÉ…ÑÌ)¥µÁ½ÉĞ…¹‘É½¥‘à¹…ÁÁ½µÁ…Ğ¹…ÁÀ¹±•ÉÑ¥…±½œ)¥µÁ½ÉĞ…¹‘É½¥‘à¹…ÁÁ½µÁ…Ğ¹…ÁÀ¹ÁÁ½µÁ…ÑÑ¥Ù¥Ñä)¥µÁ½ÉĞ…¹‘É½¥‘à¹½É”¹½¹Ñ•¹Ğ¹½¹Ñ•áÑ½µÁ…Ğ)¥µÁ½ÉĞ…¹‘É½¥‘à¹½É”¹½¹Ñ•¹Ğ¹¥±•AÉ½Ù¥‘•È)¥µÁ½ÉĞ…¹‘É½¥‘à¹½É”¹ÍÁ±…Í¡ÍÉ••¸¹MÁ±…Í¡MÉ••¸¹½µÁ…¹¥½¸¹¥¹ÍÑ…±±MÁ±…Í¡MÉ••¸)¥µÁ½ÉĞ…¹‘É½¥‘à¹½É”¹Ù¥•Ü¹Y¥•İ½µÁ…Ğ)¥µÁ½ÉĞ…¹‘É½¥‘à¹½É”¹Ù¥•Ü¹]¥¹‘½İ%¹Í•ÑÍ½µÁ…Ğ)¥µÁ½ÉĞ…¹‘É½¥‘à¹½É”¹Ù¥•Ü¹]¥¹‘½İ%¹Í•ÑÍ½¹ÑÉ½±±•É½µÁ…Ğ)¥µÁ½ÉĞ…¹‘É½¥‘à¹Íİ¥Á•É•™É•Í¡±…å½ÕĞ¹İ¥‘•Ğ¹Mİ¥Á•I•™É•Í¡1…å½ÕĞ)¥µÁ½ÉĞ½Éœ¹©Í½¸¹)M=9=‰©•Ğ)¥µÁ½ÉĞ©…Ù„¹¥¼¹	åÑ•ÉÉ…å%¹ÁÕÑMÑÉ•…´)¥µÁ½ÉĞ©…Ù„¹¥¼¹¥±”)¥µÁ½ÉĞ©…Ù„¹¥¼¹¥±•=ÕÑÁÕÑMÑÉ•…´)¥µÁ½ÉĞ©…Ù„¹¥¼¹%¹ÁÕÑMÑÉ•…´)¥µÁ½ÉĞ©…Ù„¹¹•Ğ¹!ÑÑÁUI1½¹¹•Ñ¥½¸)¥µÁ½ÉĞ©…Ù„¹¹•Ğ¹UI0)¥µÁ½ÉĞ©…Ù„¹ÕÑ¥°¹½¹ÕÉÉ•¹Ğ¹á•ÕÑ½ÉÌ()±…ÍÌ5…¥¹Ñ¥Ù¥Ñä€èÁÁ½µÁ…ÑÑ¥Ù¥Ñä ¤ì((€ÁÉ¥Ù…Ñ”±…Ñ•¥¹¥ĞÙ…ÈÉ½½Ñ½¹Ñ…¥¹•ÈèÉ…µ•1…å½ÕĞ(€ÁÉ¥Ù…Ñ”±…Ñ•¥¹¥ĞÙ…ÈÍİ¥Á•I•™É•Í èMİ¥Á•I•™É•Í¡1…å½ÕĞ(€ÁÉ¥Ù…Ñ”±…Ñ•¥¹¥ĞÙ…Èİ•‰Y¥•Üè]•‰Y¥•Ü(€ÁÉ¥Ù…Ñ”±…Ñ•¥¹¥ĞÙ…ÈÁÉ½É•ÍÍ	…ÈèAÉ½É•ÍÍ	…È(€ÁÉ¥Ù…Ñ”±…Ñ•¥¹¥ĞÙ…È½™™±¥¹•=Ù•É±…äè1¥¹•…É1…å½ÕĞ(€ÁÉ¥Ù…Ñ”±…Ñ•¥¹¥ĞÙ…ÈÉ•ÑÉå	ÕÑÑ½¸è	ÕÑÑ½¸((€ÁÉ¥Ù…Ñ”Ù…°‰…­É½Õ¹‘á•ÕÑ½È€ôá•ÕÑ½ÉÌ¹¹•İM¥¹±•Q¡É•…‘á•ÕÑ½È ¤(€ÁÉ¥Ù…Ñ”Ù…È¹•Ñİ½É­…±±‰…¬è½¹¹•Ñ¥Ù¥Ñå5…¹…•È¹9•Ñİ½É­…±±‰…¬ü€ô¹Õ±°(€ÁÉ¥Ù…Ñ”Ù…È¥Í9•Ñİ½É­…±±‰…­I•¥ÍÑ•É•€ô™…±Í”((€Y½±…Ñ¥±”(€ÁÉ¥Ù…Ñ”Ù…ÈÕÍ•	Õ¹‘±•‘=™™±¥¹•ÍÍ•ÑÌ€ô™…±Í”(€ÁÉ¥Ù…Ñ”Ù…È½™™±¥¹•…±±‰…­UÍ•‘½ÉÕÉÉ•¹Ñ1½…€ô™…±Í”(€ÁÉ¥Ù…Ñ”Ù…È¡…Í¡•­•‘Á­UÁ‘…Ñ•Q¡¥ÍM•ÍÍ¥½¸€ô™…±Í”(€ÁÉ¥Ù…Ñ”Ù…ÈÁ•¹‘¥¹Á­½İ¹±½…‘UÉ°èMÑÉ¥¹œü€ô¹Õ±°((€ÁÉ¥Ù…Ñ”Ù…È¥¹¥Ñ¥…±1½…‘½¹”€ô™…±Í”(€ÁÉ¥Ù…Ñ”Ù…È¡…Í5…¥¹É…µ•ÉÉ½È€ô™…±Í”(€ÁÉ¥Ù…Ñ”Ù…È±…ÍÑÑÑ•µÁÑ•‘UÉ°€ôMQIQ}UI0(€ÁÉ¥Ù…Ñ”Ù…È™¥±•A…Ñ¡…±±‰…¬èY…±Õ•…±±‰…¬ñÉÉ…äñUÉ¤øøü€ô¹Õ±°((€ÁÉ¥Ù…Ñ”Ù…°™¥±•¡½½Í•É1…Õ¹¡•È€ôÉ•¥ÍÑ•É½ÉÑ¥Ù¥ÑåI•ÍÕ±Ğ (€€€Ñ¥Ù¥ÑåI•ÍÕ±Ñ½¹ÑÉ…ÑÌ¹MÑ…ÉÑÑ¥Ù¥Ñå½ÉI•ÍÕ±Ğ ¤(€€¤ìÉ•ÍÕ±Ğ€´ø(€€€Ù…°…±±‰…¬€ô™¥±•A…Ñ¡…±±‰…¬(€€€™¥±•A…Ñ¡…±±‰…¬€ô¹Õ±°(€€€¥˜€¡…±±‰…¬€„ô¹Õ±°¤ì(€€€€€Ù…°Á…ÉÍ•€ô]•‰¡É½µ•±¥•¹Ğ¹¥±•¡½½Í•ÉA…É…µÌ¹Á…ÉÍ•I•ÍÕ±Ğ¡É•ÍÕ±Ğ¹É•ÍÕ±Ñ½‘”°É•ÍÕ±Ğ¹‘…Ñ„¤(€€€€€…±±‰…¬¹½¹I••¥Ù•Y…±Õ”¡Á…ÉÍ•¤(€€€ô(€ô((€ÁÉ¥Ù…Ñ”Ù…°¥¹ÍÑ…±±A•Éµ¥ÍÍ¥½¹1…Õ¹¡•È€ôÉ•¥ÍÑ•É½ÉÑ¥Ù¥ÑåI•ÍÕ±Ğ (€€€Ñ¥Ù¥ÑåI•ÍÕ±Ñ½¹ÑÉ…ÑÌ¹MÑ…ÉÑÑ¥Ù¥Ñå½ÉI•ÍÕ±Ğ ¤(€€¤ì(€€€Ù…°ÅÕ•Õ•‘UÉ°€ôÁ•¹‘¥¹Á­½İ¹±½…‘UÉ°(€€€¥˜€¡ÅÕ•Õ•‘UÉ°€„ô¹Õ±°€˜˜…¹%¹ÍÑ…±±U¹­¹½İ¹ÁÁÌ ¤¤ì(€€€€€Á•¹‘¥¹Á­½İ¹±½…‘UÉ°€ô¹Õ±°(€€€€€‘½İ¹±½…‘¹‘%¹ÍÑ…±±Á¬¡ÅÕ•Õ•‘UÉ°¤(€€€ô(€ô((€½Ù•ÉÉ¥‘”™Õ¸½¹É•…Ñ”¡Í…Ù•‘%¹ÍÑ…¹•MÑ…Ñ”è	Õ¹‘±”ü¤ì(€€€Ù…°ÍÁ±…Í¡MÉ••¸€ô¥¹ÍÑ…±±MÁ±…Í¡MÉ••¸ ¤(€€€Ù…°ÍÑ…ÉÑ•‘Ğ€ôMåÍÑ•µ±½¬¹•±…ÁÍ•‘I•…±Ñ¥µ” ¤(€€€ÍÁ±…Í¡MÉ••¸¹Í•Ñ-••Á=¹MÉ••¹½¹‘¥Ñ¥½¸ì(€€€€€€…¥¹¥Ñ¥…±1½…‘½¹”€˜˜€¡MåÍÑ•µ±½¬¹•±…ÁÍ•‘I•…±Ñ¥µ” ¤€´ÍÑ…ÉÑ•‘Ğ¤€ğ5a}MA1M!}5L(€€€ô((€€€ÍÕÁ•È¹½¹É•…Ñ”¡Í…Ù•‘%¹ÍÑ…¹•MÑ…Ñ”¤(€€€•¹…‰±•‘•Q½‘” ¤(€€€Í•Ñ½¹Ñ•¹ÑY¥•Ü¡H¹±…å½ÕĞ¹…Ñ¥Ù¥Ñå}µ…¥¸¤((€€€É½½Ñ½¹Ñ…¥¹•È€ô™¥¹‘Y¥•İ	å%¡H¹¥¹É½½Ñ½¹Ñ…¥¹•È¤(€€€Íİ¥Á•I•™É•Í €ô™¥¹‘Y¥•İ	å%¡H¹¥¹Íİ¥Á•I•™É•Í ¤(€€€İ•‰Y¥•Ü€ô™¥¹‘Y¥•İ	å%¡H¹¥¹İ•‰Y¥•Ü¤(€€€ÁÉ½É•ÍÍ	…È€ô™¥¹‘Y¥•İ	å%¡H¹¥¹ÁÉ½É•ÍÍ	…È¤(€€€½™™±¥¹•=Ù•É±…ä€ô™¥¹‘Y¥•İ	å%¡H¹¥¹½™™±¥¹•=Ù•É±…ä¤(€€€É•ÑÉå	ÕÑÑ½¸€ô™¥¹‘Y¥•İ	å%¡H¹¥¹É•ÑÉå	ÕÑÑ½¸¤((€€€…ÁÁ±åMåÍÑ•µ	…ÉÁÁ•…É…¹” ¤(€€€…ÁÁ±å]¥¹‘½İ%¹Í•ÑÌ ¤(€€€½¹™¥ÕÉ•Mİ¥Á•I•™É•Í  ¤(€€€½¹™¥ÕÉ•]•‰Y¥•Ü ¤(€€€½¹™¥ÕÉ•	…­9…Ù¥…Ñ¥½¸ ¤((€€€É•ÑÉå	ÕÑÑ½¸¹Í•Ñ=¹±¥­1¥ÍÑ•¹•Èì(€€€€€¡…Í5…¥¹É…µ•ÉÉ½È€ô™…±Í”(€€€€€½™™±¥¹•…±±‰…­UÍ•‘½ÉÕÉÉ•¹Ñ1½…€ô™…±Í”(€€€€€ÕÍ•	Õ¹‘±•‘=™™±¥¹•ÍÍ•ÑÌ€ô€…¥Í9•Ñİ½É­Ù…¥±…‰±” ¤€˜˜€…¡…Í1½…‘•‘1¥Ù•=É¥¥¹	•™½É” ¤(€€€€€½™™±¥¹•=Ù•É±…ä¹Ù¥Í¥‰¥±¥Ñä€ôY¥•Ü¹=9(€€€€€İ•‰Y¥•Ü¹±½…‘UÉ°¡±…ÍÑÑÑ•µÁÑ•‘UÉ°¤(€€€ô((€€€¥˜€¡Í…Ù•‘%¹ÍÑ…¹•MÑ…Ñ”€„ô¹Õ±°¤ì(€€€€€İ•‰Y¥•Ü¹É•ÍÑ½É•MÑ…Ñ”¡Í…Ù•‘%¹ÍÑ…¹•MÑ…Ñ”¤(€€€€€¥¹¥Ñ¥…±1½…‘½¹”€ôÑÉÕ”(€€€ô•±Í”ì(€€€€€Ù…°¥¹¥Ñ¥…±UÉ°€ôÉ•Í½±Ù•MÑ…ÉÑUÉ°¡¥¹Ñ•¹Ğ¤(€€€€€±…ÍÑÑÑ•µÁÑ•‘UÉ°€ô¥¹¥Ñ¥…±UÉ°(€€€€€Ù…°½¹±¥¹•9½Ü€ô¥Í9•Ñİ½É­Ù…¥±…‰±” ¤(€€€€€ÕÍ•	Õ¹‘±•‘=™™±¥¹•ÍÍ•ÑÌ€ô€…½¹±¥¹•9½Ü€˜˜€…¡…Í1½…‘•‘1¥Ù•=É¥¥¹	•™½É” ¤(€€€€€İ•‰Y¥•Ü¹±½…‘UÉ°¡¥¹¥Ñ¥…±UÉ°¤(€€€€€¥˜€¡½¹±¥¹•9½Ü¤ì(€€€€€€€µ…å‰•¡•­¥Ñ¡Õ‰Á­UÁ‘…Ñ” ¤(€€€€€ô(€€€ô(€ô((€½Ù•ÉÉ¥‘”™Õ¸½¹MÑ…ÉĞ ¤ì(€€€ÍÕÁ•È¹½¹MÑ…ÉĞ ¤(€€€É•¥ÍÑ•É9•Ñİ½É­=‰Í•ÉÙ•È ¤(€€€¥˜€¡¥Í9•Ñİ½É­Ù…¥±…‰±” ¤¤ì(€€€€€¡…¹‘±•½¹¹•Ñ¥Ù¥ÑåI•ÍÑ½É•¡ÑÉ¥•ÉI•±½…‘%™	Õ¹‘±•€ôÕÍ•	Õ¹‘±•‘=™™±¥¹•ÍÍ•ÑÌ¤(€€€ô(€ô((€½Ù•ÉÉ¥‘”™Õ¸½¹MÑ½À ¤ì(€€€Õ¹É•¥ÍÑ•É9•Ñİ½É­=‰Í•ÉÙ•È ¤(€€€ÍÕÁ•È¹½¹MÑ½À ¤(€ô((€½Ù•ÉÉ¥‘”™Õ¸½¹9•İ%¹Ñ•¹Ğ¡¥¹Ñ•¹Ğè%¹Ñ•¹Ğ¤ì(€€€ÍÕÁ•È¹½¹9•İ%¹Ñ•¹Ğ¡¥¹Ñ•¹Ğ¤(€€€Í•Ñ%¹Ñ•¹Ğ¡¥¹Ñ•¹Ğ¤(€€€Ù…°‘••Á1¥¹¬€ôÉ•Í½±Ù•ÕÑ¡…±±‰…¬¡¥¹Ñ•¹Ğ¹‘…Ñ„¤(€€€¥˜€¡‘••Á1¥¹¬€„ô¹Õ±°€˜˜¥Í%¹Ñ•É¹…±‘½ÁÑ…µ•UÉ°¡‘••Á1¥¹¬¤¤ì(€€€€€Ù…°Ñ…É•Ğ€ô‘••Á1¥¹¬¹Ñ½MÑÉ¥¹œ ¤(€€€€€±…ÍÑÑÑ•µÁÑ•‘UÉ°€ôÑ…É•Ğ(€€€€€¡…Í5…¥¹É…µ•ÉÉ½È€ô™…±Í”(€€€€€½™™±¥¹•…±±‰…­UÍ•‘½ÉÕÉÉ•¹Ñ1½…€ô™…±Í”(€€€€€ÕÍ•	Õ¹‘±•‘=™™±¥¹•ÍÍ•ÑÌ€ô€…¥Í9•Ñİ½É­Ù…¥±…‰±” ¤€˜˜€…¡…Í1½…‘•‘1¥Ù•=É¥¥¹	•™½É” ¤(€€€€€½™™±¥¹•=Ù•É±…ä¹Ù¥Í¥‰¥±¥Ñä€ôY¥•Ü¹=9(€€€€€İ•‰Y¥•Ü¹±½…‘UÉ°¡Ñ…É•Ğ¤(€€€ô(€ô((€½Ù•ÉÉ¥‘”™Õ¸½¹M…Ù•%¹ÍÑ…¹•MÑ…Ñ”¡½ÕÑMÑ…Ñ”è	Õ¹‘±”¤ì(€€€ÍÕÁ•È¹½¹M…Ù•%¹ÍÑ…¹•MÑ…Ñ”¡½ÕÑMÑ…Ñ”¤(€€€İ•‰Y¥•Ü¹Í…Ù•MÑ…Ñ”¡½ÕÑMÑ…Ñ”¤(€ô((€½Ù•ÉÉ¥‘”™Õ¸½¹•ÍÑÉ½ä ¤ì(€€€Õ¹É•¥ÍÑ•É9•Ñİ½É­=‰Í•ÉÙ•È ¤(€€€‰…­É½Õ¹‘á•ÕÑ½È¹Í¡ÕÑ‘½İ¹9½Ü ¤(€€€™¥±•A…Ñ¡…±±‰…¬ü¹½¹I••¥Ù•Y…±Õ”¡¹Õ±°¤(€€€™¥±•A…Ñ¡…±±‰…¬€ô¹Õ±°(€€€İ•‰Y¥•Ü¹ÍÑ½Á1½…‘¥¹œ ¤(€€€İ•‰Y¥•Ü¹‘•ÍÑÉ½ä ¤(€€€ÍÕÁ•È¹½¹•ÍÑÉ½ä ¤(€ô((€ÁÉ¥Ù…Ñ”™Õ¸…ÁÁ±åMåÍÑ•µ	…ÉÁÁ•…É…¹” ¤ì(€€€Ù…°¥Í…É¬€ô€¡É•Í½ÕÉ•Ì¹½¹™¥ÕÉ…Ñ¥½¸¹Õ¥5½‘”…¹½¹™¥ÕÉ…Ñ¥½¸¹U%}5=}9%!Q}5M,¤€ôô(€€€€€½¹™¥ÕÉ…Ñ¥½¸¹U%}5=}9%!Q}eL(€€€Ù…°½¹ÑÉ½±±•È€ô]¥¹‘½İ%¹Í•ÑÍ½¹ÑÉ½±±•É½µÁ…Ğ¡İ¥¹‘½Ü°İ¥¹‘½Ü¹‘•½ÉY¥•Ü¤(€€€½¹ÑÉ½±±•È¹¥ÍÁÁ•…É…¹•1¥¡ÑMÑ…ÑÕÍ	…ÉÌ€ô€…¥Í…É¬(€€€½¹ÑÉ½±±•È¹¥ÍÁÁ•…É…¹•1¥¡Ñ9…Ù¥…Ñ¥½¹	…ÉÌ€ô€…¥Í…É¬(€ô((€ÁÉ¥Ù…Ñ”™Õ¸…ÁÁ±å]¥¹‘½İ%¹Í•ÑÌ ¤ì(€€€Y¥•İ½µÁ…Ğ¹Í•Ñ=¹ÁÁ±å]¥¹‘½İ%¹Í•ÑÍ1¥ÍÑ•¹•È¡É½½Ñ½¹Ñ…¥¹•È¤ìÙ¥•Ü°¥¹Í•ÑÌ€´ø(€€€€€Ù…°‰…ÉÌ€ô¥¹Í•ÑÌ¹•Ñ%¹Í•ÑÌ¡]¥¹‘½İ%¹Í•ÑÍ½µÁ…Ğ¹QåÁ”¹ÍåÍÑ•µ	…ÉÌ ¤½È]¥¹‘½İ%¹Í•ÑÍ½µÁ…Ğ¹QåÁ”¹¥µ” ¤¤(€€€€€Ù¥•Ü¹Í•ÑA…‘‘¥¹œ¡‰…ÉÌ¹±•™Ğ°‰…ÉÌ¹Ñ½À°‰…ÉÌ¹É¥¡Ğ°‰…ÉÌ¹‰½ÑÑ½´¤(€€€€€¥¹Í•ÑÌ(€€€ô(€ô((€ÁÉ¥Ù…Ñ”™Õ¸½¹™¥ÕÉ•Mİ¥Á•I•™É•Í  ¤ì(€€€Íİ¥Á•I•™É•Í ¹Í•Ñ½±½ÉM¡•µ•½±½ÉÌ (€€€€€½¹Ñ•áÑ½µÁ…Ğ¹•Ñ½±½È¡Ñ¡¥Ì°H¹½±½È¹…‘½ÁÑ…µ•}ÁÉ¥µ…Éä¤°(€€€€€½¹Ñ•áÑ½µÁ…Ğ¹•Ñ½±½È¡Ñ¡¥Ì°H¹½±½È¹…‘½ÁÑ…µ•}…•¹Ğ¤(€€€€¤(€€€Íİ¥Á•I•™É•Í ¹Í•Ñ=¹¡¥±‘MÉ½±±UÁ…±±‰…¬ì|°|€´øİ•‰Y¥•Ü¹ÍÉ½±±d€ø€Àô(€€€Íİ¥Á•I•™É•Í ¹Í•Ñ=¹I•™É•Í¡1¥ÍÑ•¹•Èì(€€€€€¥˜€¡¥Í9•Ñİ½É­Ù…¥±…‰±” ¤¤ì(€€€€€€€ÕÍ•	Õ¹‘±•‘=™™±¥¹•ÍÍ•ÑÌ€ô™…±Í”(€€€€€ô(€€€€€¥˜€¡½™™±¥¹•=Ù•É±…ä¹Ù¥Í¥‰¥±¥Ñä€ôôY¥•Ü¹Y%M%	1¤ì(€€€€€€€¡…Í5…¥¹É…µ•ÉÉ½È€ô™…±Í”(€€€€€€€İ•‰Y¥•Ü¹±½…‘UÉ°¡±…ÍÑÑÑ•µÁÑ•‘UÉ°¤(€€€€€ô•±Í”ì(€€€€€€€İ•‰Y¥•Ü¹É•±½… ¤(€€€€€ô(€€€ô(€ô((€MÕÁÁÉ•ÍÍ1¥¹Ğ ‰M•Ñ)…Ù…MÉ¥ÁÑ¹…‰±•ˆ¤(€ÁÉ¥Ù…Ñ”™Õ¸½¹™¥ÕÉ•]•‰Y¥•Ü ¤ì(€€€¥˜€¡	Õ¥±‘½¹™¥œ¹	U¤ì(€€€€€]•‰Y¥•Ü¹Í•Ñ]•‰½¹Ñ•¹ÑÍ•‰Õ¥¹¹…‰±•¡ÑÉÕ”¤(€€€ô((€€€½½­¥•5…¹…•È¹•Ñ%¹ÍÑ…¹” ¤¹…ÁÁ±äì(€€€€€Í•Ñ•ÁÑ½½­¥”¡ÑÉÕ”¤(€€€€€Í•Ñ•ÁÑQ¡¥É‘A…ÉÑå½½­¥•Ì¡İ•‰Y¥•Ü°ÑÉÕ”¤(€€€ô((€€€İ•‰Y¥•Ü¹Í•ÑÑ¥¹Ì¹…ÁÁ±äì(€€€€€©…Ù…MÉ¥ÁÑ¹…‰±•€ôÑÉÕ”(€€€€€‘½µMÑ½É…•¹…‰±•€ôÑÉÕ”(€€€€€…¡•5½‘”€ô]•‰M•ÑÑ¥¹Ì¹1=}U1P(€€€€€µ•‘¥…A±…å‰…­I•ÅÕ¥É•ÍUÍ•É•ÍÑÕÉ”€ô™…±Í”(€€€€€±½…‘]¥Ñ¡=Ù•ÉÙ¥•İ5½‘”€ôÑÉÕ”(€€€€€ÕÍ•]¥‘•Y¥•İA½ÉĞ€ôÑÉÕ”(€€€€€Í•ÑMÕÁÁ½ÉÑ5Õ±Ñ¥Á±•]¥¹‘½İÌ¡ÑÉÕ”¤(€€€€€…±±½İ¥±••ÍÌ€ô™…±Í”(€€€€€…±±½İ½¹Ñ•¹Ñ•ÍÌ€ôÑÉÕ”(€€€€€µ¥á•‘½¹Ñ•¹Ñ5½‘”€ô]•‰M•ÑÑ¥¹Ì¹5%a}=9Q9Q}9YI}11=\(€€€€€¥˜€¡	Õ¥±¹YIM%=8¹M-}%9P€øô	Õ¥±¹YIM%=9}=L¹<¤ì(€€€€€€€Í…™•	É½İÍ¥¹¹…‰±•€ôÑÉÕ”(€€€€€ô(€€€€€ÕÍ•É•¹ÑMÑÉ¥¹œ€ô€ˆ‘ÕÍ•É•¹ÑMÑÉ¥¹œ‘½ÁÑ…5¹‘É½¥¼‘í	Õ¥±‘½¹™¥œ¹YIM%=9}95ôˆ(€€€ô((€€€İ•‰Y¥•Ü¹İ•‰Y¥•İ±¥•¹Ğ€ô½‰©•Ğ€è]•‰Y¥•İ±¥•¹Ğ ¤ì(€€€€€½Ù•ÉÉ¥‘”™Õ¸Í¡½Õ±‘%¹Ñ•É•ÁÑI•ÅÕ•ÍĞ (€€€€€€€Ù¥•Üè]•‰Y¥•Üü°(€€€€€€€É•ÅÕ•ÍĞè]•‰I•Í½ÕÉ•I•ÅÕ•ÍĞü(€€€€€€¤è]•‰I•Í½ÕÉ•I•ÍÁ½¹Í”üì(€€€€€€€¥˜€ …ÕÍ•	Õ¹‘±•‘=™™±¥¹•ÍÍ•ÑÌñğÉ•ÅÕ•ÍĞ€ôô¹Õ±°¤ì(€€€€€€€€€É•ÑÕÉ¸ÍÕÁ•È¹Í¡½Õ±‘%¹Ñ•É•ÁÑI•ÅÕ•ÍĞ¡Ù¥•Ü°É•ÅÕ•ÍĞ¤(€€€€€€€ô(€€€€€€€¥˜€ …É•ÅÕ•ÍĞ¹µ•Ñ¡½¹•ÅÕ…±Ì ‰Pˆ°¥¹½É•…Í”€ôÑÉÕ”¤¤ì(€€€€€€€€€É•ÑÕÉ¸ÍÕÁ•È¹Í¡½Õ±‘%¹Ñ•É•ÁÑI•ÅÕ•ÍĞ¡Ù¥•Ü°É•ÅÕ•ÍĞ¤(€€€€€€€ô(€€€€€€€Ù…°ÕÉ¤€ôÉ•ÅÕ•ÍĞ¹ÕÉ°€üèÉ•ÑÕÉ¸ÍÕÁ•È¹Í¡½Õ±‘%¹Ñ•É•ÁÑI•ÅÕ•ÍĞ¡Ù¥•Ü°É•ÅÕ•ÍĞ¤(€€€€€€€¥˜€ …¥Í%¹Ñ•É¹…±‘½ÁÑ…µ•UÉ°¡ÕÉ¤¤¤ì(€€€€€€€€€É•ÑÕÉ¸ÍÕÁ•È¹Í¡½Õ±‘%¹Ñ•É•ÁÑI•ÅÕ•ÍĞ¡Ù¥•Ü°É•ÅÕ•ÍĞ¤(€€€€€€€ô(€€€€€€€É•ÑÕÉ¸É•Í½±Ù•	Õ¹‘±•‘ÍÍ•ÑI•ÍÁ½¹Í”¡ÕÉ¤¤€üèÍÕÁ•È¹Í¡½Õ±‘%¹Ñ•É•ÁÑI•ÅÕ•ÍĞ¡Ù¥•Ü°É•ÅÕ•ÍĞ¤(€€€€€ô((€€€€€½Ù•ÉÉ¥‘”™Õ¸Í¡½Õ±‘=Ù•ÉÉ¥‘•UÉ±1½…‘¥¹œ¡Ù¥•Üè]•‰Y¥•Üü°É•ÅÕ•ÍĞè]•‰I•Í½ÕÉ•I•ÅÕ•ÍĞü¤è	½½±•…¸ì(€€€€€€€Ù…°ÕÉ¤€ôÉ•ÅÕ•ÍĞü¹ÕÉ°€üèÉ•ÑÕÉ¸™…±Í”(€€€€€€€¥˜€¡¥Í%¹Ñ•É¹…±‘½ÁÑ…µ•UÉ°¡ÕÉ¤¤¤ì(€€€€€€€€€É•ÑÕÉ¸™…±Í”(€€€€€€€ô(€€€€€€€½Á•¹áÑ•É¹…±UÉ¤¡ÕÉ¤¤(€€€€€€€É•ÑÕÉ¸ÑÉÕ”(€€€€€ô((€€€€€½Ù•ÉÉ¥‘”™Õ¸½¹A…•MÑ…ÉÑ•¡Ù¥•Üè]•‰Y¥•Üü°ÕÉ°èMÑÉ¥¹œü°™…Ù¥½¸è	¥Ñµ…Àü¤ì(€€€€€€€ÍÕÁ•È¹½¹A…•MÑ…ÉÑ•¡Ù¥•Ü°ÕÉ°°™…Ù¥½¸¤(€€€€€€€¡…Í5…¥¹É…µ•ÉÉ½È€ô™…±Í”(€€€€€€€¥˜€ …ÕÉ°¹¥Í9Õ±±=É	±…¹¬ ¤¤ì(€€€€€€€€€±…ÍÑÑÑ•µÁÑ•‘UÉ°€ôÕÉ°(€€€€€€€ô(€€€€€€€ÁÉ½É•ÍÍ	…È¹Ù¥Í¥‰¥±¥Ñä€ôY¥•Ü¹Y%M%	1(€€€€€ô((€€€€€½Ù•ÉÉ¥‘”™Õ¸½¹A…•¥¹¥Í¡•¡Ù¥•Üè]•‰Y¥•Üü°ÕÉ°èMÑÉ¥¹œü¤ì(€€€€€€€ÍÕÁ•È¹½¹A…•¥¹¥Í¡•¡Ù¥•Ü°ÕÉ°¤(€€€€€€€¥¹¥Ñ¥…±1½…‘½¹”€ôÑÉÕ”(€€€€€€€Íİ¥Á•I•™É•Í ¹¥ÍI•™É•Í¡¥¹œ€ô™…±Í”(€€€€€€€ÁÉ½É•ÍÍ	…È¹Ù¥Í¥‰¥±¥Ñä€ôY¥•Ü¹=9(€€€€€€€¥˜€ …¡…Í5…¥¹É…µ•ÉÉ½È¤ì(€€€€€€€€€½™™±¥¹•=Ù•É±…ä¹Ù¥Í¥‰¥±¥Ñä€ôY¥•Ü¹=9(€€€€€€€€€½™™±¥¹•…±±‰…­UÍ•‘½ÉÕÉÉ•¹Ñ1½…€ô™…±Í”(€€€€€€€€€¥˜€ …ÕÍ•	Õ¹‘±•‘=™™±¥¹•ÍÍ•ÑÌ€˜˜¥Í9•Ñİ½É­Ù…¥±…‰±” ¤¤ì(€€€€€€€€€€€µ…É­1¥Ù•=É¥¥¹1½…‘• ¤(€€€€€€€€€ô(€€€€€€€ô(€€€€€ô((€€€€€½Ù•ÉÉ¥‘”™Õ¸½¹I••¥Ù•‘ÉÉ½È (€€€€€€€Ù¥•Üè]•‰Y¥•Üü°(€€€€€€€É•ÅÕ•ÍĞè]•‰I•Í½ÕÉ•I•ÅÕ•ÍĞü°(€€€€€€€•ÉÉ½Èè]•‰I•Í½ÕÉ•ÉÉ½Èü(€€€€€€¤ì(€€€€€€€ÍÕÁ•È¹½¹I••¥Ù•‘ÉÉ½È¡Ù¥•Ü°É•ÅÕ•ÍĞ°•ÉÉ½È¤(€€€€€€€¥˜€¡É•ÅÕ•ÍĞü¹¥Í½É5…¥¹É…µ”€„ôÑÉÕ”¤É•ÑÕÉ¸((€€€€€€€Ù…°™…¥±¥¹UÉ°€ôÉ•ÅÕ•ÍĞ¹ÕÉ°ü¹Ñ½MÑÉ¥¹œ ¤€üè±…ÍÑÑÑ•µÁÑ•‘UÉ°(€€€€€€€¥˜€ …ÕÍ•	Õ¹‘±•‘=™™±¥¹•ÍÍ•ÑÌ€˜˜€…½™™±¥¹•…±±‰…­UÍ•‘½ÉÕÉÉ•¹Ñ1½…€˜˜¡…Í	Õ¹‘±•‘%¹‘•à ¤¤ì(€€€€€€€€€½™™±¥¹•…±±‰…­UÍ•‘½ÉÕÉÉ•¹Ñ1½…€ôÑÉÕ”(€€€€€€€€€ÕÍ•	Õ¹‘±•‘=™™±¥¹•ÍÍ•ÑÌ€ôÑÉÕ”(€€€€€€€€€¡…Í5…¥¹É…µ•ÉÉ½È€ô™…±Í”(€€€€€€€€€±…ÍÑÑÑ•µÁÑ•‘UÉ°€ô™…¥±¥¹UÉ°(€€€€€€€€€İ•‰Y¥•Ü¹Á½ÍĞìİ•‰Y¥•Ü¹±½…‘UÉ°¡™…¥±¥¹UÉ°¤ô(€€€€€€€€€É•ÑÕÉ¸(€€€€€€€ô((€€€€€€€¥¹¥Ñ¥…±1½…‘½¹”€ôÑÉÕ”(€€€€€€€¡…Í5…¥¹É…µ•ÉÉ½È€ôÑÉÕ”(€€€€€€€Íİ¥Á•I•™É•Í ¹¥ÍI•™É•Í¡¥¹œ€ô™…±Í”(€€€€€€€ÁÉ½É•ÍÍ	…È¹Ù¥Í¥‰¥±¥Ñä€ôY¥•Ü¹=9(€€€€€€€±…ÍÑÑÑ•µÁÑ•‘UÉ°€ô™…¥±¥¹UÉ°(€€€€€€€½™™±¥¹•=Ù•É±…ä¹Ù¥Í¥‰¥±¥Ñä€ôY¥•Ü¹Y%M%	1(€€€€€ô(€€€ô((€€€İ•‰Y¥•Ü¹İ•‰¡É½µ•±¥•¹Ğ€ô½‰©•Ğ€è]•‰¡É½µ•±¥•¹Ğ ¤ì(€€€€€½Ù•ÉÉ¥‘”™Õ¸½¹AÉ½É•ÍÍ¡…¹•¡Ù¥•Üè]•‰Y¥•Üü°¹•İAÉ½É•ÍÌè%¹Ğ¤ì(€€€€€€€ÁÉ½É•ÍÍ	…È¹ÁÉ½É•ÍÌ€ô¹•İAÉ½É•ÍÌ(€€€€€€€ÁÉ½É•ÍÍ	…È¹Ù¥Í¥‰¥±¥Ñä€ô¥˜€¡¹•İAÉ½É•ÍÌ¥¸€Ä¸¸ää¤Y¥•Ü¹Y%M%	1•±Í”Y¥•Ü¹=9(€€€€€ô((€€€€€½Ù•ÉÉ¥‘”™Õ¸½¹É•…Ñ•]¥¹‘½Ü (€€€€€€€Ù¥•Üè]•‰Y¥•Üü°(€€€€€€€¥Í¥…±½œè	½½±•…¸°(€€€€€€€¥ÍUÍ•É•ÍÑÕÉ”è	½½±•…¸°(€€€€€€€É•ÍÕ±Ñ5Íœè5•ÍÍ…”ü(€€€€€€¤è	½½±•…¸ì(€€€€€€€Ù…°ÑÉ…¹ÍÁ½ÉĞ€ôÉ•ÍÕ±Ñ5Íœü¹½‰¨…Ìü]•‰Y¥•Ü¹]•‰Y¥•İQÉ…¹ÍÁ½ÉĞ€üèÉ•ÑÕÉ¸™…±Í”(€€€€€€€Ù…°Ñ•µÁ]•‰Y¥•Ü€ô]•‰Y¥•Ü¡Ñ¡¥Í5…¥¹Ñ¥Ù¥Ñä¤(€€€€€€€Ù…È¡…¹‘±•€ô™…±Í”(€€€€€€€Ñ•µÁ]•‰Y¥•Ü¹İ•‰Y¥•İ±¥•¹Ğ€ô½‰©•Ğ€è]•‰Y¥•İ±¥•¹Ğ ¤ì(€€€€€€€€€ÁÉ¥Ù…Ñ”™Õ¸¡…¹‘±•A½ÁÕÁUÉ¤¡ÕÉ¤èUÉ¤ü¤ì(€€€€€€€€€€€¥˜€¡¡…¹‘±•ñğÕÉ¤€ôô¹Õ±°¤É•ÑÕÉ¸(€€€€€€€€€€€¡…¹‘±•€ôÑÉÕ”(€€€€€€€€€€€¥˜€¡¥Í%¹Ñ•É¹…±‘½ÁÑ…µ•UÉ°¡ÕÉ¤¤¤ì(€€€€€€€€€€€€€İ•‰Y¥•Ü¹±½…‘UÉ°£^}æÚ$z{-®éÜj×al activeNetwork = cm.activeNetwork ?: return false
     val capabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
     return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
       capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)

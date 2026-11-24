@@ -14,5 +14,16 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: 'pkce',
   },
 });
+
+export async function isGoogleSignInEnabled(): Promise<boolean> {
+  const response = await fetch(`${supabaseUrl}/auth/v1/settings`, {
+    headers: { apikey: supabaseAnonKey },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!response.ok) throw new Error('No se pudo comprobar el acceso con Google. Inténtalo de nuevo.');
+  const settings = await response.json();
+  return settings.external?.google === true;
+}

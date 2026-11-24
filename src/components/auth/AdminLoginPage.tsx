@@ -11,6 +11,7 @@ import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { GoogleSignInButton } from './GoogleSignInButton';
 
 const schema = z.object({
   email: z.string().email('Email inválido'),
@@ -96,6 +97,7 @@ export function AdminLoginPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <GoogleSignInButton disabled={isSigningIn} />
             {!online && (
               <div role="status" className="flex items-start gap-2.5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-100">
                 <WifiOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />

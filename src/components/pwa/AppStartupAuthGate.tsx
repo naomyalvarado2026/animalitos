@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnlineStatus } from '@/components/pwa/useOnlineStatus';
 import { assetUrl } from '@/lib/assets';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import {
   APP_GUEST_SESSION_KEY,
   isAppLaunchContext,
@@ -163,6 +164,7 @@ export function AppStartupAuthGate() {
             )}
 
             <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
+              <GoogleSignInButton disabled={submitting} />
               <div className="space-y-1.5">
                 <Label htmlFor="startup-email">Correo electrónico</Label>
                 <Input
